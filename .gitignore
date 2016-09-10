@@ -8,24 +8,22 @@ datasources
 *.cl.h
 
 # compiled binaries
-mapping/mapping_manager
-mapping/mapping_manager.san
-mapping/r_server
-mapping/gtest
-mapping/tileserver
-mapping/cache_index
-mapping/cache_node
-mapping/cache_experiments
-mapping/cluster_experiment
-mapping/local_setup
-mapping/test_client
-mapping/test/systemtests/parse_logs
+mapping_manager
+mapping_manager.san
+mapping_cgi
+r_server
+gtest
+tileserver
+cache_index
+cache_node
+cache_experiments
+cluster_experiment
+local_setup
+test_client
+test/systemtests/parse_logs
 
 # machine specific configuration
-mapping/Makefile.local
+Makefile.local
 
 # generated documentation
-docs/waveDoc/*
-htdocs/doc/wave/*
 docs/mappingDoc/*
-htdocs/doc/mapping/*
