@@ -1,6 +1,6 @@
 
 #include "services/ogcservice.h"
-#include "operators/operator.h"
+#include "processing/queryprocessor.h"
 #include "datatypes/raster.h"
 #include "datatypes/raster/raster_priv.h"
 #include "datatypes/plot.h"
@@ -67,20 +67,21 @@ void WMSService::run() {
 			);
 
 			if (format == "application/json") {
-				auto graph = GenericOperator::fromJSON(params.get("layers"));
-				QueryProfiler profiler;
-				std::unique_ptr<GenericPlot> dataVector = graph->getCachedPlot(qrect, QueryTools(profiler));
+				auto plot = QueryProcessor::getDefaultProcessor()
+					.process(Query(params.get("layers"), Query::ResultType::PLOT, qrect))
+					->getPlot();
 
 				response.sendContentType("application/json");
 				response.finishHeaders();
-				response << dataVector->toJSON();
+				response << plot;
 				return;
 			}
 			else {
+				auto result_raster = QueryProcessor::getDefaultProcessor()
+					.process(Query(params.get("layers"), Query::ResultType::RASTER, qrect))
+					->getRaster(GenericOperator::RasterQM::EXACT);
+
 				double bbox[4] = {sref.x1, sref.y1, sref.x2, sref.y2};
-				auto graph = GenericOperator::fromJSON(params.get("layers"));
-				QueryProfiler profiler;
-				auto result_raster = graph->getCachedRaster(qrect,QueryTools(profiler),GenericOperator::RasterQM::EXACT);
 				bool flipx = (bbox[2] > bbox[0]) != (result_raster->pixel_scale_x > 0);
 				bool flipy = (bbox[3] > bbox[1]) == (result_raster->pixel_scale_y > 0);
 

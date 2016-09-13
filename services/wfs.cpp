@@ -2,7 +2,7 @@
 #include "datatypes/pointcollection.h"
 #include "datatypes/linecollection.h"
 #include "datatypes/polygoncollection.h"
-#include "operators/operator.h"
+#include "processing/queryprocessor.h"
 #include "pointvisualization/CircleClusteringQuadTree.h"
 #include "util/timeparser.h"
 #include "util/enumconverter.h"
@@ -19,17 +19,13 @@ enum class WFSServiceType {
 	GetCapabilities, GetFeature
 };
 
-enum class FeatureType {
-	POINTS, LINES, POLYGONS
+const std::vector< std::pair<Query::ResultType, std::string> > featureTypeMap = {
+	std::make_pair(Query::ResultType::POINTS, "points"),
+	std::make_pair(Query::ResultType::LINES, "lines"),
+	std::make_pair(Query::ResultType::POLYGONS, "polygons"),
 };
 
-const std::vector< std::pair<FeatureType, std::string> > featureTypeMap = {
-	std::make_pair(FeatureType::POINTS, "points"),
-	std::make_pair(FeatureType::LINES, "lines"),
-	std::make_pair(FeatureType::POLYGONS, "polygons"),
-};
-
-EnumConverter<FeatureType> featureTypeConverter(featureTypeMap);
+EnumConverter<Query::ResultType> featureTypeConverter(featureTypeMap);
 
 /**
  * Implementation of the OGC WFS standard http://www.opengeospatial.org/standards/wfs
@@ -53,7 +49,7 @@ class WFSService : public OGCService {
 		std::string describeStoredQueries();
 
 		// helper functions
-		std::pair<FeatureType, Json::Value> parseTypeNames(const std::string &typeNames) const;
+		std::pair<Query::ResultType, std::string> parseTypeNames(const std::string &typeNames) const;
 		std::unique_ptr<PointCollection> clusterPoints(const PointCollection &points, const Parameters &params) const;
 
 		const std::map<std::string, WFSServiceType> stringToRequest {
@@ -95,9 +91,9 @@ void WFSService::getFeature() {
 	if(!params.hasParam("typenames"))
 		throw ArgumentException("WFSService: typeNames parameter not specified");
 
-	std::pair<FeatureType, Json::Value> typeNames = parseTypeNames(params.get("typenames"));
-	FeatureType featureType = typeNames.first;
-	Json::Value query = typeNames.second;
+	auto typeNames = parseTypeNames(params.get("typenames"));
+	auto resultType = typeNames.first;
+	auto &operatorgraph = typeNames.second;
 
 	TemporalReference tref = parseTime(params);
 
@@ -109,37 +105,16 @@ void WFSService::getFeature() {
 
 
 	SpatialReference sref(queryEpsg);
-	if(params.hasParam("bbox")) {
+	if(params.hasParam("bbox"))
 		sref = parseBBOX(params.get("bbox"), queryEpsg);
-	}
 
-	auto graph = GenericOperator::fromJSON(query);
-
-	QueryProfiler profiler;
-
-	QueryRectangle rect(
-		sref,
-		tref,
-		QueryResolution::none()
-	);
-
-	std::unique_ptr<SimpleFeatureCollection> features;
-
-	switch (featureType){
-	case FeatureType::POINTS:
-		features = graph->getCachedPointCollection(rect, QueryTools(profiler));
-		break;
-	case FeatureType::LINES:
-		features = graph->getCachedLineCollection(rect, QueryTools(profiler));
-		break;
-	case FeatureType::POLYGONS:
-		features = graph->getCachedPolygonCollection(rect, QueryTools(profiler));
-		break;
-	}
+	auto features = QueryProcessor::getDefaultProcessor()
+		.process(Query(operatorgraph, resultType, QueryRectangle(sref, tref, QueryResolution::none())))
+		->getAnyFeatureCollection();
 
 	//clustered is ignored for non-point collections
 	//TODO: implement this as VSP or other operation?
-	if (params.hasParam("clustered") && params.getBool("clustered", false) && featureType == FeatureType::POINTS) {
+	if (params.hasParam("clustered") && params.getBool("clustered", false) && resultType == Query::ResultType::POINTS) {
 		PointCollection& points = dynamic_cast<PointCollection&>(*features);
 
 		features = clusterPoints(points, params);
@@ -192,7 +167,14 @@ void WFSService::getFeature() {
 		throw ArgumentException("WFSService: unknown output format");
 
 	if(exportMode) {
-		exportZip(output.c_str(), output.length(), format, *graph->getFullProvenance());
+		/*
+		 * TODO: how do we do this in a distributed way?
+		 * We cannot execute this locally, because in distributed processing, only workers have access to all sources to gather provenance information.
+		 * So, somehow, we must ask the QueryProcessor for Provenance information.
+		 */
+		// auto provenance = *graph->getFullProvenance();
+		std::unique_ptr<ProvenanceCollection> provenance = make_unique<ProvenanceCollection>();
+		exportZip(output.c_str(), output.length(), format, *provenance);
 	} else {
 		response.sendContentType(format + "; charset=utf-8");
 		response.finishHeaders();
@@ -266,7 +248,7 @@ std::unique_ptr<PointCollection> WFSService::clusterPoints(const PointCollection
 	return clusteredPoints;
 }
 
-std::pair<FeatureType, Json::Value> WFSService::parseTypeNames(const std::string &typeNames) const {
+std::pair<Query::ResultType, std::string> WFSService::parseTypeNames(const std::string &typeNames) const {
 	// the typeNames parameter specifies the requested layer : typeNames=namespace:featuretype
 	// for now the namespace specifies the type of feature (points, lines, polygons) while the featuretype specifies the query
 
@@ -285,13 +267,7 @@ std::pair<FeatureType, Json::Value> WFSService::parseTypeNames(const std::string
 	if(queryString == "")
 		throw ArgumentException("WFSService: query in typenNames not specified");
 
-	FeatureType featureType = featureTypeConverter.from_string(featureTypeString);
+	Query::ResultType resultType = featureTypeConverter.from_string(featureTypeString);
 
-	Json::Reader reader(Json::Features::strictMode());
-	Json::Value query;
-
-	if(!reader.parse(queryString, query))
-		throw ArgumentException("WFSService: query in typeNames is not valid JSON");
-
-	return std::make_pair(featureType, query);
+	return std::make_pair(resultType, queryString);
 }
