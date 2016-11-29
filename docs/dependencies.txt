@@ -33,11 +33,10 @@ RServe? http://rforge.net/Rserve/ - LGPL, weniger startup-overhead, aber eigener
 
 
 
-apt-get install clang-3.5
+apt-get install clang
 apt-get install g++
 apt-get install make
 
-apt-get install libjsoncpp-dev
 apt-get install libpng-dev
 apt-get install libjpeg-dev
 apt-get install libgeos-dev
@@ -47,7 +46,6 @@ apt-get install libcurl3-dev
 apt-get install libboost-date-time-dev
 apt-get install libsqlite3-dev
 apt-get install liburiparser-dev
-apt-get install libgtest-dev
 apt-get install libfcgi-dev
 apt-get install libxerces-c-dev
 apt-get install libarchive-dev 
