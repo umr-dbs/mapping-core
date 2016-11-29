@@ -7,8 +7,8 @@
 GTEST_DIR=ext/gtest
 
 #CPP=g++
-CPP=clang++-3.5
-LLVM_SYMBOLIZER=/usr/bin/llvm-symbolizer-3.5
+CPP=clang++
+LLVM_SYMBOLIZER=/usr/bin/llvm-symbolizer
 ASAN_OPTIONS=
 # if you need better stack traces, use something like this. This will slow down the tests by a factor of 5-10!
 #ASAN_OPTIONS=fast_unwind_on_malloc=0:malloc_context_size=10
