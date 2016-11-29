@@ -4,8 +4,7 @@
 # TODO: maybe we should use autotools or cmake or something..
 #
 
-# this is the default path when installing libgtest-dev on ubuntu
-GTEST_DIR=/usr/src/gtest/
+GTEST_DIR=ext/gtest
 
 #CPP=g++
 CPP=clang++-3.5
@@ -48,7 +47,7 @@ OBJS_OPERATORS :=
 OBJS_SERVICES := 
 OBJS_GTEST := 
 PKGLIBS_CORE :=
-CPPFLAGS := ${DBG_FLAGS} ${OPT_FLAGS} -Wall -Wextra -pedantic-errors -std=c++11 -I. -Iext/jsoncpp
+CPPFLAGS := ${DBG_FLAGS} ${OPT_FLAGS} -Wall -Wextra -pedantic-errors -std=c++11 -I. -Iext/jsoncpp -Iext/gtest/include
 TEST_QUERIES := $(notdir $(wildcard test/systemtests/queries/*.json))
 
 # Now include the module definitions

@@ -12,7 +12,7 @@ mapping_manager
 mapping_manager.san
 mapping_cgi
 r_server
-gtest
+/gtest
 tileserver
 cache_index
 cache_node
