@@ -258,7 +258,7 @@ doc:
 	./../docs/makeDoc
 
 clean:
-	rm -f ${ALL_OBJS} o/gtest-all.o
+	rm -f ${ALL_OBJS} o/core/gtest-all.o
 	rm -f ${ALL_NAMES}
 	rm -f $(CL_HEADERS)
 	#find o/ -type f -name '*.o' -delete
