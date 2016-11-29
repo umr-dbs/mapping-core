@@ -48,7 +48,7 @@ OBJS_OPERATORS :=
 OBJS_SERVICES := 
 OBJS_GTEST := 
 PKGLIBS_CORE :=
-CPPFLAGS := ${DBG_FLAGS} ${OPT_FLAGS} -Wall -Wextra -pedantic-errors -std=c++11 -I.
+CPPFLAGS := ${DBG_FLAGS} ${OPT_FLAGS} -Wall -Wextra -pedantic-errors -std=c++11 -I. -Iext/jsoncpp
 TEST_QUERIES := $(notdir $(wildcard test/systemtests/queries/*.json))
 
 # Now include the module definitions

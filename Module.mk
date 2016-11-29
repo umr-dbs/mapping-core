@@ -2,7 +2,7 @@
 #
 # Core libraries
 #
-PKGLIBS_CORE += jsoncpp gdal libpng zlib "libpqxx >= 4.0.0" libcurl sqlite3 libarchive
+PKGLIBS_CORE += gdal libpng zlib "libpqxx >= 4.0.0" libcurl sqlite3 libarchive
 #
 # Core objects
 #
@@ -45,6 +45,8 @@ OBJS_OPERATORS += o/core/datatypes/plots/histogram.o o/core/datatypes/plots/text
 # Cache: needs to be core for now
 OBJS_CORE += o/core/cache/common.o o/core/cache/priv/shared.o o/core/cache/priv/requests.o o/core/cache/priv/connection.o o/core/cache/priv/redistribution.o o/core/cache/priv/cache_stats.o o/core/cache/priv/cache_structure.o o/core/cache/node/node_cache.o o/core/cache/manager.o o/core/cache/priv/caching_strategy.o o/core/cache/priv/cube.o
 
+# External
+OBJS_EXTERNAL += o/core/ext/jsoncpp/jsoncpp.o
 
 #
 # GTest
@@ -60,7 +62,7 @@ ALL_TARGETS += MANAGER MANAGER_SAN CGI GTEST PARSETESTLOGS
 # Note: make sure to understand the difference between A := B and A = B
 # see https://www.gnu.org/software/make/manual/html_node/Flavors.html
 TARGET_MANAGER_NAME := mapping_manager 
-TARGET_MANAGER_OBJS = o/core/mapping_manager.o ${OBJS_CORE} ${OBJS_OPERATORS}
+TARGET_MANAGER_OBJS = o/core/mapping_manager.o ${OBJS_CORE} ${OBJS_OPERATORS} ${OBJS_EXTERNAL}
 TARGET_MANAGER_PKGLIBS = ${PKGLIBS_CORE}
 TARGET_MANAGER_LDFLAGS = ${LDFLAGS} ${LDFLAGS_CL}
 
@@ -70,12 +72,12 @@ TARGET_MANAGER_SAN_PKGLIBS = ${PKGLIBS_CORE}
 TARGET_MANAGER_SAN_LDFLAGS = ${SANITIZE_FLAGS} ${LDFLAGS} ${LDFLAGS_CL}
 
 TARGET_CGI_NAME := mapping_cgi 
-TARGET_CGI_OBJS = o/core/cgi.o ${OBJS_CORE} ${OBJS_SERVICES} ${OBJS_OPERATORS}
+TARGET_CGI_OBJS = o/core/cgi.o ${OBJS_CORE} ${OBJS_SERVICES} ${OBJS_OPERATORS} ${OBJS_EXTERNAL}
 TARGET_CGI_PKGLIBS = ${PKGLIBS_CORE}
 TARGET_CGI_LDFLAGS = ${LDFLAGS} ${LDFLAGS_CL} -lfcgi++ -lfcgi
 
 TARGET_GTEST_NAME := gtest 
-TARGET_GTEST_OBJS = ${OBJS_CORE} ${OBJS_SERVICES} ${OBJS_GTEST} o/core/libgtest.a
+TARGET_GTEST_OBJS = ${OBJS_CORE} ${OBJS_SERVICES} ${OBJS_GTEST} ${OBJS_EXTERNAL} o/core/libgtest.a
 TARGET_GTEST_PKGLIBS = ${PKGLIBS_CORE}
 TARGET_GTEST_LDFLAGS = ${LDFLAGS} ${LDFLAGS_CL} -lpthread
 
