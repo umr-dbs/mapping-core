@@ -86,7 +86,7 @@ int main() {
 			fcgi_streambuf streambuf_out(request.out);
 			fcgi_streambuf streambuf_err(request.err);
 
-			HTTPService::run(&streambuf_in, &streambuf_out, &streambuf_err);
+			HTTPService::run(&streambuf_in, &streambuf_out, &streambuf_err, request);
 		}
 	}
 }

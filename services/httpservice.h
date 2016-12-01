@@ -11,6 +11,8 @@
 
 #include <json/json.h>
 
+#include <fcgio.h>
+
 /**
  * Base class for http webservices. Provides methods for parsing and output
  */
@@ -84,6 +86,7 @@ class HTTPService {
 		virtual ~HTTPService() = default;
 
 		static void run(std::streambuf *in, std::streambuf *out, std::streambuf *err);
+		static void run(std::streambuf *in, std::streambuf *out, std::streambuf *err, FCGX_Request & request);
 };
 
 

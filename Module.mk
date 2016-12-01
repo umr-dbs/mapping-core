@@ -79,7 +79,7 @@ TARGET_CGI_LDFLAGS = ${LDFLAGS} ${LDFLAGS_CL} -lfcgi++ -lfcgi
 TARGET_GTEST_NAME := gtest 
 TARGET_GTEST_OBJS = ${OBJS_CORE} ${OBJS_SERVICES} ${OBJS_GTEST} ${OBJS_EXTERNAL} o/core/libgtest.a
 TARGET_GTEST_PKGLIBS = ${PKGLIBS_CORE}
-TARGET_GTEST_LDFLAGS = ${LDFLAGS} ${LDFLAGS_CL} -lpthread
+TARGET_GTEST_LDFLAGS = ${LDFLAGS} ${LDFLAGS_CL} -lpthread -lfcgi++ -lfcgi
 
 TARGET_PARSETESTLOGS_NAME := test/systemtests/parse_logs
 TARGET_PARSETESTLOGS_OBJS = o/core/test/systemtests/parse_logs.o

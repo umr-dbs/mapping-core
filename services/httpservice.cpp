@@ -67,6 +67,34 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 	Log::off();
 }
 
+/**
+ * FastCGI
+ */
+void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *err, FCGX_Request &request) {
+	std::istream input(in);
+	std::ostream error(err);
+	HTTPResponseStream response(out);
+
+	Log::logToStream(Log::LogLevel::WARN, &error);
+	Log::logToMemory(Log::LogLevel::INFO);
+	try {
+		// Parse all entries
+		Parameters params;
+		parseGetData(params, request);
+		parsePostData(params, input, request);
+
+		auto servicename = params.get("service");
+		auto service = HTTPService::getRegisteredService(servicename, params, response, error);
+
+		service->run();
+	}
+	catch (const std::exception &e) {
+		error << "Request failed with an exception: " << e.what() << "\n";
+		response.send500("invalid request");
+	}
+	Log::off();
+}
+
 
 /*
  * Service::ResponseStream

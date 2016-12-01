@@ -2,12 +2,14 @@
 #include "util/exceptions.h"
 
 #include <string>
+#include <cstring>
 #include <vector>
 #include <algorithm>
 #include <fstream>
 #include "util/make_unique.h"
 #include "util/base64.h"
 #include "util/configuration.h"
+
 
 /**
  * std::string wrapper for getenv(). Throws exceptions if environment variable is not set.
@@ -22,6 +24,14 @@ static std::string getenv_str(const std::string& varname, bool to_lower = false)
 	if (to_lower)
 		std::transform(result.begin(), result.end(), result.begin(), ::tolower);
 	return result;
+}
+
+
+static std::string getFCGIParam(FCGX_Request &request, std::string key) {
+	const char * uri = FCGX_GetParam(key.c_str(), request.envp);
+	std::string string = std::string(uri, std::strlen(uri));
+
+	return string;
 }
 
 /*
@@ -76,16 +86,13 @@ static std::string urldecode(const std::string& str) {
 /**
  * Gets the data from a POST request
  */
-static std::string getPostData(std::istream& in) {
-	std::string content_length = getenv_str("CONTENT_LENGTH");
-
-	int cl = std::stoi(content_length);
-	if (cl < 0)
+static std::string getPostData(std::istream& in, int content_length) {
+	if (content_length < 0)
 		throw ArgumentException("CONTENT_LENGTH is negative");
 
-	char *buf = new char[cl];
-	in.read(buf, cl);
-	std::string query(buf, buf + cl);
+	char *buf = new char[content_length];
+	in.read(buf, content_length);
+	std::string query(buf, buf + content_length);
 	delete[] buf;
 	return query;
 }
@@ -159,8 +166,8 @@ void parseQuery(const std::string& query, Parameters &params) {
 /**
  * Parses a url encoded POST request
  */
-static void parsePostUrlEncoded(Parameters &params, std::istream &in) {
-	std::string query = getPostData(in);
+static void parsePostUrlEncoded(Parameters &params, std::istream &in, int content_length) {
+	std::string query = getPostData(in, content_length);
 	parseQuery(query, params);
 }
 
@@ -431,8 +438,11 @@ void parsePostData(Parameters &params, std::istream &in) {
 	// HTTP header fields are always case-insensitive (RFC 2616 ch. 4.2)
 	std::string content_type = getenv_str("CONTENT_TYPE", true);
 
+	std::string content_length_string = getenv_str("CONTENT_LENGTH", false);
+	int content_length = std::stoi(content_length_string);
+
 	if (content_type == "application/x-www-form-urlencoded") {
-		parsePostUrlEncoded(params, in);
+		parsePostUrlEncoded(params, in, content_length);
 	} else if (content_type.find("multipart/form-data") != std::string::npos || content_type.find("multipart/mixed") != std::string::npos) {
 		parsePostMultipart(params, in);
 	} else
@@ -445,5 +455,41 @@ void parsePostData(Parameters &params, std::istream &in) {
 void parseGetData(Parameters &params) {
 	std::string query_string = getenv_str("QUERY_STRING");
 
+	parseQuery(query_string, params);
+}
+
+
+/**
+ * Parses POST data from a HTTP request FCGI
+ */
+void parsePostData(Parameters &params, std::istream &in, FCGX_Request &request) {
+
+	// Methods are always case-sensitive (RFC 2616 ch. 5.1.1)
+	std::string request_method = getFCGIParam(request, "REQUEST_METHOD");
+
+	if (request_method != "POST")
+		return;
+
+	// HTTP header fields are always case-insensitive (RFC 2616 ch. 4.2)
+	std::string content_type = getFCGIParam(request, "CONTENT_TYPE");
+
+	std::transform(content_type.begin(), content_type.end(), content_type.begin(), ::tolower);
+
+	std::string content_length_string = getFCGIParam(request, "CONTENT_LENGTH");
+	int content_length = std::stoi(content_length_string);
+
+	if (content_type == "application/x-www-form-urlencoded") {
+		parsePostUrlEncoded(params, in, content_length);
+	} else if (content_type.find("multipart/form-data") != std::string::npos || content_type.find("multipart/mixed") != std::string::npos) {
+		parsePostMultipart(params, in);
+	} else
+		throw ArgumentException("Unknown content type in POST request.");
+}
+
+/**
+ * Parses GET data from a HTTP request FCGI
+ */
+void parseGetData(Parameters &params, FCGX_Request &request) {
+	std::string query_string = getFCGIParam(request, "QUERY_STRING");
 	parseQuery(query_string, params);
 }
