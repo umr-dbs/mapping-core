@@ -183,8 +183,8 @@ indexserver.host=***REMOVED***
 #
 ###############################
 
-operators.gfbiosource.dbcredentials=user = 'gfbio' host = '***REMOVED***' password = '***REMOVED***' dbname = 'gfbio'
-gfbio.abcd.datapath=/home/gfbio/abcd/
+operators.gfbiosource.dbcredentials=user = 'USER' host = 'HOST' password = 'PASSWORD' dbname = 'DBNAME'
+gfbio.abcd.datapath=/path/to/gfbio/data
 
 ```
 
