@@ -1,0 +1,40 @@
+{
+	"name": "Temporal Aggregation (Single raster)",
+	"query_result": "raster",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1443657600,
+        "end": 1443657601
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },
+    "resolution": {
+    	"type": "pixels",
+        "x": 3600,
+        "y": 1800
+    },
+    "query": {
+        "params": {
+           "duration" : 1,
+           "aggregation" : "min"
+        },
+        "sources": {
+            "raster": [
+                {
+                    "params": {
+                        "channel": 0,
+                        "sourcename": "ndvi"
+                    },
+                    "type": "rasterdb_source"
+                }
+            ]
+        },
+        "type": "temporal_aggregation"
+    },
+    "query_expected_hash": "56a716fabc919abeee1db5f03144a92e7394aa8a"
+}
