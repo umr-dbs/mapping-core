@@ -155,6 +155,9 @@ std::unique_ptr<PointCollection> CSVSourceOperator::getPointCollection(const Que
 	tools.profiler.addIOCost(filesize);
 
 	std::ifstream data(filename);
+	if(!data.is_open()) {
+		throw OperatorException("CSVSource: could not open file");
+	}
 	return csvSourceUtil->getPointCollection(data, rect);
 }
 
@@ -163,6 +166,9 @@ std::unique_ptr<LineCollection> CSVSourceOperator::getLineCollection(const Query
 	tools.profiler.addIOCost(filesize);
 
 	std::ifstream data(filename);
+	if(!data.is_open()) {
+		throw OperatorException("CSVSource: could not open file");
+	}
 	return csvSourceUtil->getLineCollection(data, rect);
 }
 
@@ -171,6 +177,9 @@ std::unique_ptr<PolygonCollection> CSVSourceOperator::getPolygonCollection(const
 	tools.profiler.addIOCost(filesize);
 
 	std::ifstream data(filename);
+	if(!data.is_open()) {
+		throw OperatorException("CSVSource: could not open file");
+	}
 	return csvSourceUtil->getPolygonCollection(data, rect);
 }
 
