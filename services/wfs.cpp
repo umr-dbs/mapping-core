@@ -105,8 +105,9 @@ void WFSService::getFeature() {
 
 
 	SpatialReference sref(queryEpsg);
-	if(params.hasParam("bbox"))
+	if(params.hasParam("bbox")) {
 		sref = parseBBOX(params.get("bbox"), queryEpsg);
+	}
 
 	auto features = QueryProcessor::getDefaultProcessor()
 		.process(Query(operatorgraph, resultType, QueryRectangle(sref, tref, QueryResolution::none())))
@@ -213,18 +214,61 @@ std::unique_ptr<PointCollection> WFSService::clusterPoints(const PointCollection
 	auto x2 = sref.x2;
 	auto y1 = sref.y1;
 	auto y2 = sref.y2;
-	pv::CircleClusteringQuadTree clusterer(
-			pv::BoundingBox(
-					pv::Coordinate((x2 + x1) / (2 * resolution),
-							(y2 + y1) / (2 * resolution)),
-					pv::Dimension((x2 - x1) / (2 * resolution),
-							(y2 - y1) / (2 * resolution)), 1), 1);
-	for (const Coordinate& pointOld : points.coordinates) {
-		clusterer.insert(
-				std::make_shared<pv::Circle>(
-						pv::Coordinate(pointOld.x / resolution,
-								pointOld.y / resolution), 5, 1));
-	}
+
+    // initialize empty tree
+    std::size_t node_capacity = 1;
+    pv::Circle::CommonAttributes common_attributes{5, 1};
+	pv::CircleClusteringQuadTree clustering_tree{
+        pv::BoundingBox(
+            pv::Coordinate((x2 + x1) / (2 * resolution), (y2 + y1) / (2 * resolution)),
+            pv::Dimension((x2 - x1) / (2 * resolution), (y2 - y1) / (2 * resolution)),
+            common_attributes.getEpsilonDistance()
+        ),
+        node_capacity
+    };
+
+    // add coordinate by coordinate
+    std::vector<std::string> text_keys = points.feature_attributes.getTextualKeys();
+    std::vector<std::string> numeric_keys = points.feature_attributes.getNumericKeys();
+    for (const auto& point: points) {
+        Coordinate mapping_coordinate = points.coordinates.at(static_cast<std::size_t>(point));
+        pv::Coordinate coordinate{mapping_coordinate.x / resolution, mapping_coordinate.y / resolution};
+
+        // add text attributes
+        std::map<std::string, pv::Circle::TextAttribute> text_attributes;
+        for (const auto& key : text_keys) {
+            text_attributes.insert(
+                std::make_pair(
+                    key,
+                    pv::Circle::TextAttribute{
+                        points.feature_attributes.textual(key).get(point),
+                        coordinate,
+                        common_attributes
+                    }
+                )
+            );
+        }
+
+        // add numeric attributes
+        std::map<std::string, pv::Circle::NumericAttribute> numeric_attributes;
+        for (const auto& key : numeric_keys) {
+            numeric_attributes.insert(
+                std::make_pair(
+                    key,
+                    std::move(pv::Circle::NumericAttribute{points.feature_attributes.numeric(key).get(point)})
+                )
+            );
+        }
+
+        clustering_tree.insert(
+            std::make_shared<pv::Circle>(
+                coordinate,
+                common_attributes,
+                text_attributes,
+                numeric_attributes
+            )
+        );
+    }
 
 	// PROPERTYNAME
 	// O
@@ -233,16 +277,65 @@ std::unique_ptr<PointCollection> WFSService::clusterPoints(const PointCollection
 	// TYPENAMES=ns1:F1,ns2:F2&ALIASES=A,B&FILTER=<Filter>…for A,B…</Filter>
 	// TYPENAMES=ns1:F1,ns1:F1&ALIASES=C,D&FILTER=<Filter>…for C,D…</Filter>
 
-	auto circles = clusterer.getCircles();
-	auto &attr_radius = clusteredPoints->feature_attributes.addNumericAttribute("radius", Unit::unknown());
-	auto &attr_number = clusteredPoints->feature_attributes.addNumericAttribute("numberOfPoints", Unit::unknown());
+    // output circles
+	auto circles = clustering_tree.getCircles();
+
+    // initialize map specific data
+	auto &attr_radius = clusteredPoints->feature_attributes.addNumericAttribute("___radius", Unit::unknown());
+	auto &attr_number = clusteredPoints->feature_attributes.addNumericAttribute("___numberOfPoints", Unit::unknown());
 	attr_radius.reserve(circles.size());
 	attr_number.reserve(circles.size());
-	for (auto& circle : circles) {
-		size_t idx = clusteredPoints->addSinglePointFeature(Coordinate(circle->getX() * resolution,
-				circle->getY() * resolution));
+
+    // initialize textual attributes
+    for (const auto& key: text_keys) {
+        clusteredPoints->feature_attributes.addTextualAttribute(key, points.feature_attributes.textual(key).unit);
+    }
+
+    // initialize numeric attributes as text attributes for output
+    for (const auto& key: numeric_keys) {
+        clusteredPoints->feature_attributes.addTextualAttribute(key, points.feature_attributes.numeric(key).unit);
+    }
+
+	for (const auto& circle : circles) {
+        // add feature to point collection
+		size_t idx = clusteredPoints->addSinglePointFeature(
+            Coordinate(circle->getX() * resolution, circle->getY() * resolution)
+        );
+
+        // set circle map specific data
 		attr_radius.set(idx, circle->getRadius());
 		attr_number.set(idx, circle->getNumberOfPoints());
+
+        // add textual attributes
+        for (const auto& text_attribute_entry : circle->getTextAttributes()) {
+            std::vector<std::string> texts = text_attribute_entry.second.getTexts();
+            std::string texts_concat;
+            for (const auto &text : text_attribute_entry.second.getTexts()) {
+                texts_concat += text + ", ";
+            }
+            clusteredPoints->feature_attributes.textual(text_attribute_entry.first).set(
+                idx,
+                texts.size() >= 5 ? texts_concat + "…" : texts_concat.substr(0, texts_concat.size() - 2)
+            );
+        }
+
+        // add numeric attributes as text attributes for output
+        for (const auto& numeric_attribute_entry : circle->getNumericAttributes()) {
+            double average = numeric_attribute_entry.second.getAverage();
+            double variance = numeric_attribute_entry.second.getVariance();
+
+            std::stringstream output_stream;
+
+            if (!std::isnan(average)) {
+                output_stream << average;
+
+                if (variance > 0) {
+                    output_stream << " ± " << sqrt(variance);
+                }
+            }
+
+            clusteredPoints->feature_attributes.textual(numeric_attribute_entry.first).set(idx, output_stream.str());
+        }
 	}
 
 	return clusteredPoints;

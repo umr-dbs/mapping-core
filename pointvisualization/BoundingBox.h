@@ -57,9 +57,10 @@ namespace pv {
 			 */
 			std::string to_string() const;
 		private:
-			const Coordinate center;
-			const Dimension halfDimension;
-			const double EPSILON_DISTANCE;
+			Coordinate center;
+			Dimension halfDimension;
+
+			double EPSILON_DISTANCE;
 	};
 
 }

@@ -9,8 +9,8 @@ BoundingBox::BoundingBox(Coordinate center, Dimension halfDimension, double epsi
  */
 bool BoundingBox::intersects(Circle& circle) const {
 	auto circleDistance = std::make_pair(
-			abs(circle.getX() - center.getX()),
-			abs(circle.getY() - center.getY()));
+			fabs(circle.getX() - center.getX()),
+			fabs(circle.getY() - center.getY()));
 
 	if (circleDistance.first
 			> (halfDimension.getWidth() + circle.getRadius() + EPSILON_DISTANCE)) {
@@ -33,13 +33,11 @@ bool BoundingBox::intersects(Circle& circle) const {
 			+ pow(circleDistance.second - halfDimension.getHeight(), 2);
 
 	return (cornerDistance_sq <= pow(circle.getRadius(), 2));
-
-	return true;
 }
 
 bool BoundingBox::contains(Circle& circle) const {
-	return ( abs(circle.getX() - center.getX()) <= (halfDimension.getWidth() - circle.getRadius() - EPSILON_DISTANCE) )
-		&& (abs(circle.getY() - center.getY()) <= (halfDimension.getHeight() - circle.getRadius() - EPSILON_DISTANCE));
+	return ( fabs(circle.getX() - center.getX()) <= (halfDimension.getWidth() - circle.getRadius() - EPSILON_DISTANCE) )
+		&& (fabs(circle.getY() - center.getY()) <= (halfDimension.getHeight() - circle.getRadius() - EPSILON_DISTANCE));
 }
 
 Coordinate BoundingBox::getCenter() const {
