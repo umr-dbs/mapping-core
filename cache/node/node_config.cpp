@@ -21,11 +21,11 @@ NodeConfig NodeConfig::fromConfiguration() {
 	result.caching_strategy = Configuration::get("nodeserver.cache.strategy");
 	result.local_replacement = Configuration::get("nodeserver.cache.local.replacement", "lru");
 
-	result.raster_size = Configuration::getInt("nodeserver.cache.raster.size");
-	result.point_size = Configuration::getInt("nodeserver.cache.points.size");
-	result.line_size = Configuration::getInt("nodeserver.cache.lines.size");
-	result.polygon_size = Configuration::getInt("nodeserver.cache.polygons.size");
-	result.plot_size = Configuration::getInt("nodeserver.cache.plots.size");
+	result.raster_size = Configuration::getLong("nodeserver.cache.raster.size");
+	result.point_size = Configuration::getLong("nodeserver.cache.points.size");
+	result.line_size = Configuration::getLong("nodeserver.cache.lines.size");
+	result.polygon_size = Configuration::getLong("nodeserver.cache.polygons.size");
+	result.plot_size = Configuration::getLong("nodeserver.cache.plots.size");
 	return result;
 }
 

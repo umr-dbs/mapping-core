@@ -47,7 +47,7 @@ bool HybridCacheWrapper<T>::put(const std::string& semantic_id,
 			return false;
 		}
 
-		CacheCube cube(*item);
+		CacheCube cube = NodeCacheWrapper<T>::get_bounds(*item, query);
 		// Min/Max resolution hack
 		if (query.restype == QueryResolution::Type::PIXELS) {
 			double scale_x = (query.x2 - query.x1) / query.xres;

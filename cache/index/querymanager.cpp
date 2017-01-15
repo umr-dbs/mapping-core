@@ -109,17 +109,20 @@ void QueryManager::worker_failed(uint64_t worker_id) {
 	}
 }
 
-void QueryManager::node_failed(uint32_t node_id) {
-	Log::info("Node with id: %u failed. Rescheduling jobs!", node_id);
+void QueryManager::node_failed(const Node& node) {
+	Log::info("Node with id: %u failed. Rescheduling jobs!", node.id);
 	auto iter = pending_jobs.begin();
 
 	while ( iter != pending_jobs.end() ) {
-		if ( iter->second->is_affected_by_node(node_id) ) {
+		if ( iter->second->is_affected_by_node(node.id) ) {
 			auto nj = recreate_job(*iter->second);
 			iter->second = std::move(nj);
 		}
 		iter++;
 	}
+	for ( auto &bw : node.get_busy_workers() )
+		worker_failed(bw.first);
+
 }
 
 void QueryManager::handle_client_abort(uint64_t client_id) {

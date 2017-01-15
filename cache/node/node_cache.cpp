@@ -58,7 +58,13 @@ template class NodeCacheEntry<GenericPlot>;
 ///////////////////////////////////////////////////////////////////
 
 template<typename EType>
-NodeCache<EType>::NodeCache(CacheType type, size_t max_size) :
+NodeCache<EType>::NodeCache(CacheType type, size_t max_size) : Cache<uint64_t,NodeCacheEntry<EType>>(false),
+		type(type), max_size(max_size), current_size(0), next_id(1) {
+	Log::debug("Creating new cache with capacity: %d bytes", max_size);
+}
+
+template<>
+NodeCache<GenericPlot>::NodeCache(CacheType type, size_t max_size) : Cache(true),
 		type(type), max_size(max_size), current_size(0), next_id(1) {
 	Log::debug("Creating new cache with capacity: %d bytes", max_size);
 }

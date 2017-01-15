@@ -186,6 +186,8 @@ public:
 	CacheType get_type() const;
 
 protected:
+	CacheCube get_bounds( const T &item, const QueryRectangle &rect ) const;
+
 	NodeCacheManager &mgr;
 	NodeCache<T> cache;
 	ActiveQueryStats stats;

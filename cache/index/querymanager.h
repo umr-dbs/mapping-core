@@ -182,7 +182,7 @@ public:
 	 * re-analyzed and executed on a different node.
 	 * @param node_id the id of the node that failed
 	 */
-	void node_failed( uint32_t node_id );
+	void node_failed( const Node &node );
 
 	/**
 	 * Invoked after the computation of a result is finished.

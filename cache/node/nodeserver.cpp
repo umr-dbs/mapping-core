@@ -306,7 +306,7 @@ void NodeServer::process_control_command(BinaryReadBuffer &payload) {
 			break;
 		}
 		case ControlConnection::CMD_GET_STATS: {
-			Log::debug("Received stats-request.");
+			Log::trace("Received stats-request.");
 			NodeStats stats = manager->get_stats_delta();
 			control_connection->write(ControlConnection::RESP_STATS,stats);
 			break;

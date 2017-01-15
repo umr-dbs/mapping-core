@@ -11,10 +11,13 @@
 Histogram::Histogram(int number_of_buckets, double min, double max)
 	: counts(number_of_buckets), nodata_count(0), min(min), max(max) {
 
-	if (!std::isfinite(min) || !std::isfinite(max))
+	if (!std::isfinite(min) || !std::isfinite(max)) {
 		throw ArgumentException("Histogram: min or max not finite");
-	if (min >= max)
-		throw ArgumentException("Histogram: min >= max");
+	} else if (min == max && number_of_buckets > 1) {
+		throw ArgumentException("Histogram: number_of_buckets must be 1 if min = max");
+	} else if (min > max) {
+		throw ArgumentException("Histogram: min > max");
+	}
 }
 
 Histogram::~Histogram() {
@@ -34,9 +37,13 @@ void Histogram::inc(double value) {
 }
 
 int Histogram::calculateBucketForValue(double value){
-	int bucket = std::floor(((value - min) / (max - min)) * counts.size());
-	bucket = std::min((int) counts.size()-1, std::max(0, bucket));
-	return bucket;
+	if (max > min) {
+		int bucket = std::floor(((value - min) / (max - min)) * counts.size());
+		bucket = std::min((int) counts.size()-1, std::max(0, bucket));
+		return bucket;
+	} else {
+		return 0; // `number_of_buckets` is 1 if `min = max`
+	}
 }
 
 double Histogram::calculateBucketLowerBorder(int bucket){
@@ -96,4 +103,34 @@ std::unique_ptr<GenericPlot> Histogram::clone() const {
 	copy->counts = counts;
 
 	return std::unique_ptr<GenericPlot>(copy.release());
+}
+
+Histogram::Histogram(BinaryReadBuffer &buffer) {
+	buffer.read(&counts);
+	buffer.read(&nodata_count);
+	buffer.read(&min);
+	buffer.read(&max);
+
+	auto count = buffer.read<size_t>();
+	for (size_t i=0;i<count;i++) {
+		double p1 = buffer.read<double>();
+		std::string p2 = buffer.read<std::string>();
+		markers.push_back(std::make_pair(p1, p2));
+	}
+}
+
+void Histogram::serialize(BinaryWriteBuffer &buffer, bool is_persistent_memory) const {
+	buffer << Type::Histogram;
+
+	buffer << counts;
+	buffer << nodata_count;
+	buffer << min;
+	buffer << max;
+
+	size_t count = markers.size();
+	buffer.write(count);
+	for (auto &e : markers) {
+		buffer.write(e.first);
+		buffer.write(e.second);
+	}
 }

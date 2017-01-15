@@ -13,6 +13,8 @@
 class Histogram : public GenericPlot {
 	public:
 		Histogram(int number_of_buckets, double min, double max);
+		Histogram(BinaryReadBuffer &buffer);
+
 		virtual ~Histogram();
 
 		void inc(double value);
@@ -55,6 +57,8 @@ class Histogram : public GenericPlot {
 		void addMarker(double bucket, const std::string &label);
 
 		std::unique_ptr<GenericPlot> clone() const;
+
+		virtual void serialize(BinaryWriteBuffer &buffer, bool is_persistent_memory) const;
 
 	private:
 		std::vector<int> counts;

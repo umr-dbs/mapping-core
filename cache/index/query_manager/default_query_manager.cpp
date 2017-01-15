@@ -94,7 +94,7 @@ void DefaultQueryManager::process_worker_query(WorkerConnection& con) {
 		}
 		// Puzzle
 		else if (res.has_hit() ) {
-			Log::debug("Partial HIT. Sending puzzle-request, coverage: %f");
+			Log::debug("Partial HIT. Sending puzzle-request, coverage: %f", res.hit_ratio);
 			std::vector<CacheRef> entries;
 			for (auto &e : res.items) {
 				auto &node = nodes.at(e->id.first);

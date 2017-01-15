@@ -5,6 +5,7 @@
 
 #include <unistd.h>
 #include <time.h>
+#include <limits>
 
 
 ProfilingData::ProfilingData() : self_cpu(0), all_cpu(0), uncached_cpu(0),
@@ -41,7 +42,7 @@ std::string ProfilingData::to_string() const {
 /*
  * QueryProfiler class
  */
-QueryProfiler::QueryProfiler() : t_start(0) {
+QueryProfiler::QueryProfiler() : t_start(std::numeric_limits<double>::infinity()) {
 }
 
 double QueryProfiler::getTimestamp() {
@@ -61,16 +62,16 @@ double QueryProfiler::getTimestamp() {
 }
 
 void QueryProfiler::startTimer() {
-	if (t_start != 0)
+	if (t_start != std::numeric_limits<double>::infinity())
 		throw OperatorException("QueryProfiler: Timer started twice");
 	t_start = getTimestamp();
 }
 
 void QueryProfiler::stopTimer() {
-	if (t_start == 0)
+	if (t_start == std::numeric_limits<double>::infinity())
 		throw OperatorException("QueryProfiler: Timer not started");
 	double cost = getTimestamp() - t_start;
-	t_start = 0;
+	t_start = std::numeric_limits<double>::infinity();
 	if (cost < 0)
 		throw OperatorException("QueryProfiler: Timer stopped a negative time");
 	self_cpu += cost;
@@ -101,7 +102,7 @@ QueryProfiler& QueryProfiler::operator +=(const ProfilingData& other) {
 }
 
 QueryProfiler & QueryProfiler::operator+=(const QueryProfiler &other) {
-	if (other.t_start != 0)
+	if (other.t_start != std::numeric_limits<double>::infinity())
 		throw OperatorException("QueryProfiler: tried adding a timer that had not been stopped");
 	return operator +=((ProfilingData&)other);
 }

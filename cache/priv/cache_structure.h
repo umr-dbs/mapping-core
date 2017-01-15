@@ -101,7 +101,7 @@ public:
 	/**
 	 * Creates a new instance
 	 */
-	CacheStructure( const std::string &semantic_id );
+	CacheStructure( const std::string &semantic_id, bool query_exact );
 	CacheStructure( const CacheStructure<KType,EType> & ) = delete;
 	CacheStructure( CacheStructure<KType,EType> && ) = delete;
 
@@ -183,9 +183,17 @@ private:
 	 */
 	QueryRectangle enlarge_expected_result( const QueryCube &orig, const std::vector<std::shared_ptr<const EType>> &hits, const std::vector<Cube<3>> &remainders ) const;
 
+
+	/**
+	 * Queries the cache, using the given query-spec, only reports exact matches
+	 * @param spec the extend of the query
+	 * @return the search result description
+	 */
+	const CacheQueryResult<EType> query_exact( const QueryRectangle &spec ) const;
 public:
 	const std::string semantic_id;
 private:
+	const bool query_exact_only;
 	std::map<KType, std::shared_ptr<EType>> entries;
 	mutable RWLock lock;
 	uint64_t _size;
@@ -197,7 +205,7 @@ private:
 template<typename KType, typename EType>
 class Cache {
 public:
-	Cache() = default;
+	Cache( bool query_exact );
 	Cache( const Cache<KType,EType> & ) = delete;
 	Cache( Cache<KType,EType> && ) = delete;
 	Cache& operator=( const Cache<KType,EType> & ) = delete;
@@ -250,6 +258,7 @@ private:
 	CacheStructure<KType,EType>& get_cache( const std::string &semantic_id, bool create = false ) const;
 	mutable std::unordered_map<std::string,std::unique_ptr<CacheStructure<KType,EType>>> caches;
 	mutable std::mutex mtx;
+	const bool query_exact;
 };
 
 #endif /* CACHE_STRUCTURE_H_ */

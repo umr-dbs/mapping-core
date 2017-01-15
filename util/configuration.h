@@ -13,6 +13,8 @@ class Parameters : public std::map<std::string, std::string> {
 		const std::string &get(const std::string &name, const std::string &defaultValue) const;
 		int getInt(const std::string &name) const;
 		int getInt(const std::string &name, int defaultValue) const;
+		long getLong(const std::string &name) const;
+		long getLong(const std::string &name, long defaultValue) const;
 		bool getBool(const std::string &name) const;
 		bool getBool(const std::string &name, bool defaultValue) const;
 
@@ -31,6 +33,7 @@ class Parameters : public std::map<std::string, std::string> {
 
 		// These do throw exceptions when the string cannot be parsed.
 		static int parseInt(const std::string &str);
+		static long parseLong(const std::string &str);
 		static bool parseBool(const std::string &str);
 };
 
@@ -61,6 +64,12 @@ class Configuration {
 		}
 		static int getInt(const std::string &name, const int defaultValue) {
 			return parameters.getInt(name, defaultValue);
+		}
+		static long getLong(const std::string &name) {
+			return parameters.getLong(name);
+		}
+		static long getLong(const std::string &name, const long defaultValue) {
+			return parameters.getLong(name, defaultValue);
 		}
 		static bool getBool(const std::string &name) {
 			return parameters.getBool(name);

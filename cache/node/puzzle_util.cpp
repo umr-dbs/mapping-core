@@ -10,6 +10,7 @@
 #include "cache/node/nodeserver.h"
 
 #include "datatypes/raster.h"
+#include "datatypes/attributes.h"
 #include "datatypes/pointcollection.h"
 #include "datatypes/linecollection.h"
 #include "datatypes/polygoncollection.h"
@@ -346,6 +347,15 @@ std::unique_ptr<T> PuzzleUtil::puzzle_feature_collection(
 
 	T& target = *result;
 	target.global_attributes = items.at(0)->global_attributes;
+
+	auto &aas = items.front()->feature_attributes;
+
+	for ( auto& s : aas.getNumericKeys() ) {
+		target.feature_attributes.addNumericAttribute(s, aas.numeric(s).unit);
+	}
+	for ( auto& s : aas.getTextualKeys() ) {
+		target.feature_attributes.addTextualAttribute(s, aas.textual(s).unit);
+	}
 
 	for (auto &src : items) {
 		std::vector<bool> keep;

@@ -138,6 +138,19 @@ CacheType NodeCacheWrapper<T>::get_type() const {
 	return cache.type;
 }
 
+
+template<typename T>
+CacheCube NodeCacheWrapper<T>::get_bounds(const T& item,
+		const QueryRectangle& rect) const {
+	return CacheCube(item);
+}
+
+template<>
+CacheCube NodeCacheWrapper<GenericPlot>::get_bounds(const GenericPlot& item,
+		const QueryRectangle& rect) const {
+	return CacheCube(rect);
+}
+
 ////////////////////////////////////////////////////////////
 //
 // NodeCacheManager

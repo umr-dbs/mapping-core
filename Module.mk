@@ -6,7 +6,7 @@ PKGLIBS_CORE += gdal libpng zlib "libpqxx >= 4.0.0" libcurl sqlite3 libarchive
 #
 # Core objects
 #
-OBJS_CORE += o/core/datatypes/attributes.o o/core/datatypes/spatiotemporal.o o/core/datatypes/raster/import_gdal.o o/core/datatypes/raster/export_pgm.o o/core/datatypes/raster/export_yuv.o o/core/datatypes/raster/export_png.o o/core/datatypes/raster/export_jpeg.o o/core/datatypes/simplefeaturecollection.o o/core/datatypes/pointcollection.o o/core/datatypes/linecollection.o o/core/datatypes/polygoncollection.o o/core/datatypes/simplefeaturecollections/geosgeomutil.o o/core/datatypes/simplefeaturecollections/wkbutil.o o/core/datatypes/unit.o o/core/datatypes/colorizer.o
+OBJS_CORE += o/core/datatypes/attributes.o o/core/datatypes/spatiotemporal.o o/core/datatypes/raster/import_gdal.o o/core/datatypes/raster/export_pgm.o o/core/datatypes/raster/export_yuv.o o/core/datatypes/raster/export_png.o o/core/datatypes/raster/export_jpeg.o o/core/datatypes/simplefeaturecollection.o o/core/datatypes/pointcollection.o o/core/datatypes/linecollection.o o/core/datatypes/polygoncollection.o o/core/datatypes/simplefeaturecollections/geosgeomutil.o o/core/datatypes/simplefeaturecollections/wkbutil.o o/core/datatypes/unit.o o/core/datatypes/colorizer.o o/core/datatypes/plot.o o/core/datatypes/plots/histogram.o
 OBJS_CORE_WITHCL += o/core/datatypes/raster/raster.o o/core/raster/opencl.o
 OBJS_CORE_NOCL += o/core/datatypes/raster/raster_nocl.o
 OBJS_CORE += o/core/raster/profiler.o
@@ -39,7 +39,7 @@ OBJS_OPERATORS += o/core/operators/processing/combined/projection.o o/core/opera
 OBJS_OPERATORS += o/core/operators/processing/meteosat/temperature.o o/core/operators/processing/meteosat/reflectance.o o/core/operators/processing/meteosat/solarangle.o o/core/operators/processing/meteosat/radiance.o o/core/operators/processing/meteosat/pansharpening.o o/core/operators/processing/meteosat/gccthermthresholddetection.o o/core/operators/processing/meteosat/co2correction.o
 OBJS_OPERATORS += o/core/util/sunpos.o
 OBJS_OPERATORS += o/core/operators/plots/histogram.o o/core/operators/plots/feature_attributes_plot.o
-OBJS_OPERATORS += o/core/datatypes/plots/histogram.o o/core/datatypes/plots/text.o o/core/datatypes/plots/png.o
+OBJS_OPERATORS += o/core/datatypes/plots/text.o o/core/datatypes/plots/png.o
 
 
 # Cache: needs to be core for now

@@ -38,8 +38,6 @@ bool RemoteCacheWrapper<T>::put(const std::string& semantic_id,
 	auto &idx_con = mgr.get_worker_context().get_index_connection();
 
 	size_t size = SizeUtil::get_byte_size(*item);
-  if ( size > 25 * 1024 * 1024 )
-      Log::info("Big result found: %lu", size);
 
 	this->stats.add_result_bytes(size);
 
@@ -50,7 +48,7 @@ bool RemoteCacheWrapper<T>::put(const std::string& semantic_id,
 			return false;
 		}
 
-		CacheCube cube(*item);
+		CacheCube cube = NodeCacheWrapper<T>::get_bounds(*item, query);
 		// Min/Max resolution hack
 		if (query.restype == QueryResolution::Type::PIXELS) {
 			double scale_x = (query.x2 - query.x1) / query.xres;
@@ -130,7 +128,7 @@ std::unique_ptr<T> RemoteCacheWrapper<T>::query(GenericOperator& op,
 	Log::debug("Local MISS for query: %s on %s. Querying index.",
 			CacheCommon::qr_to_string(rect).c_str(),
 			op.getSemanticId().c_str());
-	BaseRequest cr(CacheType::RASTER, op.getSemanticId(), rect);
+	BaseRequest cr(this->cache.type, op.getSemanticId(), rect);
 
 	std::unique_ptr<BinaryReadBuffer> resp =
 			mgr.get_worker_context().get_index_connection().write_and_read(

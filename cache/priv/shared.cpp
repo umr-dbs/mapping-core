@@ -126,12 +126,6 @@ CacheCube::CacheCube(const GridSpatioTemporalResult& result) :
 		BaseCube(result.stref), resolution_info(result) {
 }
 
-CacheCube::CacheCube(const GenericPlot& result) :
-	BaseCube( SpatioTemporalReference::unreferenced() ) {
-	(void) result;
-}
-
-
 CacheCube::CacheCube(BinaryReadBuffer& buffer) : BaseCube(buffer), resolution_info(buffer) {
 }
 

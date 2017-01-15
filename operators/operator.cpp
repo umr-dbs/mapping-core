@@ -265,18 +265,26 @@ std::unique_ptr<PolygonCollection> GenericOperator::getCachedPolygonCollection(c
 }
 std::unique_ptr<GenericPlot> GenericOperator::getCachedPlot(const QueryRectangle &rect, const QueryTools &tools) {
 	QueryProfiler &parent_profiler = tools.profiler;
+	QueryProfilerSimpleGuard parent_guard(parent_profiler);
+
 	//	TODO: do we want plots to allow resolutions?
 	validateQRect(rect, ResolutionRequirement::OPTIONAL);
-
-	// TODO: Plug plots into cache
+	auto &cache = CacheManager::get_instance().get_plot_cache();
 	std::unique_ptr<GenericPlot> result;
-	QueryProfiler profiler;
-	{
-		QueryProfilerRunningGuard guard(parent_profiler, profiler);
-		TIME_EXEC("Operator.getPlot");
-		result = getPlot(rect, QueryTools(profiler));
+	try {
+		result = cache.query( *this, rect, parent_profiler );
+	} catch ( NoSuchElementException &nse ) {
+		QueryProfilerStoppingGuard stop_guard(parent_profiler);
+		QueryProfiler exec_profiler;
+		{
+			QueryProfilerRunningGuard guard(parent_profiler, exec_profiler);
+			TIME_EXEC("Operator.getPlot");
+			result = getPlot(rect,QueryTools(exec_profiler));
+		}
+		d_profile(depth, type, "plot", exec_profiler);
+		if ( cache.put(semantic_id,result,rect,exec_profiler) )
+			parent_profiler.cached(exec_profiler);
 	}
-	d_profile(depth, type, "plot", profiler);
 	return result;
 }
 

@@ -31,7 +31,7 @@ bool LocalCacheWrapper<T>::put(const std::string &semantic_id,
 	this->stats.add_result_bytes(size);
 
 	if ( mgr.get_strategy().do_cache(profiler,size) && size <= this->cache.get_max_size() ) {
-		CacheCube cube(*item);
+		CacheCube cube = NodeCacheWrapper<T>::get_bounds(*item, query);
 		// Min/Max resolution hack
 		if ( query.restype == QueryResolution::Type::PIXELS ) {
 			double scale_x = (query.x2-query.x1) / query.xres;
@@ -108,7 +108,6 @@ std::unique_ptr<T> LocalCacheWrapper<T>::query(GenericOperator& op,
 	}
 }
 
-
 template<class T>
 MetaCacheEntry LocalCacheWrapper<T>::put_local(
 		const std::string& semantic_id, const std::unique_ptr<T>& item,
@@ -132,8 +131,6 @@ std::unique_ptr<T> LocalCacheWrapper<T>::process_puzzle(
 	(void) parent_profiler;
 	throw MustNotHappenException("No external puzzling allowed in local cache manager!");
 }
-
-
 
 //
 // MGR

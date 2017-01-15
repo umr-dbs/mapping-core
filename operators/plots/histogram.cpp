@@ -128,6 +128,11 @@ struct histogram{
 					max = std::max(v, max);
 				}
 			}
+
+			if (min == max) {
+				buckets = 1;
+			}
+
 			break;
 		}
 
@@ -189,6 +194,11 @@ std::unique_ptr<GenericPlot> createHistogram(SimpleFeatureCollection &features, 
 				max = std::max(v, max);
 			}
 		}
+
+		if (min == max) {
+			buckets = 1;
+		}
+
 		break;
 
 	case RangeMode::UNIT:

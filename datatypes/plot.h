@@ -7,11 +7,13 @@
 #include <string>
 #include <memory>
 
-
 /**
  * Abstract base class for all output data vector types.
  */
 class GenericPlot {
+protected:
+	enum class Type { Histogram };
+
 public:
 	virtual ~GenericPlot() {};
 
@@ -27,10 +29,7 @@ public:
 		throw MustNotHappenException("Implement me!");
 	}
 
-	static std::unique_ptr<GenericPlot> deserialize(BinaryReadBuffer &buffer) {
-		// TODO
-		throw MustNotHappenException("Implement me!");
-	}
+	static std::unique_ptr<GenericPlot> deserialize(BinaryReadBuffer &buffer);
 };
 
 #endif /* DATAVECTOR_H_ */

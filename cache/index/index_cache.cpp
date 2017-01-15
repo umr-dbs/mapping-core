@@ -68,7 +68,7 @@ uint64_t IndexCacheEntry::get_entry_id() const {
 //
 //////////////////////////////////////////////////////////////////
 
-IndexCache::IndexCache( CacheType type ) : type(type) {
+IndexCache::IndexCache( CacheType type ) : Cache( type == CacheType::PLOT ? true : false ), type(type) {
 }
 
 

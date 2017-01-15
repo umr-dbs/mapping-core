@@ -68,7 +68,7 @@ public:
 
 	ControlConnection& get_control_connection();
 
-	std::map<uint64_t,std::unique_ptr<WorkerConnection>>& get_busy_workers();
+	const std::map<uint64_t,std::unique_ptr<WorkerConnection>>& get_busy_workers() const;
 
 
 	/** The unique id of this node */

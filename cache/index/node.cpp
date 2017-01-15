@@ -105,7 +105,7 @@ uint32_t Node::num_idle_workers() const {
 	return idle_workers.size();
 }
 
-std::map<uint64_t, std::unique_ptr<WorkerConnection> >& Node::get_busy_workers() {
+const std::map<uint64_t, std::unique_ptr<WorkerConnection> >& Node::get_busy_workers() const {
 	return busy_workers;
 }
 

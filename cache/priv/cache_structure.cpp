@@ -92,7 +92,7 @@ std::string CacheQueryResult<EType>::to_string() const {
 //////////////////////////////////////////////////////////////
 
 template<typename KType, typename EType>
-CacheStructure<KType, EType>::CacheStructure(const std::string &semantic_id) : semantic_id(semantic_id), _size(0) {
+CacheStructure<KType, EType>::CacheStructure(const std::string &semantic_id, bool query_exact) : semantic_id(semantic_id), query_exact_only(query_exact), _size(0) {
 }
 
 
@@ -143,8 +143,27 @@ std::vector<std::shared_ptr<EType> > CacheStructure<KType, EType>::get_all() con
 //
 
 template<typename KType, typename EType>
+const CacheQueryResult<EType> CacheStructure<KType, EType>::query_exact(
+		const QueryRectangle& spec) const {
+
+	const QueryCube qc(spec);
+	for ( auto &e : entries ) {
+		CacheCube &bounds = e.second->bounds;
+
+		if ( bounds == qc )
+			return CacheQueryResult<EType>( QueryRectangle(spec), std::vector<Cube<3>>(), std::vector<std::shared_ptr<const EType>>{e.second}, 1.0);
+	}
+	return CacheQueryResult<EType>( spec );
+}
+
+
+template<typename KType, typename EType>
 const CacheQueryResult<EType> CacheStructure<KType, EType>::query(const QueryRectangle& spec) const {
 	Log::trace("Querying cache for: %s", CacheCommon::qr_to_string(spec).c_str() );
+
+	// Only exact queries
+	if ( query_exact_only )
+		return query_exact(spec);
 
 	const QueryCube qc(spec);
 
@@ -401,6 +420,11 @@ std::string CacheStructure< std::pair<uint32_t, uint64_t>, IndexCacheEntry>::key
 //
 //////////////////////////////////////////////////////////////
 
+
+template<typename KType, typename EType>
+Cache<KType, EType>::Cache(bool query_exact) : query_exact(query_exact) {
+}
+
 template<typename KType, typename EType>
 const CacheQueryResult<EType> Cache<KType, EType>::query(
 	const std::string& semantic_id, const QueryRectangle& qr) const {
@@ -456,7 +480,7 @@ CacheStructure<KType, EType>& Cache<KType, EType>::get_cache(
 	auto got = caches.find(semantic_id);
 	if (got == caches.end() && create) {
 		Log::trace("No cache-structure found for semantic_id: %s. Creating.", semantic_id.c_str() );
-		auto e = caches.emplace(semantic_id, make_unique<CacheStructure<KType,EType>>(semantic_id));
+		auto e = caches.emplace(semantic_id, make_unique<CacheStructure<KType,EType>>(semantic_id,query_exact));
 		return *e.first->second;
 	}
 	else if (got != caches.end())
