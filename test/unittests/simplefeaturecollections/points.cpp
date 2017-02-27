@@ -17,7 +17,7 @@
 #include <geos/io/WKTReader.h>
 #include <geos/geom/GeometryFactory.h>
 
-std::unique_ptr<PointCollection> createPointsWithAttributesAndTime(){
+static std::unique_ptr<PointCollection> createPointsWithAttributesAndTime(){
 	std::string wkt = "GEOMETRYCOLLECTION(POINT(1 1), POINT(2 5), MULTIPOINT(8 6, 8 9, 88 99, 23 21), POINT(68 59), MULTIPOINT(42 6, 43 7))";
 	auto points = WKBUtil::readPointCollection(wkt, SpatioTemporalReference::unreferenced());
 	points->setTimeStamps({2, 4,  8, 16, 32}, {4, 8, 16, 32, 64});

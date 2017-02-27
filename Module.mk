@@ -15,6 +15,7 @@ OBJS_CORE += o/core/rasterdb/rasterdb.o o/core/rasterdb/backend.o o/core/rasterd
 OBJS_CORE += o/core/rasterdb/converters/converter.o o/core/rasterdb/converters/raw.o
 # userdb: move to core for now
 OBJS_CORE += o/core/userdb/userdb.o o/core/userdb/backend_sqlite.o
+OBJS_CORE += o/core/featurecollectiondb/featurecollectiondb.o o/core/featurecollectiondb/featurecollectiondbbackend_postgres.o
 OBJS_CORE += o/core/util/gdal.o o/core/util/sha1.o o/core/util/curl.o o/core/util/sqlite.o o/core/util/binarystream.o o/core/util/csvparser.o o/core/util/base64.o o/core/util/configuration.o o/core/util/formula.o o/core/util/timemodification.o o/core/util/log.o o/core/util/timeparser.o o/core/util/sizeutil.o
 # operator and query base must be in core for now
 OBJS_CORE += o/core/operators/operator.o o/core/operators/provenance.o o/core/operators/queryrectangle.o o/core/operators/queryprofiler.o
@@ -27,6 +28,7 @@ OBJS_CORE += o/core/processing/query.o o/core/processing/queryprocessor.o o/core
 OBJS_SERVICES += o/core/services/httpservice.o o/core/services/httpparsing.o o/core/services/user.o o/core/services/ogcservice.o o/core/services/wms.o o/core/services/wcs.o o/core/services/wfs.o o/core/services/plot.o o/core/services/provenance.o o/core/services/artifact.o
 # pointvisualization is only used by services, so that's where it goes
 OBJS_SERVICES += o/core/pointvisualization/BoundingBox.o o/core/pointvisualization/Circle.o o/core/pointvisualization/Coordinate.o o/core/pointvisualization/Dimension.o o/core/pointvisualization/FindResult.o o/core/pointvisualization/QuadTreeNode.o o/core/pointvisualization/CircleClusteringQuadTree.o
+OBJS_SERVICES += o/core/services/featurecollectiondb.o
 
 #
 # Operators
@@ -40,6 +42,7 @@ OBJS_OPERATORS += o/core/operators/processing/meteosat/temperature.o o/core/oper
 OBJS_OPERATORS += o/core/util/sunpos.o
 OBJS_OPERATORS += o/core/operators/plots/histogram.o o/core/operators/plots/feature_attributes_plot.o
 OBJS_OPERATORS += o/core/datatypes/plots/text.o o/core/datatypes/plots/png.o
+OBJS_OPERATORS += o/core/operators/source/featurecollectiondb_source.o
 
 
 # Cache: needs to be core for now

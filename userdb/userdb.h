@@ -54,6 +54,7 @@ class UserDB {
 		};
 		class User {
 			friend class UserDB;
+			friend class PostgresFeatureCollectionDBBackend;
 
 			public:
 				User(userid_t userid, const std::string &username, const std::string &realname, const std::string &email, const std::string &externalid, Permissions &&user_permissions, std::vector<std::shared_ptr<Group>> &&groups);

@@ -5,6 +5,7 @@
 #include "services/httpservice.h"
 #include "userdb/userdb.h"
 #include "util/log.h"
+#include "featurecollectiondb/featurecollectiondb.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -64,6 +65,11 @@ int main() {
 	 * Initialize UserDB
 	 */
 	UserDB::initFromConfiguration();
+
+	/**
+	 * Initialize FeatureCollectionDB
+	 */
+	FeatureCollectionDB::initFromConfiguration();
 
 
 	if (getenv("FCGI_WEB_SERVER_ADDRS") == nullptr) {
