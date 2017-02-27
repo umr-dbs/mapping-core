@@ -18,7 +18,7 @@
 		"type" : "csv_source",
 		"params" : 
 		{
-			"filename": "test/systemtests/data/un_countries/countries.csv",
+			"filename": "file://test/systemtests/data/un_countries/countries.csv",
 			"on_error": "keep",
 			"separator": ";",
 			"geometry": "wkt",

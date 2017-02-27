@@ -18,7 +18,7 @@
 		"type" : "csv_source",
 		"params" : 
 		{
-			"filename": "test/systemtests/data/osm_highways_3_lanes/osm_highways_3lanes.csv",
+			"filename": "file://test/systemtests/data/osm_highways_3_lanes/osm_highways_3lanes.csv",
 			"separator": ";",
 			"geometry": "wkt",
 			"time": "start",
@@ -34,7 +34,7 @@
 				"time1": "time_start"
 			},
    			"provenance": {
-	     		"citation": "© OpenStreetMap contributors",
+	     		"citation": "ï¿½ OpenStreetMap contributors",
 	     		"license": "Open Data Commons Open Database License (ODbL)",
 	    		"uri": "http://www.openstreetmap.org/"
   			 }

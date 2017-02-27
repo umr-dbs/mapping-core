@@ -16,7 +16,7 @@
 	{
 		"params" : 
 		{
-			"filename" : "file://test/systemtests/data/places_dump/places_dump_DE_100k.csv",
+			"filename" : "data:text/plain,X,Y,PLZ,Name\n1,2,1234,test",
 			"geometry": "xy",
 			"time": "none",
 			"columns": {
@@ -29,5 +29,5 @@
 		"sources" : null,
 		"type" : "csv_source"
 	},
-	"query_expected_hash" : "e846d330ac28ef0214533b70f0ef7be9747fe59b"
+	"query_expected_hash" : "a31a25c391202ec46aefd1ceb3cb9b8108504424"
 }

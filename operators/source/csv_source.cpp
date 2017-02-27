@@ -2,9 +2,9 @@
 #include "util/exceptions.h"
 #include "util/make_unique.h"
 #include "util/csv_source_util.h"
+#include "util/uriloader.h"
 
 #include <string>
-#include <fstream>
 #include <sstream>
 #include <streambuf>
 #include <algorithm>
@@ -154,33 +154,24 @@ std::unique_ptr<PointCollection> CSVSourceOperator::getPointCollection(const Que
 	filesize = getFilesize(filename.c_str());
 	tools.profiler.addIOCost(filesize);
 
-	std::ifstream data(filename);
-	if(!data.is_open()) {
-		throw OperatorException("CSVSource: could not open file");
-	}
-	return csvSourceUtil->getPointCollection(data, rect);
+	auto data = URILoader::loadFromURI(filename);
+	return csvSourceUtil->getPointCollection(*data, rect);
 }
 
 std::unique_ptr<LineCollection> CSVSourceOperator::getLineCollection(const QueryRectangle &rect, const QueryTools &tools) {
 	filesize = getFilesize(filename.c_str());
 	tools.profiler.addIOCost(filesize);
 
-	std::ifstream data(filename);
-	if(!data.is_open()) {
-		throw OperatorException("CSVSource: could not open file");
-	}
-	return csvSourceUtil->getLineCollection(data, rect);
+	auto data = URILoader::loadFromURI(filename);
+	return csvSourceUtil->getLineCollection(*data, rect);
 }
 
 std::unique_ptr<PolygonCollection> CSVSourceOperator::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools) {
 	filesize = getFilesize(filename.c_str());
 	tools.profiler.addIOCost(filesize);
 
-	std::ifstream data(filename);
-	if(!data.is_open()) {
-		throw OperatorException("CSVSource: could not open file");
-	}
-	return csvSourceUtil->getPolygonCollection(data, rect);
+	auto data = URILoader::loadFromURI(filename);
+	return csvSourceUtil->getPolygonCollection(*data, rect);
 }
 
 
