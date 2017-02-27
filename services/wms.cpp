@@ -81,6 +81,8 @@ void WMSService::run() {
 					.process(Query(params.get("layers"), Query::ResultType::RASTER, qrect))
 					->getRaster(GenericOperator::RasterQM::EXACT);
 
+				// TODO: check permissions
+
 				double bbox[4] = {sref.x1, sref.y1, sref.x2, sref.y2};
 				bool flipx = (bbox[2] > bbox[0]) != (result_raster->pixel_scale_x > 0);
 				bool flipy = (bbox[3] > bbox[1]) == (result_raster->pixel_scale_y > 0);

@@ -55,6 +55,8 @@ void PlotService::run() {
 
 	auto plot = graph->getCachedPlot(rect, QueryTools(profiler));
 
+	// TODO: check permissions
+
 	response.sendContentType("application/json");
 	response.finishHeaders();
 

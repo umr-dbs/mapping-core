@@ -135,6 +135,8 @@ void WCSService::run() {
 		QueryProfiler profiler;
 		auto result_raster = graph->getCachedRaster(query_rect,QueryTools(profiler));
 
+		// TODO: check permissions
+
 		auto format = params.get("format", "image/tiff");
 		fprintf(stderr,format.c_str());
 		bool exportMode = false;

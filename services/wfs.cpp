@@ -113,6 +113,8 @@ void WFSService::getFeature() {
 		.process(Query(operatorgraph, resultType, QueryRectangle(sref, tref, QueryResolution::none())))
 		->getAnyFeatureCollection();
 
+	// TODO: check permission
+
 	//clustered is ignored for non-point collections
 	//TODO: implement this as VSP or other operation?
 	if (params.hasParam("clustered") && params.getBool("clustered", false) && resultType == Query::ResultType::POINTS) {
