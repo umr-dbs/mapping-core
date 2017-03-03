@@ -42,6 +42,7 @@ void UserService::run() {
 
 		// anything except login is only allowed with a valid session, so check for it.
 		auto session = UserDB::loadSession(params.get("sessiontoken"));
+		auto user = session->getUser();
 
 		if (request == "logout") {
 			session->logout();
@@ -59,7 +60,11 @@ void UserService::run() {
 				Json::Value root;
 				if (!reader.parse(iss, root))
 					continue;
-				v[name] = root;
+
+				// check permissions: only return rasters the user can access
+				if(user.hasPermission("data.rasterdb_source." + name)) {
+					v[name] = root;
+				}
 			}
 			response.sendSuccessJSON("sourcelist", v);
 			return;

@@ -3,6 +3,8 @@
 
 #include "util/make_unique.h"
 #include "util/configuration.h" // Parameters class
+#include "processing/queryprocessor.h"
+#include "userdb/userdb.h"
 
 #include <memory>
 #include <string>
@@ -78,6 +80,11 @@ class HTTPService {
 
 		virtual void run() = 0;
 		static std::unique_ptr<HTTPService> getRegisteredService(const std::string &name,const Parameters &params, HTTPResponseStream &response, std::ostream &error);
+
+		/**
+		 * Process the given query and validate the permissions of the user
+		 */
+		std::unique_ptr<QueryProcessor::QueryResult> processQuery(Query &query, UserDB::User &user);
 
 		const Parameters &params;
 		HTTPResponseStream &response;

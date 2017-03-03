@@ -352,10 +352,12 @@ std::shared_ptr<UserDB::User> UserDB::loadUser(UserDB::userid_t userid) {
 
 std::shared_ptr<UserDB::User> UserDB::createUser(const std::string &username, const std::string &realname, const std::string &email, const std::string &password) {
 	auto userid = userdb_backend->createUser(username, realname, email, password, "");
+	userdb_backend->addUserToGroup(userid, userdb_backend->loadGroupId("users"));
 	return loadUser(userid);
 }
 std::shared_ptr<UserDB::User> UserDB::createExternalUser(const std::string &username, const std::string &realname, const std::string &email, const std::string &externalid) {
 	auto userid = userdb_backend->createUser(username, realname, email, "", externalid);
+	userdb_backend->addUserToGroup(userid, userdb_backend->loadGroupId("users"));
 	return loadUser(userid);
 }
 
@@ -385,6 +387,11 @@ std::shared_ptr<UserDB::Group> UserDB::loadGroup(UserDB::groupid_t groupid) {
 
 std::shared_ptr<UserDB::Group> UserDB::createGroup(const std::string &groupname) {
 	auto groupid = userdb_backend->createGroup(groupname);
+	return loadGroup(groupid);
+}
+
+std::shared_ptr<UserDB::Group> UserDB::loadGroup(const std::string &groupname) {
+	auto groupid = userdb_backend->loadGroupId(groupname);
 	return loadGroup(groupid);
 }
 

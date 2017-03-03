@@ -201,6 +201,7 @@ class UserDB {
 		static std::shared_ptr<Session> loadSession(const std::string &token);
 
 		static std::shared_ptr<Group> createGroup(const std::string &groupname);
+		static std::shared_ptr<Group> loadGroup(const std::string &groupname);
 
 		// these should only be called by backend implementations
 		static std::string createRandomToken(size_t length);

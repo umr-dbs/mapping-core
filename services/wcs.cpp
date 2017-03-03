@@ -79,6 +79,8 @@ static int getWcsParameterInteger(const std::string &wcsParameterString){
 
 
 void WCSService::run() {
+	auto session = UserDB::loadSession(params.get("sessiontoken"));
+	auto user = session->getUser();
 
 	/*http://www.myserver.org:port/path?
 	 * service=WCS &version=2.0
@@ -96,9 +98,6 @@ void WCSService::run() {
 		response.send500("Unsupported WCS version");
 
 	if(params.get("request") == "getcoverage") {
-		//for now we will handle the OpGraph as the coverageId
-		auto graph = GenericOperator::fromJSON(params.get("coverageid"));
-
 		//now we will identify the parameters for the QueryRectangle
 		std::pair<std::string, std::string> crsInformation = getCrsInformationFromOGCUri(params.get("outputcrs"));
 		epsg_t query_crsId = (epsg_t) std::stoi(crsInformation.second);
@@ -132,8 +131,10 @@ void WCSService::run() {
 			TemporalReference(TIMETYPE_UNIX, timestamp),
 			QueryResolution::pixels(sizeX, sizeY)
 		);
-		QueryProfiler profiler;
-		auto result_raster = graph->getCachedRaster(query_rect,QueryTools(profiler));
+
+		Query query(params.get("coverageid"), Query::ResultType::RASTER, query_rect);
+		auto result = processQuery(query, user);
+		auto result_raster = result->getRaster(GenericOperator::RasterQM::EXACT);
 
 		// TODO: check permissions
 
@@ -165,7 +166,7 @@ void WCSService::run() {
 			throw ArgumentException("WCSService: unknown format");
 
 		if(exportMode) {
-			exportZip(reinterpret_cast<char*>(outDataBuffer), static_cast<size_t>(length), format, *graph->getFullProvenance());
+			exportZip(reinterpret_cast<char*>(outDataBuffer), static_cast<size_t>(length), format, result->getProvenance());
 		} else {
 			//put the HTML headers for download
 			//response.sendContentType("???"); // TODO

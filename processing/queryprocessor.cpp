@@ -15,15 +15,15 @@ QueryProcessor &QueryProcessor::getDefaultProcessor() {
 	return *default_instance;
 }
 
-std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::process(const Query &q) {
-	auto progress = processAsync(q);
+std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::process(const Query &q, bool includeProvenance) {
+	auto progress = processAsync(q, includeProvenance);
 	progress->wait();
 	return progress->getResult();
 }
 
 
-std::unique_ptr<QueryProcessor::QueryProgress> QueryProcessor::processAsync(const Query &q) {
-	return backend->processAsync(q);
+std::unique_ptr<QueryProcessor::QueryProgress> QueryProcessor::processAsync(const Query &q, bool includeProvenance) {
+	return backend->processAsync(q, includeProvenance);
 }
 
 
@@ -40,27 +40,27 @@ QueryProcessor::~QueryProcessor() {
 /*
  * QueryResult
  */
-QueryProcessor::QueryResult::QueryResult(Query::ResultType result_type, std::unique_ptr<SpatioTemporalResult> result, const std::string &result_plot, const std::string &result_error, const QueryRectangle &qrect)
-	: result_type(result_type), result(std::move(result)), result_plot(result_plot), result_error(result_error), qrect(qrect) {
+QueryProcessor::QueryResult::QueryResult(Query::ResultType result_type, std::unique_ptr<SpatioTemporalResult> result, std::unique_ptr<ProvenanceCollection> provenance, const std::string &result_plot, const std::string &result_error, const QueryRectangle &qrect)
+	: result_type(result_type), result(std::move(result)), provenance(std::move(provenance)), result_plot(result_plot), result_error(result_error), qrect(qrect) {
 }
 
-std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::raster(std::unique_ptr<GenericRaster> result, const QueryRectangle &qrect) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::RASTER, std::move(result), "", "", qrect));
+std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::raster(std::unique_ptr<GenericRaster> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::RASTER, std::move(result), std::move(provenance), "", "", qrect));
 }
-std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::points(std::unique_ptr<PointCollection> result, const QueryRectangle &qrect) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::POINTS, std::move(result), "", "", qrect));
+std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::points(std::unique_ptr<PointCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::POINTS, std::move(result), std::move(provenance), "", "", qrect));
 }
-std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::lines(std::unique_ptr<LineCollection> result, const QueryRectangle &qrect) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::LINES, std::move(result), "", "", qrect));
+std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::lines(std::unique_ptr<LineCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::LINES, std::move(result), std::move(provenance), "", "", qrect));
 }
-std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::polygons(std::unique_ptr<PolygonCollection> result, const QueryRectangle &qrect) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::POLYGONS, std::move(result), "", "", qrect));
+std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::polygons(std::unique_ptr<PolygonCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::POLYGONS, std::move(result), std::move(provenance), "", "", qrect));
 }
-std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::plot(const std::string &plot, const QueryRectangle &qrect) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::PLOT, nullptr, plot, "", qrect));
+std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::plot(const std::string &plot, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::PLOT, nullptr, std::move(provenance), plot, "", qrect));
 }
 std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::error(const std::string &error, const QueryRectangle &qrect) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::ERROR, nullptr, "", error, qrect));
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::ERROR, nullptr, nullptr, "", error, qrect));
 }
 
 
@@ -144,5 +144,12 @@ std::string QueryProcessor::QueryResult::getPlot() {
 		throw std::runtime_error("QueryResult::getPlot(): result is not a plot");
 
 	return std::move(result_plot);
+}
+
+ProvenanceCollection& QueryProcessor::QueryResult::getProvenance() {
+	if (provenance.get() == nullptr) {
+		throw std::runtime_error("QueryProcessor: getProvenance not available");
+	}
+	return *provenance;
 }
 

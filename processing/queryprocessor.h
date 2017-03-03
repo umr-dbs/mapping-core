@@ -2,6 +2,7 @@
 #define PROCESSING_QUERYPROCESSOR_H
 
 #include "processing/query.h"
+#include "operators/provenance.h"
 class Parameters; // util/configuration.h
 
 #include <memory>
@@ -38,17 +39,19 @@ class QueryProcessor {
 				std::unique_ptr<PolygonCollection> getPolygonCollection(GenericOperator::FeatureCollectionQM querymode = GenericOperator::FeatureCollectionQM::ANY_FEATURE);
 				std::unique_ptr<SimpleFeatureCollection> getAnyFeatureCollection(GenericOperator::FeatureCollectionQM querymode = GenericOperator::FeatureCollectionQM::ANY_FEATURE);
 				std::string getPlot();
+				ProvenanceCollection& getProvenance();
 
-				static std::unique_ptr<QueryResult> raster(std::unique_ptr<GenericRaster> result, const QueryRectangle &qrect);
-				static std::unique_ptr<QueryResult> points(std::unique_ptr<PointCollection> result, const QueryRectangle &qrect);
-				static std::unique_ptr<QueryResult> lines(std::unique_ptr<LineCollection> result, const QueryRectangle &qrect);
-				static std::unique_ptr<QueryResult> polygons(std::unique_ptr<PolygonCollection> result, const QueryRectangle &qrect);
-				static std::unique_ptr<QueryResult> plot(const std::string &plot, const QueryRectangle &qrect);
+				static std::unique_ptr<QueryResult> raster(std::unique_ptr<GenericRaster> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
+				static std::unique_ptr<QueryResult> points(std::unique_ptr<PointCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
+				static std::unique_ptr<QueryResult> lines(std::unique_ptr<LineCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
+				static std::unique_ptr<QueryResult> polygons(std::unique_ptr<PolygonCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
+				static std::unique_ptr<QueryResult> plot(const std::string &plot, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
 				static std::unique_ptr<QueryResult> error(const std::string &error, const QueryRectangle &qrect);
 			private:
-				QueryResult(Query::ResultType result_type, std::unique_ptr<SpatioTemporalResult> result, const std::string &result_plot, const std::string &error, const QueryRectangle &qrect);
+				QueryResult(Query::ResultType result_type, std::unique_ptr<SpatioTemporalResult> result, std::unique_ptr<ProvenanceCollection> provenance, const std::string &result_plot, const std::string &error, const QueryRectangle &qrect);
 				Query::ResultType result_type;
 				std::unique_ptr<SpatioTemporalResult> result;
+				std::unique_ptr<ProvenanceCollection> provenance;
 				std::string result_plot;
 				std::string result_error;
 				QueryRectangle qrect;
@@ -75,11 +78,11 @@ class QueryProcessor {
 		/**
 		 * Starts processing a query, waits for the result and returns it.
 		 */
-		std::unique_ptr<QueryResult> process(const Query &q);
+		std::unique_ptr<QueryResult> process(const Query &q, bool includeProvenance);
 		/**
 		 * Starts processing a query asynchronously. Returns an object that allows tracking progress and waiting on the result.
 		 */
-		std::unique_ptr<QueryProgress> processAsync(const Query &q);
+		std::unique_ptr<QueryProgress> processAsync(const Query &q, bool includeProvenance);
 
 	private:
 		QueryProcessor(std::unique_ptr<QueryProcessorBackend> backend);

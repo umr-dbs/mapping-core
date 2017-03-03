@@ -34,6 +34,7 @@ _CUSTOM_EXCEPTION_CLASS(GDALException);
 _CUSTOM_EXCEPTION_CLASS(NetworkException);
 _CUSTOM_EXCEPTION_CLASS(FeatureException);
 _CUSTOM_EXCEPTION_CLASS(TimeParseException);
+_CUSTOM_EXCEPTION_CLASS(PermissionDeniedException);
 
 // Added Micha
 _CUSTOM_EXCEPTION_CLASS(CacheException);

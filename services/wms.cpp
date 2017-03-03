@@ -23,6 +23,9 @@ REGISTER_HTTP_SERVICE(WMSService, "WMS");
 
 
 void WMSService::run() {
+	auto session = UserDB::loadSession(params.get("sessiontoken"));
+	auto user = session->getUser();
+
 	bool debug = params.getBool("debug", Configuration::getBool("global.debug", false));
 	auto query_epsg = parseEPSG(params, "crs");
 	TemporalReference tref = parseTime(params);
@@ -66,69 +69,56 @@ void WMSService::run() {
 				QueryResolution::pixels(output_width, output_height)
 			);
 
-			if (format == "application/json") {
-				auto plot = QueryProcessor::getDefaultProcessor()
-					.process(Query(params.get("layers"), Query::ResultType::PLOT, qrect))
-					->getPlot();
 
-				response.sendContentType("application/json");
-				response.finishHeaders();
-				response << plot;
-				return;
-			}
-			else {
-				auto result_raster = QueryProcessor::getDefaultProcessor()
-					.process(Query(params.get("layers"), Query::ResultType::RASTER, qrect))
-					->getRaster(GenericOperator::RasterQM::EXACT);
+			Query query(params.get("layers"), Query::ResultType::RASTER, qrect);
+			auto result_raster = processQuery(query, user)
+				->getRaster(GenericOperator::RasterQM::EXACT);
 
-				// TODO: check permissions
+			double bbox[4] = {sref.x1, sref.y1, sref.x2, sref.y2};
+			flipx = (bbox[2] > bbox[0]) != (result_raster->pixel_scale_x > 0);
+			flipy = (bbox[3] > bbox[1]) == (result_raster->pixel_scale_y > 0);
 
-				double bbox[4] = {sref.x1, sref.y1, sref.x2, sref.y2};
-				bool flipx = (bbox[2] > bbox[0]) != (result_raster->pixel_scale_x > 0);
-				bool flipy = (bbox[3] > bbox[1]) == (result_raster->pixel_scale_y > 0);
+			std::unique_ptr<Raster2D<uint8_t>> overlay;
+			if (debug) {
+				Unit u = Unit::unknown();
+				u.setMinMax(0, 1);
+				DataDescription dd_overlay(GDT_Byte, u);
+				overlay.reset( (Raster2D<uint8_t> *) GenericRaster::create(dd_overlay, SpatioTemporalReference::unreferenced(), output_width, output_height).release() );
+				overlay->clear(0);
 
-				std::unique_ptr<Raster2D<uint8_t>> overlay;
-				if (debug) {
-					Unit u = Unit::unknown();
-					u.setMinMax(0, 1);
-					DataDescription dd_overlay(GDT_Byte, u);
-					overlay.reset( (Raster2D<uint8_t> *) GenericRaster::create(dd_overlay, SpatioTemporalReference::unreferenced(), output_width, output_height).release() );
-					overlay->clear(0);
+				// Write debug info
+				std::ostringstream msg_tl;
+				msg_tl.precision(2);
+				msg_tl << std::fixed << bbox[0] << ", " << bbox[1] << " [" << result_raster->stref.x1 << ", " << result_raster->stref.y1 << "]";
+				overlay->print(4, 4, 1, msg_tl.str().c_str());
 
-					// Write debug info
-					std::ostringstream msg_tl;
-					msg_tl.precision(2);
-					msg_tl << std::fixed << bbox[0] << ", " << bbox[1] << " [" << result_raster->stref.x1 << ", " << result_raster->stref.y1 << "]";
-					overlay->print(4, 4, 1, msg_tl.str().c_str());
+				std::ostringstream msg_br;
+				msg_br.precision(2);
+				msg_br << std::fixed << bbox[2] << ", " << bbox[3] << " [" << result_raster->stref.x2 << ", " << result_raster->stref.y2 << "]";;
+				std::string msg_brs = msg_br.str();
+				overlay->print(overlay->width-4-8*msg_brs.length(), overlay->height-12, 1, msg_brs.c_str());
 
-					std::ostringstream msg_br;
-					msg_br.precision(2);
-					msg_br << std::fixed << bbox[2] << ", " << bbox[3] << " [" << result_raster->stref.x2 << ", " << result_raster->stref.y2 << "]";;
-					std::string msg_brs = msg_br.str();
-					overlay->print(overlay->width-4-8*msg_brs.length(), overlay->height-12, 1, msg_brs.c_str());
-
-					if (result_raster->height >= 512) {
-						const auto &messages = Log::getMemoryMessages();
-						int ypos = 46;
-						for (const auto &msg : messages) {
-							overlay->print(4, ypos, 1, msg.c_str());
-							ypos += 10;
-						}
-						ypos += 20;
-						overlay->print(4, ypos, 1, "Attributes:");
+				if (result_raster->height >= 512) {
+					const auto &messages = Log::getMemoryMessages();
+					int ypos = 46;
+					for (const auto &msg : messages) {
+						overlay->print(4, ypos, 1, msg.c_str());
 						ypos += 10;
-						for (auto val : result_raster->global_attributes.numeric()) {
-							std::ostringstream msg;
-							msg << "attribute " << val.first << "=" << val.second;
-							overlay->print(4, ypos, 1, msg.str().c_str());
-							ypos += 10;
-						}
-
 					}
-				}
+					ypos += 20;
+					overlay->print(4, ypos, 1, "Attributes:");
+					ypos += 10;
+					for (auto val : result_raster->global_attributes.numeric()) {
+						std::ostringstream msg;
+						msg << "attribute " << val.first << "=" << val.second;
+						overlay->print(4, ypos, 1, msg.str().c_str());
+						ypos += 10;
+					}
 
-				outputImage(result_raster.get(), flipx, flipy, colorizer, overlay.get());
+				}
 			}
+
+			outputImage(result_raster.get(), flipx, flipy, colorizer, overlay.get());
 		}
 		catch (const std::exception &e) {
 			// Alright, something went wrong.
@@ -189,9 +179,9 @@ void WMSService::run() {
 			QueryResolution::pixels(1, 1)
 		);
 
-		auto graph = GenericOperator::fromJSON(params.get("layers"));
-		QueryProfiler profiler;
-		auto result_raster = graph->getCachedRaster(qrect,QueryTools(profiler),GenericOperator::RasterQM::LOOSE);
+		Query query(params.get("layers"), Query::ResultType::RASTER, qrect);
+		auto result_raster = processQuery(query, user)
+			->getRaster(GenericOperator::RasterQM::LOOSE);
 
 		auto unit = result_raster->dd.unit;
 		auto colorizer = Colorizer::fromUnit(unit);

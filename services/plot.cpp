@@ -22,8 +22,11 @@ public:
 REGISTER_HTTP_SERVICE(PlotService, "plot");
 
 void PlotService::run() {
-	std::string query = params.get("query", "");
-	if(query == "")
+	auto session = UserDB::loadSession(params.get("sessiontoken"));
+	auto user = session->getUser();
+
+	std::string queryString = params.get("query", "");
+	if(queryString == "")
 		throw ArgumentException("PlotService: no query specified");
 
 	if(!params.hasParam("crs"))
@@ -38,10 +41,6 @@ void PlotService::run() {
 
 	TemporalReference tref = parseTime(params);
 
-	auto graph = GenericOperator::fromJSON(query);
-
-	QueryProfiler profiler;
-
 	QueryResolution qres = QueryResolution::none();
 
 	if(params.hasParam("width") && params.hasParam("height")) {
@@ -53,12 +52,13 @@ void PlotService::run() {
 		qres
 	);
 
-	auto plot = graph->getCachedPlot(rect, QueryTools(profiler));
+	Query query(queryString, Query::ResultType::PLOT, rect);
+	auto plot = processQuery(query, user)->getPlot();
 
 	// TODO: check permissions
 
 	response.sendContentType("application/json");
 	response.finishHeaders();
 
-	response << plot->toJSON();
+	response << plot;
 }

@@ -159,3 +159,17 @@ void HTTPService::HTTPResponseStream::sendFailureJSON(const std::string &error) 
 	obj["result"] = error;
 	sendJSON(obj);
 }
+
+std::unique_ptr<QueryProcessor::QueryResult> HTTPService::processQuery(Query &query, UserDB::User &user) {
+	auto queryResult = QueryProcessor::getDefaultProcessor().process(query, true);
+
+	ProvenanceCollection &provenance = queryResult->getProvenance();
+
+	for(std::string identifier : provenance.getLocalIdentifiers()) {
+		if(!user.hasPermission(identifier)) {
+			throw PermissionDeniedException("HTTPService: Permission denied for query result");
+		}
+	}
+
+	return queryResult;
+}

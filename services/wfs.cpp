@@ -88,6 +88,9 @@ void WFSService::getCapabilities() {
 }
 
 void WFSService::getFeature() {
+	auto session = UserDB::loadSession(params.get("sessiontoken"));
+	auto user = session->getUser();
+
 	if(!params.hasParam("typenames"))
 		throw ArgumentException("WFSService: typeNames parameter not specified");
 
@@ -109,9 +112,8 @@ void WFSService::getFeature() {
 		sref = parseBBOX(params.get("bbox"), queryEpsg);
 	}
 
-	auto features = QueryProcessor::getDefaultProcessor()
-		.process(Query(operatorgraph, resultType, QueryRectangle(sref, tref, QueryResolution::none())))
-		->getAnyFeatureCollection();
+	Query query(operatorgraph, resultType, QueryRectangle(sref, tref, QueryResolution::none()));
+	auto features = processQuery(query, user)->getAnyFeatureCollection();
 
 	// TODO: check permission
 
