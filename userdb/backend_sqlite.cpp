@@ -121,6 +121,8 @@ SQLiteUserDBBackend::SQLiteUserDBBackend(const std::string &filename) {
 		" FOREIGN KEY(artifactid) REFERENCES artifacts(artifactid) ON DELETE CASCADE"
 		")"
 	);
+
+	db.exec("INSERT OR IGNORE INTO groups(groupname) VALUES('users')");
 }
 
 SQLiteUserDBBackend::~SQLiteUserDBBackend() {
@@ -262,7 +264,7 @@ UserDBBackend::GroupData SQLiteUserDBBackend::loadGroup(groupid_t groupid) {
 }
 
 UserDBBackend::groupid_t SQLiteUserDBBackend::loadGroupId(const std::string &groupname) {
-	auto stmt = db.prepare("SELECT groupid FROM groups WHERE username = ?");
+	auto stmt = db.prepare("SELECT groupid FROM groups WHERE groupname = ?");
 	stmt.bind(1, groupname);
 	if (!stmt.next())
 		throw UserDB::database_error("UserDB: group not found");
