@@ -162,9 +162,8 @@ UserDBBackend::UserData SQLiteUserDBBackend::loadUser(userid_t userid) {
 	if (externalid_ptr != nullptr)
 		externalid = std::string(externalid_ptr);
 	stmt.finalize();
-	stmt = db.prepare("SELECT permission FROM user_permissions WHERE userid = ? UNION SELECT permission FROM group_permissions join user_to_group using (groupid) where userid = ?");
+	stmt = db.prepare("SELECT permission FROM user_permissions WHERE userid = ?");
 	stmt.bind(1, userid);
-	stmt.bind(2, userid);
 	UserDB::Permissions permissions;
 	while (stmt.next())
 		permissions.addPermission(stmt.getString(0));
