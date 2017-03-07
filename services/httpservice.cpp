@@ -163,6 +163,10 @@ void HTTPService::HTTPResponseStream::sendFailureJSON(const std::string &error) 
 std::unique_ptr<QueryProcessor::QueryResult> HTTPService::processQuery(Query &query, UserDB::User &user) {
 	auto queryResult = QueryProcessor::getDefaultProcessor().process(query, true);
 
+	if(queryResult->isError()) {
+		throw OperatorException("HTTPService: query failed with error: " + queryResult->getErrorMessage());
+	}
+
 	ProvenanceCollection &provenance = queryResult->getProvenance();
 
 	for(std::string identifier : provenance.getLocalIdentifiers()) {
