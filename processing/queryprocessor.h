@@ -40,6 +40,8 @@ class QueryProcessor {
 				std::unique_ptr<SimpleFeatureCollection> getAnyFeatureCollection(GenericOperator::FeatureCollectionQM querymode = GenericOperator::FeatureCollectionQM::ANY_FEATURE);
 				std::string getPlot();
 				ProvenanceCollection& getProvenance();
+				bool isError();
+				std::string getErrorMessage();
 
 				static std::unique_ptr<QueryResult> raster(std::unique_ptr<GenericRaster> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
 				static std::unique_ptr<QueryResult> points(std::unique_ptr<PointCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);

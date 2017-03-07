@@ -153,3 +153,11 @@ ProvenanceCollection& QueryProcessor::QueryResult::getProvenance() {
 	return *provenance;
 }
 
+bool QueryProcessor::QueryResult::isError() {
+	return result_type == Query::ResultType::ERROR;
+}
+
+std::string QueryProcessor::QueryResult::getErrorMessage() {
+	return result_error;
+}
+
