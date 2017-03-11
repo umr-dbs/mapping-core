@@ -241,4 +241,12 @@ TEST(HTTPParsing, case_insensitive_request_method_get) {
 	EXPECT_EQ(3, params.getInt("c"));
 }
 
+TEST(HTTPParsing, EncodedAmpersandInValue) {
+	// Value of a parameter contains an encoded &
+	Parameters params;
+	parseCGIEnvironment(params, "GET", "/cgi-bin/bla", "foo=a%26b");
+
+	EXPECT_EQ(params.get("foo", "-"), "a&b");
+}
+
 

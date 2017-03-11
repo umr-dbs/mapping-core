@@ -106,8 +106,8 @@ static void parseKeyValuePair(const std::string& q, std::map<std::string, std::s
 		key = q;
 		val = ""; // Empty value
 	} else {
-		key = q.substr(0, sep);
-		val = q.substr(sep + 1, q.length() - (sep + 1));
+		key = urldecode(q.substr(0, sep));
+		val = urldecode(q.substr(sep + 1, q.length() - (sep + 1)));
 		trim(val);
 	}
 
@@ -134,8 +134,6 @@ void parseQuery(const std::string& query, Parameters &params) {
 	if (query.length() == 0)
 		return;
 
-	auto q = urldecode(query);
-
 	// see RFC 3986 ch. 3.4
 
 	/*
@@ -151,14 +149,14 @@ void parseQuery(const std::string& query, Parameters &params) {
 	std::string::size_type last = 0;
 	std::string::size_type cur;
 
-	while ((cur = q.find_first_of("&", last)) != std::string::npos) {
-		std::string sub = q.substr(last, cur - last);
+	while ((cur = query.find_first_of("&", last)) != std::string::npos) {
+		std::string sub = query.substr(last, cur - last);
 		parseKeyValuePair(sub, params);
 		last = cur + 1;
 	}
 
-	if (last < q.length()) {
-		std::string sub = q.substr(last, q.length() - last);
+	if (last < query.length()) {
+		std::string sub = query.substr(last, query.length() - last);
 		parseKeyValuePair(sub, params);
 	}
 }
