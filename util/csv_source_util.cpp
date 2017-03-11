@@ -303,6 +303,7 @@ void CSVSourceUtil::readAnyCollection(SimpleFeatureCollection *collection, std::
 			double value;
 			try {
 				value = std::stod(tuple[pos_numeric[k]].c_str());
+				collection->feature_attributes.numeric(columns_numeric[k]).set(current_idx, value);
 			} catch (const std::exception& e) {
 				switch(errorHandling) {
 					case ErrorHandling::ABORT:
@@ -313,9 +314,9 @@ void CSVSourceUtil::readAnyCollection(SimpleFeatureCollection *collection, std::
 						break;
 					case ErrorHandling::KEEP:
 						value = NAN;
+						collection->feature_attributes.numeric(columns_numeric[k]).set(current_idx, value);
 				}
 			}
-			collection->feature_attributes.numeric(columns_numeric[k]).set(current_idx, value);
 		}
 		if (!added)
 			continue;
