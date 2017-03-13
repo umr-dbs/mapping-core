@@ -22,10 +22,10 @@ sudo apt-get install spawn-fcgi
 
 Spawn a single process of mapping
 ```
-sudo FCGI_WEB_SERVER_ADDRS=127.0.0.1 spawn-fcgi -p 1337 mapping_cgi
+sudo -u www-data FCGI_WEB_SERVER_ADDRS=127.0.0.1 spawn-fcgi -p 1337 mapping_cgi
 ```
 
 Spawn multiple processes of mapping
 ```
-sudo FCGI_WEB_SERVER_ADDRS=127.0.0.1 spawn-fcgi -p 1337 -F 2 mapping_cgi
+sudo -u www-data FCGI_WEB_SERVER_ADDRS=127.0.0.1 spawn-fcgi -p 1337 -F 2 mapping_cgi
 ```

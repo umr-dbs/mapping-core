@@ -14,6 +14,7 @@
 #include <json/json.h>
 
 #include <fcgio.h>
+#include <unistd.h>
 
 
 /*
@@ -88,11 +89,17 @@ int main() {
 			throw std::runtime_error("FCGX_InitRequest failed");
 
 		while (FCGX_Accept_r(&request) == 0) {
+			// save stdin, because Intel OpenCL driver closes it
+			int stdin = dup(0);
+			
 			fcgi_streambuf streambuf_in(request.in);
 			fcgi_streambuf streambuf_out(request.out);
 			fcgi_streambuf streambuf_err(request.err);
 
 			HTTPService::run(&streambuf_in, &streambuf_out, &streambuf_err, request);
+			
+			// restore stdin
+			dup2(stdin, 0);
 		}
 	}
 }
