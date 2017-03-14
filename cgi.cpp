@@ -12,9 +12,9 @@
 #include <string>
 
 #include <json/json.h>
-
 #include <fcgio.h>
 #include <unistd.h>
+#include <thread>
 
 
 /*
@@ -38,7 +38,24 @@ JPEG32: 168333 (95%)
 JPEG32: 120703 (90%)
 */
 
+/**
+ * A thread function that handles fcgi request
+ */
+void fcgiThread(int fd) {
+	FCGX_Init();
 
+	FCGX_Request request;
+
+	FCGX_InitRequest(&request, fd, 0);
+
+	while (FCGX_Accept_r(&request) == 0) {
+		fcgi_streambuf streambuf_in(request.in);
+		fcgi_streambuf streambuf_out(request.out);
+		fcgi_streambuf streambuf_err(request.err);
+
+		HTTPService::run(&streambuf_in, &streambuf_out, &streambuf_err, request);
+	}
+}
 
 int main() {
 	Configuration::loadFromDefaultPaths();
@@ -79,27 +96,20 @@ int main() {
 	}
 	else {
 		// FCGI mode
-		FCGX_Request request;
-		int res;
-		res = FCGX_Init();
-		if (res != 0)
-			throw std::runtime_error("FCGX_Init failed");
-		res = FCGX_InitRequest(&request, 0, 0);
-		if (res != 0)
-			throw std::runtime_error("FCGX_InitRequest failed");
+		// save stdin fd because of OpenCL Bug
+		int fd = dup(0);
 
-		while (FCGX_Accept_r(&request) == 0) {
-			// save stdin, because Intel OpenCL driver closes it
-			int stdin = dup(0);
-			
-			fcgi_streambuf streambuf_in(request.in);
-			fcgi_streambuf streambuf_out(request.out);
-			fcgi_streambuf streambuf_err(request.err);
+		size_t numberOfThreads = Configuration::getInt("fcgi.threads", 1);
 
-			HTTPService::run(&streambuf_in, &streambuf_out, &streambuf_err, request);
-			
-			// restore stdin
-			dup2(stdin, 0);
+		// spawn threads
+		std::vector<std::thread> threads;
+		for(size_t i = 0; i < numberOfThreads; ++i) {
+			threads.emplace_back(fcgiThread, fd);
+		}
+
+		// wait for finish
+		for(size_t i = 0; i < numberOfThreads; ++i) {
+			threads[i].join();
 		}
 	}
 }
