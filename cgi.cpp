@@ -7,6 +7,8 @@
 #include "util/log.h"
 #include "featurecollectiondb/featurecollectiondb.h"
 
+#include "cache/node/manager/local_manager.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -56,9 +58,12 @@ int main() {
 		cm = make_unique<NopCacheManager>();
 	}
 	else {
-		std::string host = Configuration::get("indexserver.host");
-		int port = atoi( Configuration::get("indexserver.port").c_str() );
-		cm = make_unique<ClientCacheManager>(host,port);
+		cm = make_unique<LocalCacheManager>("always", "lru",
+				Configuration::getInt("nodeserver.cache.raster.size"),
+				Configuration::getInt("nodeserver.cache.points.size"),
+				Configuration::getInt("nodeserver.cache.lines.size"),
+				Configuration::getInt("nodeserver.cache.polygons.size"),
+				Configuration::getInt("nodeserver.cache.plots.size"));
 	}
 	CacheManager::init( cm.get() );
 

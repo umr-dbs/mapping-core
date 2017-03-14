@@ -46,7 +46,7 @@ OBJS_OPERATORS += o/core/operators/source/featurecollectiondb_source.o
 
 
 # Cache: needs to be core for now
-OBJS_CORE += o/core/cache/common.o o/core/cache/priv/shared.o o/core/cache/priv/requests.o o/core/cache/priv/connection.o o/core/cache/priv/redistribution.o o/core/cache/priv/cache_stats.o o/core/cache/priv/cache_structure.o o/core/cache/node/node_cache.o o/core/cache/manager.o o/core/cache/priv/caching_strategy.o o/core/cache/priv/cube.o
+OBJS_CORE += o/core/cache/common.o o/core/cache/priv/shared.o o/core/cache/priv/requests.o o/core/cache/priv/connection.o o/core/cache/priv/redistribution.o o/core/cache/priv/cache_stats.o o/core/cache/priv/cache_structure.o o/core/cache/node/node_cache.o o/core/cache/manager.o o/core/cache/priv/caching_strategy.o o/core/cache/priv/cube.o o/core/cache/node/manager/local_manager.o o/core/cache/node/node_manager.o o/core/cache/node/manager/local_replacement.o o/core/cache/node/puzzle_util.o o/core/cache/node/nodeserver.o o/core/cache/node/delivery.o o/core/cache/node/node_config.o o/core/cache/node/manager/remote_manager.o o/core/cache/node/manager/hybrid_manager.o
 
 # External
 OBJS_EXTERNAL += o/core/ext/jsoncpp/jsoncpp.o
@@ -77,7 +77,7 @@ TARGET_MANAGER_SAN_LDFLAGS = ${SANITIZE_FLAGS} ${LDFLAGS} ${LDFLAGS_CL}
 TARGET_CGI_NAME := mapping_cgi 
 TARGET_CGI_OBJS = o/core/cgi.o ${OBJS_CORE} ${OBJS_SERVICES} ${OBJS_OPERATORS} ${OBJS_EXTERNAL}
 TARGET_CGI_PKGLIBS = ${PKGLIBS_CORE}
-TARGET_CGI_LDFLAGS = ${LDFLAGS} ${LDFLAGS_CL} -lfcgi++ -lfcgi
+TARGET_CGI_LDFLAGS = ${LDFLAGS} ${LDFLAGS_CL} -lfcgi++ -lfcgi -lpthread
 
 TARGET_GTEST_NAME := gtest 
 TARGET_GTEST_OBJS = ${OBJS_CORE} ${OBJS_SERVICES} ${OBJS_GTEST} ${OBJS_EXTERNAL} o/core/libgtest.a
