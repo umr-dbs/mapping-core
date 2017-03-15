@@ -113,7 +113,8 @@ void WFSService::getFeature() {
 	}
 
 	Query query(operatorgraph, resultType, QueryRectangle(sref, tref, QueryResolution::none()));
-	auto features = processQuery(query, user)->getAnyFeatureCollection();
+	auto result = processQuery(query, user);
+	auto features = result->getAnyFeatureCollection();
 
 	// TODO: check permission
 
@@ -172,14 +173,7 @@ void WFSService::getFeature() {
 		throw ArgumentException("WFSService: unknown output format");
 
 	if(exportMode) {
-		/*
-		 * TODO: how do we do this in a distributed way?
-		 * We cannot execute this locally, because in distributed processing, only workers have access to all sources to gather provenance information.
-		 * So, somehow, we must ask the QueryProcessor for Provenance information.
-		 */
-		// auto provenance = *graph->getFullProvenance();
-		std::unique_ptr<ProvenanceCollection> provenance = make_unique<ProvenanceCollection>();
-		exportZip(output.c_str(), output.length(), format, *provenance);
+		exportZip(output.c_str(), output.length(), format, result->getProvenance());
 	} else {
 		response.sendContentType(format + "; charset=utf-8");
 		response.finishHeaders();
