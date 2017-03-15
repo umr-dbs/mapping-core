@@ -26,6 +26,8 @@ class UserDB {
 		using groupid_t = int64_t;
 		using artifactid_t = int64_t;
 		friend class UserDBBackend;
+		friend class FeatureCollectionDB;
+		friend class PostgresFeatureCollectionDBBackend;
 
 	public:
 		class Permissions;
@@ -54,6 +56,7 @@ class UserDB {
 		};
 		class User {
 			friend class UserDB;
+			friend class FeatureCollectionDB;
 			friend class PostgresFeatureCollectionDBBackend;
 
 			public:
@@ -207,6 +210,7 @@ class UserDB {
 		static std::string createRandomToken(size_t length);
 	private:
 		static std::shared_ptr<User> loadUser(userid_t userid);
+		static std::shared_ptr<User> loadUser(const std::string &username);
 		static void addUserPermission(userid_t userid, const std::string &permission);
 		static void removeUserPermission(userid_t userid, const std::string &permission);
 		static void setUserPassword(userid_t userid, const std::string &password);

@@ -28,6 +28,7 @@ public:
 	// TODO: owner of the data set?
 	struct DataSetMetaData {
 		size_t dataSetId;
+		std::string owner;
 		std::string dataSetName;
 		Query::ResultType resultType;
 		std::map<std::string, Unit> numeric_attributes;
@@ -44,17 +45,17 @@ public:
 	/**
 	 * load a feature collection
 	 */
-	static std::unique_ptr<PointCollection> loadPoints(datasetid_t dataSetId, const QueryRectangle &qrect);
+	static std::unique_ptr<PointCollection> loadPoints(const std::string &owner, const std::string &dataSetName, const QueryRectangle &qrect);
 
 	/**
 	 * load a feature collection
 	 */
-	static std::unique_ptr<LineCollection> loadLines(datasetid_t dataSetId, const QueryRectangle &qrect);
+	static std::unique_ptr<LineCollection> loadLines(const std::string &owner, const std::string &dataSetName, const QueryRectangle &qrect);
 
 	/**
 	 * load a feature collection
 	 */
-	static std::unique_ptr<PolygonCollection> loadPolygons(datasetid_t dataSetId, const QueryRectangle &qrect);
+	static std::unique_ptr<PolygonCollection> loadPolygons(const std::string &owner, const std::string &dataSetName, const QueryRectangle &qrect);
 
 
 	/**

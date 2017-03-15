@@ -39,7 +39,8 @@ Json::Value FeatureCollectionDBService::metaDataToJson(const FeatureCollectionDB
 	Json::Value json(Json::objectValue);
 
 	json["id"] = metaData.dataSetId;
-	json["name"] = metaData.dataSetName;
+	json["owner"] = metaData.owner;
+	json["data_set_name"] = metaData.dataSetName;
 	json["has_time"] = metaData.hasTime;
 
 	std::string typeString;

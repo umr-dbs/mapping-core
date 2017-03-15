@@ -350,6 +350,11 @@ std::shared_ptr<UserDB::User> UserDB::loadUser(UserDB::userid_t userid) {
 	return user;
 }
 
+std::shared_ptr<UserDB::User> UserDB::loadUser(const std::string &username) {
+	userid_t userid = userdb_backend->loadUserId(username);
+	return loadUser(userid);
+}
+
 std::shared_ptr<UserDB::User> UserDB::createUser(const std::string &username, const std::string &realname, const std::string &email, const std::string &password) {
 	auto userid = userdb_backend->createUser(username, realname, email, password, "");
 	userdb_backend->addUserToGroup(userid, userdb_backend->loadGroupId("users"));

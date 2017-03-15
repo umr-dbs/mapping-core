@@ -21,13 +21,13 @@ public:
 	virtual ~PostgresFeatureCollectionDBBackend();
 
 	virtual std::vector<FeatureCollectionDBBackend::DataSetMetaData> loadDataSetsMetaData(UserDB::User &user);
-	virtual FeatureCollectionDBBackend::DataSetMetaData loadDataSetMetaData(FeatureCollectionDBBackend::datasetid_t dataSetId);
+	virtual FeatureCollectionDBBackend::DataSetMetaData loadDataSetMetaData(const UserDB::User &owner, const std::string &dataSetName);
 	virtual FeatureCollectionDBBackend::datasetid_t createPoints(UserDB::User &user, const std::string &dataSetName, const PointCollection &collection);
 	virtual FeatureCollectionDBBackend::datasetid_t createLines(UserDB::User &user, const std::string &dataSetName, const LineCollection &collection);
 	virtual FeatureCollectionDBBackend::datasetid_t createPolygons(UserDB::User &user, const std::string &dataSetName, const PolygonCollection &collection);
-	virtual std::unique_ptr<PointCollection> loadPoints(FeatureCollectionDBBackend::datasetid_t dataSetId, const QueryRectangle &qrect);
-	virtual std::unique_ptr<LineCollection> loadLines(FeatureCollectionDBBackend::datasetid_t dataSetId, const QueryRectangle &qrect);
-	virtual std::unique_ptr<PolygonCollection> loadPolygons(FeatureCollectionDBBackend::datasetid_t dataSetId, const QueryRectangle &qrect);
+	virtual std::unique_ptr<PointCollection> loadPoints(const UserDB::User &owner, const std::string& dataSetName, const QueryRectangle &qrect);
+	virtual std::unique_ptr<LineCollection> loadLines(const UserDB::User &owner, const std::string& dataSetName, const QueryRectangle &qrect);
+	virtual std::unique_ptr<PolygonCollection> loadPolygons(const UserDB::User &owner, const std::string& dataSetName, const QueryRectangle &qrect);
 
 private:
 	pqxx::connection connection;
@@ -37,7 +37,7 @@ private:
 	void createDataSetTable(pqxx::work &work, const std::string &tableName, const SimpleFeatureCollection &collection);
 	void insertDataIntoTable(pqxx::work &work, const std::string &tableName, const SimpleFeatureCollection &collection);
 	FeatureCollectionDBBackend::DataSetMetaData dataSetRowToMetaData(pqxx::result::tuple& row);
-	void loadFeatures(SimpleFeatureCollection &collection,const Query::ResultType &type, FeatureCollectionDBBackend::datasetid_t dataSetId, const QueryRectangle &qrect);
+	void loadFeatures(SimpleFeatureCollection &collection,const Query::ResultType &type, const UserDB::User &owner, const std::string &dataSetName, const QueryRectangle &qrect);
 
 };
 
@@ -87,6 +87,7 @@ std::vector<FeatureCollectionDBBackend::DataSetMetaData> PostgresFeatureCollecti
 
 FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::dataSetRowToMetaData(pqxx::result::tuple& row) {
 	size_t datasetid = row["datasetid"].as<size_t>();
+	size_t userid = row["userid"].as<size_t>();
 
 	std::string name = row["name"].as<std::string>();
 	std::string type = row["type"].as<std::string>();
@@ -118,15 +119,17 @@ FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::
 
 	bool hasTime = row["has_time"].as<bool>();
 
-	return DataSetMetaData{datasetid, name, resultType, numeric_attributes, textual_attributes, hasTime};
+	auto user = UserDB::loadUser(userid);
+
+	return DataSetMetaData{datasetid, user->getUsername(), name, resultType, numeric_attributes, textual_attributes, hasTime};
 }
 
-FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::loadDataSetMetaData(datasetid_t dataSetId) {
+FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::loadDataSetMetaData(const UserDB::User &owner, const std::string &dataSetName) {
 	// TODO avoid preparing statements redundantly
-	connection.prepare("select_dataset", "SELECT datasetid, name, type, numeric_attributes, textual_attributes, has_time FROM datasets WHERE datasetid = $1");
+	connection.prepare("select_dataset", "SELECT datasetid, userid, name, type, numeric_attributes, textual_attributes, has_time FROM datasets WHERE userid = $1 AND name = $2");
 	pqxx::work work(connection);
 
-	pqxx::result result = work.prepared("select_dataset")(dataSetId).exec();
+	pqxx::result result = work.prepared("select_dataset")(owner.userid)(dataSetName).exec();
 
 	if(result.size() < 1) {
 		throw ArgumentException("PostgresFeatureCollectionDB: data set with given id does not exist");
@@ -239,11 +242,13 @@ void PostgresFeatureCollectionDBBackend::insertDataIntoTable(pqxx::work &work, c
 
 	query << ") VALUES (" << placeholders.str() << ")";
 
-	connection.prepare("insert", query.str());
+	std::string prepare = "insert" + tableName;
+	connection.unprepare(prepare);
+	connection.prepare(prepare, query.str());
 
 	// perform insertions
 	for(size_t i = 0; i < collection.getFeatureCount(); ++i) {
-		auto prep = work.prepared("insert");
+		auto prep = work.prepared(prepare);
 
 		for(auto &attribute : collection.feature_attributes.getNumericKeys()) {
 			prep(collection.feature_attributes.numeric(attribute).get(i));
@@ -296,9 +301,9 @@ FeatureCollectionDBBackend::datasetid_t PostgresFeatureCollectionDBBackend::crea
 	return createFeatureCollection(user, dataSetName, collection, Query::ResultType::POLYGONS);
 }
 
-void PostgresFeatureCollectionDBBackend::loadFeatures(SimpleFeatureCollection &collection,const Query::ResultType &type, FeatureCollectionDBBackend::datasetid_t dataSetId, const QueryRectangle &qrect) {
+void PostgresFeatureCollectionDBBackend::loadFeatures(SimpleFeatureCollection &collection, const Query::ResultType &type, const UserDB::User &owner, const std::string &dataSetName, const QueryRectangle &qrect) {
 	//get meta data
-	auto metaData = loadDataSetMetaData(dataSetId);
+	auto metaData = loadDataSetMetaData(owner, dataSetName);
 
 	// build query and prepare collection
 	std::stringstream query;
@@ -369,20 +374,20 @@ void PostgresFeatureCollectionDBBackend::loadFeatures(SimpleFeatureCollection &c
 }
 
 
-std::unique_ptr<PointCollection> PostgresFeatureCollectionDBBackend::loadPoints(FeatureCollectionDBBackend::datasetid_t dataSetId, const QueryRectangle &qrect) {
+std::unique_ptr<PointCollection> PostgresFeatureCollectionDBBackend::loadPoints(const UserDB::User &owner, const std::string &dataSetName, const QueryRectangle &qrect) {
 	auto points = make_unique<PointCollection>(qrect);
-	loadFeatures(*points, Query::ResultType::POINTS, dataSetId, qrect);
+	loadFeatures(*points, Query::ResultType::POINTS, owner, dataSetName, qrect);
 	return points;
 }
 
-std::unique_ptr<LineCollection> PostgresFeatureCollectionDBBackend::loadLines(FeatureCollectionDBBackend::datasetid_t dataSetId, const QueryRectangle &qrect) {
+std::unique_ptr<LineCollection> PostgresFeatureCollectionDBBackend::loadLines(const UserDB::User &owner, const std::string &dataSetName, const QueryRectangle &qrect) {
 	auto lines = make_unique<LineCollection>(qrect);
-	loadFeatures(*lines, Query::ResultType::LINES, dataSetId, qrect);
+	loadFeatures(*lines, Query::ResultType::LINES,  owner, dataSetName, qrect);
 	return lines;
 }
 
-std::unique_ptr<PolygonCollection> PostgresFeatureCollectionDBBackend::loadPolygons(FeatureCollectionDBBackend::datasetid_t dataSetId, const QueryRectangle &qrect) {
+std::unique_ptr<PolygonCollection> PostgresFeatureCollectionDBBackend::loadPolygons(const UserDB::User  &owner, const std::string &dataSetName, const QueryRectangle &qrect) {
 	auto polygons = make_unique<PolygonCollection>(qrect);
-	loadFeatures(*polygons, Query::ResultType::POLYGONS, dataSetId, qrect);
+	loadFeatures(*polygons, Query::ResultType::POLYGONS, owner, dataSetName, qrect);
 	return polygons;
 }

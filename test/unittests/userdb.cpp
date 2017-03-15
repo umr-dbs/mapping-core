@@ -141,4 +141,6 @@ TEST(UserDB, testALL) {
 	artifacts = user2->loadArtifactsOfType("project");
 	EXPECT_EQ(1, artifacts.size());
 	EXPECT_EQ("Test Project", artifacts[0].getName());
+
+	UserDB::shutdown();
 }

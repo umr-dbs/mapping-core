@@ -30,18 +30,20 @@ TEST(FeatureCollectionDB, testALL) {
 	Configuration::loadFromDefaultPaths();
 	FeatureCollectionDB::init("postgres", Configuration::get("test.featurecollectiondb.postgres.dbcredentials"));
 
+	UserDB::init("sqlite", ":memory:");
+
 	// Create a user
-	UserDB::User user(0, "testuser", "name", "email", "externalid", UserDB::Permissions(), std::vector<std::shared_ptr<UserDB::Group>>());
+	auto user = UserDB::createUser("testuser", "name", "email", "pass");
 
 	QueryRectangle qrect (QueryRectangle::extent(epsg_t::EPSG_LATLON), TemporalReference(timetype_t::TIMETYPE_UNIX), QueryResolution::none());
 
 	auto points = createPointsWithAttributesAndTime();
 	points->replaceSTRef(qrect);
 
-	FeatureCollectionDB::DataSetMetaData dataset = FeatureCollectionDB::createPoints(user, "test points", *points);
+	FeatureCollectionDB::DataSetMetaData dataset = FeatureCollectionDB::createPoints(*user, "test points", *points);
 
 
-	auto loadedPoints = FeatureCollectionDB::loadPoints(dataset.dataSetId, qrect);
+	auto loadedPoints = FeatureCollectionDB::loadPoints("testuser", "test points", qrect);
 
 	CollectionTestUtil::checkEquality(*points, *loadedPoints);
 }
