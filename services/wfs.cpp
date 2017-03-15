@@ -19,13 +19,13 @@ enum class WFSServiceType {
 	GetCapabilities, GetFeature
 };
 
-const std::vector< std::pair<Query::ResultType, std::string> > featureTypeMap = {
+static const std::vector< std::pair<Query::ResultType, std::string> > featureTypeMap = {
 	std::make_pair(Query::ResultType::POINTS, "points"),
 	std::make_pair(Query::ResultType::LINES, "lines"),
 	std::make_pair(Query::ResultType::POLYGONS, "polygons"),
 };
 
-EnumConverter<Query::ResultType> featureTypeConverter(featureTypeMap);
+static EnumConverter<Query::ResultType> featureTypeConverter(featureTypeMap);
 
 /**
  * Implementation of the OGC WFS standard http://www.opengeospatial.org/standards/wfs
