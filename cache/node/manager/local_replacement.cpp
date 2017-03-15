@@ -13,6 +13,8 @@
 #include "datatypes/polygoncollection.h"
 #include "datatypes/plot.h"
 
+#include "operators/provenance.h"
+
 std::unique_ptr<LocalRelevanceFunction> LocalRelevanceFunction::by_name(
 		const std::string& name) {
 
@@ -99,3 +101,4 @@ template class LocalReplacement<PointCollection>;
 template class LocalReplacement<LineCollection>;
 template class LocalReplacement<PolygonCollection>;
 template class LocalReplacement<GenericPlot> ;
+template class LocalReplacement<ProvenanceCollection> ;

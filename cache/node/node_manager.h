@@ -212,7 +212,8 @@ public:
 			std::unique_ptr<NodeCacheWrapper<PointCollection>> point_wrapper,
 			std::unique_ptr<NodeCacheWrapper<LineCollection>> line_wrapper,
 			std::unique_ptr<NodeCacheWrapper<PolygonCollection>> polygon_wrapper,
-			std::unique_ptr<NodeCacheWrapper<GenericPlot>> plot_wrapper );
+			std::unique_ptr<NodeCacheWrapper<GenericPlot>> plot_wrapper,
+			std::unique_ptr<NodeCacheWrapper<ProvenanceCollection>> provenance_wrapper);
 
 	/**
 	 * @return the thread-sensitve worker-context

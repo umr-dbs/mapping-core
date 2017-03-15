@@ -29,6 +29,7 @@ public:
 	size_t line_size;
 	size_t polygon_size;
 	size_t plot_size;
+	size_t provenance_size;
 
 	std::string caching_strategy;
 	std::string local_replacement;

@@ -19,7 +19,7 @@ void ProvenanceCollection::add(const Provenance &provenance) {
 	items.push_back(provenance);
 }
 
-std::string ProvenanceCollection::toJson() {
+std::string ProvenanceCollection::toJson() const {
 	Json::Value result(Json::ValueType::arrayValue);
 	for (const auto &p : items) {
 		Json::Value item(Json::ValueType::objectValue);

@@ -13,6 +13,8 @@
 #include "datatypes/polygoncollection.h"
 #include "datatypes/plot.h"
 
+#include "operators/provenance.h"
+
 #include "util/log.h"
 
 //////////////////////////////////////////////////////////////
@@ -50,6 +52,7 @@ template class NodeCacheEntry<PointCollection>;
 template class NodeCacheEntry<LineCollection>;
 template class NodeCacheEntry<PolygonCollection>;
 template class NodeCacheEntry<GenericPlot>;
+template class NodeCacheEntry<ProvenanceCollection>;
 
 ///////////////////////////////////////////////////////////////////
 //
@@ -166,3 +169,4 @@ template class NodeCache<PointCollection> ;
 template class NodeCache<LineCollection> ;
 template class NodeCache<PolygonCollection> ;
 template class NodeCache<GenericPlot> ;
+template class NodeCache<ProvenanceCollection> ;

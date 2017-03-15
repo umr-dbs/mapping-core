@@ -59,7 +59,7 @@ public:
 	 */
 	RemoteCacheManager( const std::string &strategy,
 			size_t raster_cache_size, size_t point_cache_size, size_t line_cache_size,
-			size_t polygon_cache_size, size_t plot_cache_size );
+			size_t polygon_cache_size, size_t plot_cache_size, size_t provenance_cache_size );
 
 	/**
 	 * Creates a self-reference to the cache-entry with the given id

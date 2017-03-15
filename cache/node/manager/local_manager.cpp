@@ -140,13 +140,14 @@ std::unique_ptr<T> LocalCacheWrapper<T>::process_puzzle(
 LocalCacheManager::LocalCacheManager(const std::string &strategy, const std::string &replacement,
 		size_t raster_cache_size, size_t point_cache_size,
 		size_t line_cache_size, size_t polygon_cache_size,
-		size_t plot_cache_size ) :
+		size_t plot_cache_size, size_t provenance_cache_size ) :
 				NodeCacheManager( strategy,
 						make_unique<LocalCacheWrapper<GenericRaster>>(*this, replacement, raster_cache_size, CacheType::RASTER),
 						make_unique<LocalCacheWrapper<PointCollection>>(*this, replacement,point_cache_size, CacheType::POINT),
 						make_unique<LocalCacheWrapper<LineCollection>>(*this, replacement,line_cache_size, CacheType::LINE),
 						make_unique<LocalCacheWrapper<PolygonCollection>>(*this, replacement,polygon_cache_size, CacheType::POLYGON),
-						make_unique<LocalCacheWrapper<GenericPlot>>(*this, replacement,plot_cache_size, CacheType::PLOT) ) {
+						make_unique<LocalCacheWrapper<GenericPlot>>(*this, replacement,plot_cache_size, CacheType::PLOT),
+						make_unique<LocalCacheWrapper<ProvenanceCollection>>(*this, replacement,provenance_cache_size, CacheType::UNKNOWN)) {
 }
 
 template class LocalCacheWrapper<GenericRaster>;
@@ -154,3 +155,4 @@ template class LocalCacheWrapper<PointCollection>;
 template class LocalCacheWrapper<LineCollection>;
 template class LocalCacheWrapper<PolygonCollection>;
 template class LocalCacheWrapper<GenericPlot> ;
+template class LocalCacheWrapper<ProvenanceCollection> ;

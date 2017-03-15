@@ -171,6 +171,7 @@ public:
 	CacheWrapper<LineCollection>& get_line_cache();
 	CacheWrapper<PolygonCollection>& get_polygon_cache();
 	CacheWrapper<GenericPlot>& get_plot_cache();
+	CacheWrapper<ProvenanceCollection>& get_provenance_cache();
 private:
 
 	std::string idx_host;
@@ -181,6 +182,7 @@ private:
 	ClientCacheWrapper<LineCollection> line_cache;
 	ClientCacheWrapper<PolygonCollection> poly_cache;
 	ClientCacheWrapper<GenericPlot> plot_cache;
+	ClientCacheWrapper<ProvenanceCollection> provenance_cache;
 };
 
 #endif /* MANAGER_H_ */

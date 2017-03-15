@@ -80,7 +80,9 @@ int main() {
 				Configuration::getInt("nodeserver.cache.points.size"),
 				Configuration::getInt("nodeserver.cache.lines.size"),
 				Configuration::getInt("nodeserver.cache.polygons.size"),
-				Configuration::getInt("nodeserver.cache.plots.size"));
+				Configuration::getInt("nodeserver.cache.plots.size"),
+				Configuration::getInt("nodeserver.cache.provenance.size")
+		);
 	}
 	CacheManager::init( cm.get() );
 

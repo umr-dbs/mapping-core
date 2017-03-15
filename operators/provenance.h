@@ -1,6 +1,8 @@
 #ifndef OPERATORS_PROVENANCE_H
 #define OPERATORS_PROVENANCE_H
 
+#include "util/make_unique.h"
+
 #include <string>
 #include <vector>
 
@@ -62,6 +64,9 @@ class Provenance {
  */
 class ProvenanceCollection {
 	public:
+
+		ProvenanceCollection(){};
+
 		/*
 		 * Add provenance information for another data set.
 		 */
@@ -69,11 +74,26 @@ class ProvenanceCollection {
 		/*
 		 * Serializes the collection into Json format
 		 */
-		std::string toJson();
+		std::string toJson() const;
 		/*
 		 * Returns a list of all local identifiers used in this Collection, without duplicates.
 		 */
 		std::vector<std::string> getLocalIdentifiers();
+
+		size_t get_byte_size() const {
+			return toJson().size();
+		}
+
+		std::unique_ptr<ProvenanceCollection> clone() const {
+			std::unique_ptr<ProvenanceCollection> clone = make_unique<ProvenanceCollection>();
+
+			for(const Provenance& provenance : items) {
+				clone->add(provenance);
+			}
+
+			return clone;
+		}
+
 	private:
 		std::vector<Provenance> items;
 };

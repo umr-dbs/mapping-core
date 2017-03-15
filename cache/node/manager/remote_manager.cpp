@@ -257,7 +257,7 @@ std::unique_ptr<T> RemoteCacheWrapper<T>::process_puzzle_int( GenericOperator &o
 RemoteCacheManager::RemoteCacheManager(const std::string &strategy,
 		size_t raster_cache_size, size_t point_cache_size,
 		size_t line_cache_size, size_t polygon_cache_size,
-		size_t plot_cache_size) :
+		size_t plot_cache_size, size_t provenance_cache_size) :
 		NodeCacheManager(strategy,
 				make_unique<RemoteCacheWrapper<GenericRaster>>(*this,
 						raster_cache_size, CacheType::RASTER),
@@ -268,7 +268,9 @@ RemoteCacheManager::RemoteCacheManager(const std::string &strategy,
 				make_unique<RemoteCacheWrapper<PolygonCollection>>(*this,
 						polygon_cache_size, CacheType::POLYGON),
 				make_unique<RemoteCacheWrapper<GenericPlot>>(*this,
-						plot_cache_size, CacheType::PLOT)) {
+						plot_cache_size, CacheType::PLOT),
+				make_unique<RemoteCacheWrapper<ProvenanceCollection>>(*this,
+						provenance_cache_size, CacheType::UNKNOWN)) {
 }
 
 CacheRef RemoteCacheManager::create_local_ref(uint64_t id, const Cube<3> &bounds) const {
@@ -284,3 +286,4 @@ template class RemoteCacheWrapper<PointCollection> ;
 template class RemoteCacheWrapper<LineCollection> ;
 template class RemoteCacheWrapper<PolygonCollection> ;
 template class RemoteCacheWrapper<GenericPlot> ;
+template class RemoteCacheWrapper<ProvenanceCollection> ;

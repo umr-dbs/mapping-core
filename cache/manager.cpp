@@ -191,6 +191,14 @@ std::unique_ptr<GenericPlot> ClientCacheWrapper<GenericPlot>::read_result(
 	return GenericPlot::deserialize(buffer);
 }
 
+template<>
+std::unique_ptr<ProvenanceCollection> ClientCacheWrapper<ProvenanceCollection>::read_result(
+		BinaryReadBuffer &buffer) {
+	// TODO
+	return nullptr;
+}
+
+
 //
 // Client-cache
 //
@@ -201,7 +209,8 @@ ClientCacheManager::ClientCacheManager(const std::string& idx_host, int idx_port
 	point_cache(CacheType::POINT, idx_host, idx_port),
 	line_cache(CacheType::LINE, idx_host, idx_port),
 	poly_cache(CacheType::POLYGON, idx_host, idx_port),
-	plot_cache(CacheType::PLOT, idx_host, idx_port){
+	plot_cache(CacheType::PLOT, idx_host, idx_port),
+	provenance_cache(CacheType::UNKNOWN, idx_host, idx_port){
 }
 
 CacheWrapper<GenericRaster>& ClientCacheManager::get_raster_cache() {
@@ -224,15 +233,20 @@ CacheWrapper<GenericPlot>& ClientCacheManager::get_plot_cache() {
 	return plot_cache;
 }
 
+CacheWrapper<ProvenanceCollection>& ClientCacheManager::get_provenance_cache() {
+	return provenance_cache;
+}
+
 template class NopCacheWrapper<GenericRaster> ;
 template class NopCacheWrapper<PointCollection> ;
 template class NopCacheWrapper<LineCollection> ;
 template class NopCacheWrapper<PolygonCollection> ;
 template class NopCacheWrapper<GenericPlot> ;
+template class NopCacheWrapper<ProvenanceCollection> ;
 
 
 template class ClientCacheWrapper<GenericRaster> ;
 template class ClientCacheWrapper<PointCollection> ;
 template class ClientCacheWrapper<LineCollection> ;
 template class ClientCacheWrapper<PolygonCollection> ;
-template class ClientCacheWrapper<GenericPlot> ;
+template class ClientCacheWrapper<ProvenanceCollection> ;

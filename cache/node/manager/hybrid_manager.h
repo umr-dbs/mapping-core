@@ -56,7 +56,7 @@ public:
 	 */
 	HybridCacheManager( const std::string &strategy,
 			size_t raster_cache_size, size_t point_cache_size, size_t line_cache_size,
-			size_t polygon_cache_size, size_t plot_cache_size );
+			size_t polygon_cache_size, size_t plot_cache_size, size_t provenance_cache_size );
 };
 
 

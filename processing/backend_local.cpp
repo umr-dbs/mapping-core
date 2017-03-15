@@ -30,6 +30,7 @@ std::unique_ptr<QueryProcessor::QueryResult> LocalQueryProcessor::process(const 
 		std::unique_ptr<ProvenanceCollection> provenance;
 		if(includeProvenance) {
 			provenance.reset(op->getCachedFullProvenance(q.rectangle, tools).release());
+//			provenance.reset(op->getFullProvenance().release());
 		}
 
 		if (q.result == Query::ResultType::RASTER)
