@@ -170,7 +170,7 @@ std::unique_ptr<QueryProcessor::QueryResult> HTTPService::processQuery(Query &qu
 	ProvenanceCollection &provenance = queryResult->getProvenance();
 
 	for(std::string identifier : provenance.getLocalIdentifiers()) {
-		if(!user.hasPermission(identifier)) {
+		if(identifier != "" && !user.hasPermission(identifier)) {
 			throw PermissionDeniedException("HTTPService: Permission denied for query result");
 		}
 	}
