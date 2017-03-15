@@ -24,13 +24,13 @@ std::unique_ptr<QueryProcessor::QueryResult> LocalQueryProcessor::process(const 
 	try {
 		auto op = GenericOperator::fromJSON(q.operatorgraph);
 
-		std::unique_ptr<ProvenanceCollection> provenance;
-		if(includeProvenance) {
-			provenance.reset(op->getFullProvenance().release());
-		}
-
 		QueryProfiler profiler;
 		QueryTools tools(profiler);
+
+		std::unique_ptr<ProvenanceCollection> provenance;
+		if(includeProvenance) {
+			provenance.reset(op->getCachedFullProvenance(q.rectangle, tools).release());
+		}
 
 		if (q.result == Query::ResultType::RASTER)
 			return QueryProcessor::QueryResult::raster( op->getCachedRaster(q.rectangle, tools), q.rectangle, std::move(provenance) );

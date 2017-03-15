@@ -90,6 +90,8 @@ public:
 	 * @return the wrapper for the plot-cache
 	 */
 	virtual CacheWrapper<GenericPlot>& get_plot_cache() = 0;
+
+	virtual CacheWrapper<ProvenanceCollection>& get_provenance_cache() = 0;
 private:
 
 };
@@ -122,12 +124,14 @@ public:
 	CacheWrapper<LineCollection>& get_line_cache();
 	CacheWrapper<PolygonCollection>& get_polygon_cache();
 	CacheWrapper<GenericPlot>& get_plot_cache();
+	CacheWrapper<ProvenanceCollection>& get_provenance_cache();
 private:
 	NopCacheWrapper<GenericRaster> raster_cache;
 	NopCacheWrapper<PointCollection> point_cache;
 	NopCacheWrapper<LineCollection> line_cache;
 	NopCacheWrapper<PolygonCollection> poly_cache;
 	NopCacheWrapper<GenericPlot> plot_cache;
+	NopCacheWrapper<ProvenanceCollection> provenance_cache;
 };
 
 /**

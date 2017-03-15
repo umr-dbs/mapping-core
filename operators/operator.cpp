@@ -302,6 +302,30 @@ std::unique_ptr<ProvenanceCollection> GenericOperator::getFullProvenance() {
 	return provenance;
 }
 
+std::unique_ptr<ProvenanceCollection> GenericOperator::getCachedFullProvenance(const QueryRectangle &rect, const QueryTools &tools) {
+	QueryProfiler &parent_profiler = tools.profiler;
+	QueryProfilerSimpleGuard parent_guard(parent_profiler);
+
+	//	TODO: do we want plots to allow resolutions?
+	auto &cache = CacheManager::get_instance().get_provenance_cache();
+	std::unique_ptr<ProvenanceCollection> result;
+	try {
+		result = cache.query( *this, rect, parent_profiler );
+	} catch ( NoSuchElementException &nse ) {
+		QueryProfilerStoppingGuard stop_guard(parent_profiler);
+		QueryProfiler exec_profiler;
+		{
+			QueryProfilerRunningGuard guard(parent_profiler, exec_profiler);
+			TIME_EXEC("Operator.getPlot");
+			result = getFullProvenance();
+		}
+		d_profile(depth, type, "provenance", exec_profiler);
+		if ( cache.put(semantic_id,result, rect, exec_profiler) )
+			parent_profiler.cached(exec_profiler);
+	}
+	return result;
+}
+
 
 std::unique_ptr<GenericRaster> GenericOperator::getRasterFromSource(int idx, const QueryRectangle &rect, const QueryTools &tools, RasterQM query_mode) {
 	if (idx < 0 || idx >= sourcecounts[0])

@@ -88,6 +88,10 @@ CacheWrapper<GenericPlot>& NopCacheManager::get_plot_cache() {
 	return plot_cache;
 }
 
+CacheWrapper<ProvenanceCollection>& NopCacheManager::get_provenance_cache() {
+	return provenance_cache;
+}
+
 //
 // Client Implementation
 //

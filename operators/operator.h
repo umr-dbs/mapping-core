@@ -75,6 +75,7 @@ class GenericOperator {
 		std::unique_ptr<GenericPlot> getCachedPlot(const QueryRectangle &rect, const QueryTools &tools);
 
 		std::unique_ptr<ProvenanceCollection> getFullProvenance();
+		std::unique_ptr<ProvenanceCollection> getCachedFullProvenance(const QueryRectangle &rect, const QueryTools &tools);
 
 		const std::string &getType() const { return type; }
 		const std::string &getSemanticId() const { return semantic_id; }

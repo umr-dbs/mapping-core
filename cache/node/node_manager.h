@@ -277,12 +277,15 @@ public:
 	 * @return the wrapper for the plot-cache
 	 */
 	NodeCacheWrapper<GenericPlot>& get_plot_cache();
+
+	NodeCacheWrapper<ProvenanceCollection>& get_provenance_cache();
 private:
 	mutable std::unique_ptr<NodeCacheWrapper<GenericRaster>> raster_wrapper;
 	mutable std::unique_ptr<NodeCacheWrapper<PointCollection>> point_wrapper;
 	mutable std::unique_ptr<NodeCacheWrapper<LineCollection>> line_wrapper;
 	mutable std::unique_ptr<NodeCacheWrapper<PolygonCollection>> polygon_wrapper;
 	mutable std::unique_ptr<NodeCacheWrapper<GenericPlot>> plot_wrapper;
+	mutable std::unique_ptr<NodeCacheWrapper<ProvenanceCollection>> provenance_wrapper;
 
 	// Holds the actual caching-strategy to use
 	std::unique_ptr<CachingStrategy> strategy;

@@ -194,6 +194,10 @@ NodeCacheWrapper<GenericPlot>& NodeCacheManager::get_plot_cache() {
 	return *plot_wrapper;
 }
 
+NodeCacheWrapper<ProvenanceCollection>& NodeCacheManager::get_provenance_cache() {
+	return *provenance_wrapper;
+}
+
 
 
 std::unique_ptr<NodeCacheManager> NodeCacheManager::from_config( const NodeConfig &config ) {
