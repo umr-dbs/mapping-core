@@ -145,7 +145,10 @@ void CSVSourceOperator::writeSemanticParameters(std::ostringstream& stream) {
 #ifndef MAPPING_OPERATOR_STUBS
 
 void CSVSourceOperator::getProvenance(ProvenanceCollection &pc) {
-	provenance.local_identifier = "data." + getType() + "." + filename;
+	// CSV with data URI does not require permission, because the data is supplied by the user
+	if(filename.find("data:") != 0) {
+		provenance.local_identifier = "data." + getType() + "." + filename;
+	}
 
 	pc.add(provenance);
 }

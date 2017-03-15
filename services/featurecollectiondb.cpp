@@ -4,6 +4,16 @@
 
 #include "services/ogcservice.h"
 #include "featurecollectiondb/featurecollectiondb.h"
+#include "util/enumconverter.h"
+
+static const std::vector< std::pair<Query::ResultType, std::string> > featureTypeMap = {
+	std::make_pair(Query::ResultType::POINTS, "points"),
+	std::make_pair(Query::ResultType::LINES, "lines"),
+	std::make_pair(Query::ResultType::POLYGONS, "polygons"),
+};
+
+static EnumConverter<Query::ResultType> featureTypeConverter(featureTypeMap);
+
 
 /*
  * This service allow storing the result of a query in the featurecollectiondb
@@ -70,13 +80,14 @@ Json::Value FeatureCollectionDBService::metaDataToJson(const FeatureCollectionDB
 
 void FeatureCollectionDBService::run() {
 	auto session = UserDB::loadSession(params.get("sessiontoken"));
+	auto& user = session->getUser();
 
 	try {
 	std::string request = params.get("request");
 
 	if(request == "save") {
-		std::string query = params.get("query", "");
-		if(query == "")
+		std::string queryString = params.get("query", "");
+		if(queryString == "")
 			throw ArgumentException("FeatureCollectionDBService: no query specified");
 
 		if(!params.hasParam("crs"))
@@ -99,8 +110,6 @@ void FeatureCollectionDBService::run() {
 
 		TemporalReference tref = parseTime(params);
 
-		auto graph = GenericOperator::fromJSON(query);
-
 		QueryProfiler profiler;
 
 		QueryResolution qres = QueryResolution::none();
@@ -112,15 +121,19 @@ void FeatureCollectionDBService::run() {
 		);
 
 		std::string type = params.get("type", "");
+
+		Query query(queryString, featureTypeConverter.from_string(type), rect);
+		auto result = processQuery(query, user);
+
 		FeatureCollectionDB::DataSetMetaData metaData;
 		if(type == "points") {
-			auto points = graph->getCachedPointCollection(rect, QueryTools(profiler));
+			auto points = result->getPointCollection(GenericOperator::FeatureCollectionQM::ANY_FEATURE);
 			metaData = FeatureCollectionDB::createPoints(session->getUser(), name, *points);
 		} else if(type == "lines") {
-			auto lines = graph->getCachedLineCollection(rect, QueryTools(profiler));
+			auto lines = result->getLineCollection(GenericOperator::FeatureCollectionQM::ANY_FEATURE);
 			metaData = FeatureCollectionDB::createLines(session->getUser(), name, *lines);
 		} else if(type == "polygons") {
-			auto polygons = graph->getCachedPolygonCollection(rect, QueryTools(profiler));
+			auto polygons = result->getPolygonCollection(GenericOperator::FeatureCollectionQM::ANY_FEATURE);
 			metaData = FeatureCollectionDB::createPolygons(session->getUser(), name, *polygons);
 		} else {
 			throw ArgumentException("FeatureCollectionDBService: invalid type");
