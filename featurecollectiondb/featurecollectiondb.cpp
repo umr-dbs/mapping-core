@@ -57,31 +57,34 @@ std::vector<FeatureCollectionDB::DataSetMetaData> FeatureCollectionDB::loadDataS
 	return featurecollectiondb_backend->loadDataSetsMetaData(user);
 }
 
-std::unique_ptr<PointCollection> FeatureCollectionDB::loadPoints(datasetid_t dataSetId, const QueryRectangle &qrect) {
-	return featurecollectiondb_backend->loadPoints(dataSetId, qrect);
+std::unique_ptr<PointCollection> FeatureCollectionDB::loadPoints(const std::string &owner, const std::string &dataSetName, const QueryRectangle &qrect) {
+	auto user = UserDB::loadUser(owner);
+	return featurecollectiondb_backend->loadPoints(*user, dataSetName, qrect);
 }
 
-std::unique_ptr<LineCollection> FeatureCollectionDB::loadLines(datasetid_t dataSetId, const QueryRectangle &qrect) {
-	return featurecollectiondb_backend->loadLines(dataSetId, qrect);
+std::unique_ptr<LineCollection> FeatureCollectionDB::loadLines(const std::string &owner, const std::string &dataSetName, const QueryRectangle &qrect) {
+	auto user = UserDB::loadUser(owner);
+	return featurecollectiondb_backend->loadLines(*user, dataSetName, qrect);
 }
 
-std::unique_ptr<PolygonCollection> FeatureCollectionDB::loadPolygons(datasetid_t dataSetId, const QueryRectangle &qrect) {
-	return featurecollectiondb_backend->loadPolygons(dataSetId, qrect);
+std::unique_ptr<PolygonCollection> FeatureCollectionDB::loadPolygons(const std::string &owner, const std::string &dataSetName, const QueryRectangle &qrect) {
+	auto user = UserDB::loadUser(owner);
+	return featurecollectiondb_backend->loadPolygons(*user, dataSetName, qrect);
 }
 
 
 FeatureCollectionDB::DataSetMetaData FeatureCollectionDB::createPoints(UserDB::User &user, const std::string &dataSetName, const PointCollection &collection) {
 	datasetid_t datasetId = featurecollectiondb_backend->createPoints(user, dataSetName, collection);
-	return featurecollectiondb_backend->loadDataSetMetaData(datasetId);
+	return featurecollectiondb_backend->loadDataSetMetaData(user, dataSetName);
 }
 
 FeatureCollectionDB::DataSetMetaData FeatureCollectionDB::createLines(UserDB::User &user, const std::string &dataSetName, const LineCollection &collection) {
 	datasetid_t datasetId = featurecollectiondb_backend->createLines(user, dataSetName, collection);
-	return featurecollectiondb_backend->loadDataSetMetaData(datasetId);
+	return featurecollectiondb_backend->loadDataSetMetaData(user, dataSetName);
 }
 
 FeatureCollectionDB::DataSetMetaData FeatureCollectionDB::createPolygons(UserDB::User &user, const std::string &dataSetName, const PolygonCollection &collection) {
 	datasetid_t datasetId = featurecollectiondb_backend->createPolygons(user, dataSetName, collection);
-	return featurecollectiondb_backend->loadDataSetMetaData(datasetId);
+	return featurecollectiondb_backend->loadDataSetMetaData(user, dataSetName);
 }
 

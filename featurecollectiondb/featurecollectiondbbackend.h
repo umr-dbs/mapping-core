@@ -33,7 +33,7 @@ public:
 	/**
 	 * load meta data for a given data set
 	 */
-	virtual DataSetMetaData loadDataSetMetaData(datasetid_t dataSetId) = 0;
+	virtual DataSetMetaData loadDataSetMetaData(const UserDB::User &owner, const std::string &dataSetName) = 0;
 
 	/**
 	 * create a data set for given user
@@ -53,17 +53,17 @@ public:
 	/**
 	 * load the data of the given data set
 	 */
-	virtual std::unique_ptr<PointCollection> loadPoints(datasetid_t dataSetId, const QueryRectangle &qrect) = 0;
+	virtual std::unique_ptr<PointCollection> loadPoints(const UserDB::User &owner, const std::string &dataSetName, const QueryRectangle &qrect) = 0;
 
 	/**
 	 * load the data of the given data set
 	 */
-	virtual std::unique_ptr<LineCollection> loadLines(datasetid_t dataSetId, const QueryRectangle &qrect) = 0;
+	virtual std::unique_ptr<LineCollection> loadLines(const UserDB::User &owner, const std::string &dataSetName, const QueryRectangle &qrect) = 0;
 
 	/**
 	 * load the data of the given data set
 	 */
-	virtual std::unique_ptr<PolygonCollection> loadPolygons(datasetid_t dataSetId, const QueryRectangle &qrect) = 0;
+	virtual std::unique_ptr<PolygonCollection> loadPolygons(const UserDB::User &owner, const std::string &dataSetName, const QueryRectangle &qrect) = 0;
 
 };
 
