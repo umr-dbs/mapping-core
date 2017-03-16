@@ -266,6 +266,12 @@ std::unique_ptr<GenericPlot> PuzzleUtil::compute(GenericOperator& op,
 	return op.getCachedPlot(query, QueryTools(qp));
 }
 
+template<>
+std::unique_ptr<ProvenanceCollection> PuzzleUtil::compute(GenericOperator& op,
+		const QueryRectangle& query, QueryProfiler& qp) {
+	return op.getCachedFullProvenance(query, QueryTools(qp));
+}
+
 //
 // Puzzle
 //
@@ -303,6 +309,15 @@ std::unique_ptr<GenericPlot> PuzzleUtil::puzzle(
 	(void) bbox;
 	(void) items;
 	throw OperatorException("Puzzling not supported for plots");
+}
+
+template<>
+std::unique_ptr<ProvenanceCollection> PuzzleUtil::puzzle(
+		const SpatioTemporalReference& bbox,
+		const std::vector<std::shared_ptr<const ProvenanceCollection> >& items) {
+	(void) bbox;
+	(void) items;
+	throw OperatorException("Puzzling not supported for provenance");
 }
 
 template<>

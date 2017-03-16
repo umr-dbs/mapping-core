@@ -306,11 +306,13 @@ std::unique_ptr<ProvenanceCollection> GenericOperator::getCachedFullProvenance(c
 	QueryProfiler &parent_profiler = tools.profiler;
 	QueryProfilerSimpleGuard parent_guard(parent_profiler);
 
-	//	TODO: do we want plots to allow resolutions?
+	// TODO: think about the semantics of provenance!
+	QueryRectangle fullRect(SpatialReference::extent(rect.epsg), TemporalReference(rect.timetype), QueryResolution::none());
+
 	auto &cache = CacheManager::get_instance().get_provenance_cache();
 	std::unique_ptr<ProvenanceCollection> result;
 	try {
-		result = cache.query( *this, rect, parent_profiler );
+		result = cache.query( *this, fullRect, parent_profiler );
 	} catch ( NoSuchElementException &nse ) {
 		QueryProfilerStoppingGuard stop_guard(parent_profiler);
 		QueryProfiler exec_profiler;
@@ -320,7 +322,7 @@ std::unique_ptr<ProvenanceCollection> GenericOperator::getCachedFullProvenance(c
 			result = getFullProvenance();
 		}
 		d_profile(depth, type, "provenance", exec_profiler);
-		if ( cache.put(semantic_id,result, rect, exec_profiler) )
+		if ( cache.put(semantic_id,result, fullRect, exec_profiler) )
 			parent_profiler.cached(exec_profiler);
 	}
 	return result;
