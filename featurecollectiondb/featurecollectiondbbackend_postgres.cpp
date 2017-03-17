@@ -254,7 +254,7 @@ void PostgresFeatureCollectionDBBackend::insertDataIntoTable(pqxx::work &work, c
 
 	query << "geom, feature_index";
 	// TODO: SRID
-	placeholders << "ST_GeomFromText($" << parameterId++ << "),$" << parameterId++;
+	placeholders << "ST_SetSRID(ST_GeomFromText($" << parameterId++ << "),$" << parameterId++;
 
 	query << ") VALUES (" << placeholders.str() << ")";
 
@@ -346,13 +346,18 @@ void PostgresFeatureCollectionDBBackend::loadFeatures(SimpleFeatureCollection &c
 	query << "ST_AsEWKT(geom) geom";
 
 	// TODO get tableName from registry?
-	// TODO filter by query rectangle
-	query << " FROM dataset_" << metaData.dataSetId << " ORDER BY feature_index ASC";
+	query << " FROM dataset_" << metaData.dataSetId;
+	query << " WHERE ST_INTERSECTS(geom, ST_MakeEnvelope($1, $2, $3, $4)) AND ((to_timestamp(time_start), to_timestamp(time_end)) OVERLAPS (to_timestamp($5), to_timestamp($6)))";
+	query << " ORDER BY feature_index ASC";
 
 
 	pqxx::work work(connection);
 
-	pqxx::result result = work.exec(query);
+	std::string prepare = "select_" + dataSetName;
+	connection.unprepare(prepare);
+	connection.prepare(prepare, query.str());
+
+	pqxx::result result = work.prepared(prepare)(qrect.x1)(qrect.y1)(qrect.x2)(qrect.y2)(qrect.t1)(qrect.t2).exec();
 
 	// TODO: global attributes
 
