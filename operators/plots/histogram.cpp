@@ -178,6 +178,7 @@ struct histogram{
 std::unique_ptr<GenericPlot> createHistogram(SimpleFeatureCollection &features, std::string attribute, RangeMode rangeMode, double min, double max, size_t buckets){
 	auto &valueVector = features.feature_attributes.numeric(attribute);
 	size_t featureCount = features.getFeatureCount();
+	size_t numberOfValues;
 
 	switch(rangeMode){
 	case RangeMode::MINMAX:
@@ -187,12 +188,19 @@ std::unique_ptr<GenericPlot> createHistogram(SimpleFeatureCollection &features, 
 		min = std::numeric_limits<double>::max();
 		max = std::numeric_limits<double>::min();
 
+		numberOfValues = 0;
 		for (size_t i=0; i < featureCount; i++) {
 			double v = valueVector.get(i);
 			if (!std::isnan(v)) {
 				min = std::min(v, min);
 				max = std::max(v, max);
+				numberOfValues += 1;
 			}
+		}
+
+		if(numberOfValues == 0) {
+			min = 0;
+			max = 0;
 		}
 
 		if (min == max) {
