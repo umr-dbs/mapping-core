@@ -1,0 +1,34 @@
+{
+	"name" : "Load points",	
+	"query_result": "points",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 0
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },
+	"query" : 
+	{
+		"params" : 
+		{
+			"filename" : "data:text/plain,x,y,a,b\n0,0,1,2\n0,0,asdf,qwert",
+			"geometry": "xy",
+			"time": "none",
+			"on_error": "skip",
+			"columns": {
+				"x": "x",
+				"y": "y",
+				"numeric": ["a", "b"],
+				"textual": []
+			}
+		},
+		"sources" : null,
+		"type" : "csv_source"
+	},
+	"query_expected_hash" : "6092ba422907fcd5ff71ac93a819b83bbc5fecb4"
+}
