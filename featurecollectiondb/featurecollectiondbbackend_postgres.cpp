@@ -4,6 +4,7 @@
 #include "datatypes/simplefeaturecollections/wkbutil.h"
 #include "util/exceptions.h"
 #include "util/enumconverter.h"
+#include "util/make_unique.h"
 
 #include <memory>
 #include <pqxx/pqxx>
@@ -31,7 +32,7 @@ public:
 	virtual std::unique_ptr<PolygonCollection> loadPolygons(const UserDB::User &owner, const std::string& dataSetName, const QueryRectangle &qrect);
 
 private:
-	pqxx::connection connection;
+
 
 	virtual FeatureCollectionDBBackend::datasetid_t createFeatureCollection(UserDB::User &user, const std::string &dataSetName, const SimpleFeatureCollection &collection, const Query::ResultType &type);
 	FeatureCollectionDBBackend::datasetid_t createDataSet(pqxx::work &work, const UserDB::User &user, const std::string &dataSetName, const Query::ResultType type, const SimpleFeatureCollection &collection);
@@ -40,11 +41,24 @@ private:
 	FeatureCollectionDBBackend::DataSetMetaData dataSetRowToMetaData(pqxx::result::tuple& row);
 	void loadFeatures(SimpleFeatureCollection &collection,const Query::ResultType &type, const UserDB::User &owner, const std::string &dataSetName, const QueryRectangle &qrect);
 
+	std::string connectionString;
 };
+
 
 REGISTER_FEATURECOLLECTIONDB_BACKEND(PostgresFeatureCollectionDBBackend, "postgres");
 
-PostgresFeatureCollectionDBBackend::PostgresFeatureCollectionDBBackend(const std::string &connectionString) : connection(connectionString){
+static thread_local std::unique_ptr<pqxx::connection> _connection;
+
+static pqxx::connection& getConnection(const std::string& connectionString) {
+	if(_connection.get() == nullptr) {
+		_connection = make_unique<pqxx::connection>(connectionString);
+	}
+
+	return *_connection;
+}
+
+PostgresFeatureCollectionDBBackend::PostgresFeatureCollectionDBBackend(const std::string &connectionString) : connectionString(connectionString){
+	auto& connection = getConnection(connectionString);
 
 	// TODO: global attributes
 	// TODO: simple or multi features
@@ -66,7 +80,10 @@ PostgresFeatureCollectionDBBackend::~PostgresFeatureCollectionDBBackend() {
 }
 
 
+
 std::vector<FeatureCollectionDBBackend::DataSetMetaData> PostgresFeatureCollectionDBBackend::loadDataSetsMetaData(UserDB::User &user) {
+	auto& connection = getConnection(connectionString);
+
 	std::vector<FeatureCollectionDB::DataSetMetaData> dataSets;
 
 	// TODO: resolve all data sets the user has access to (rights)
@@ -126,6 +143,8 @@ FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::
 }
 
 FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::loadDataSetMetaData(const UserDB::User &owner, const std::string &dataSetName) {
+	auto& connection = getConnection(connectionString);
+
 	// TODO avoid preparing statements redundantly
 	connection.prepare("select_dataset_by_owner_name", "SELECT datasetid, userid, name, type, numeric_attributes, textual_attributes, has_time FROM datasets WHERE userid = $1 AND name = $2");
 	pqxx::work work(connection);
@@ -142,6 +161,8 @@ FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::
 }
 
 FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::loadDataSetMetaData(datasetid_t dataSetId) {
+	auto& connection = getConnection(connectionString);
+
 	connection.prepare("select_dataset_by_id", "SELECT datasetid, userid, name, type, numeric_attributes, textual_attributes, has_time FROM datasets WHERE datasetid = $1");
 	pqxx::work work(connection);
 
@@ -158,6 +179,8 @@ FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::
 
 
 FeatureCollectionDBBackend::datasetid_t PostgresFeatureCollectionDBBackend::createDataSet(pqxx::work &work, const UserDB::User &user, const std::string &dataSetName, const Query::ResultType type, const SimpleFeatureCollection &collection) {
+	auto& connection = getConnection(connectionString);
+
 	connection.prepare("insert_dataset", "INSERT INTO datasets (userid, name, type, numeric_attributes, textual_attributes, has_time) VALUES ($1, $2, $3, $4, $5, $6) RETURNING datasetid");
 
 	Json::Value numeric_attributes(Json::arrayValue);
@@ -225,6 +248,8 @@ void PostgresFeatureCollectionDBBackend::createDataSetTable(pqxx::work &work, co
 }
 
 void PostgresFeatureCollectionDBBackend::insertDataIntoTable(pqxx::work &work, const std::string &tableName, const SimpleFeatureCollection &collection) {
+	auto& connection = getConnection(connectionString);
+
 	// build the insert statement
 	std::stringstream query;
 	std::stringstream placeholders;
@@ -287,6 +312,8 @@ void PostgresFeatureCollectionDBBackend::insertDataIntoTable(pqxx::work &work, c
 
 
 FeatureCollectionDBBackend::datasetid_t PostgresFeatureCollectionDBBackend::createFeatureCollection(UserDB::User &user, const std::string &dataSetName, const SimpleFeatureCollection &collection, const Query::ResultType &type) {
+	auto& connection = getConnection(connectionString);
+
 	pqxx::work work(connection);
 
 	size_t dataSetId = createDataSet(work, user, dataSetName, type, collection);
@@ -318,6 +345,8 @@ FeatureCollectionDBBackend::datasetid_t PostgresFeatureCollectionDBBackend::crea
 }
 
 void PostgresFeatureCollectionDBBackend::loadFeatures(SimpleFeatureCollection &collection, const Query::ResultType &type, const UserDB::User &owner, const std::string &dataSetName, const QueryRectangle &qrect) {
+	auto& connection = getConnection(connectionString);
+
 	//get meta data
 	auto metaData = loadDataSetMetaData(owner, dataSetName);
 
@@ -347,7 +376,10 @@ void PostgresFeatureCollectionDBBackend::loadFeatures(SimpleFeatureCollection &c
 
 	// TODO get tableName from registry?
 	query << " FROM dataset_" << metaData.dataSetId;
-	query << " WHERE ST_INTERSECTS(geom, ST_MakeEnvelope($1, $2, $3, $4)) AND ((to_timestamp(time_start), to_timestamp(time_end)) OVERLAPS (to_timestamp($5), to_timestamp($6)))";
+	query << " WHERE ST_INTERSECTS(geom, ST_MakeEnvelope($1, $2, $3, $4))";
+	if(metaData.hasTime) {
+		query << " AND ((to_timestamp(time_start), to_timestamp(time_end)) OVERLAPS (to_timestamp($5), to_timestamp($6)))";
+	}
 	query << " ORDER BY feature_index ASC";
 
 
@@ -357,7 +389,13 @@ void PostgresFeatureCollectionDBBackend::loadFeatures(SimpleFeatureCollection &c
 	connection.unprepare(prepare);
 	connection.prepare(prepare, query.str());
 
-	pqxx::result result = work.prepared(prepare)(qrect.x1)(qrect.y1)(qrect.x2)(qrect.y2)(qrect.t1)(qrect.t2).exec();
+	auto prep = work.prepared(prepare);
+	prep(qrect.x1)(qrect.y1)(qrect.x2)(qrect.y2);
+	if(metaData.hasTime) {
+		prep(qrect.t1)(qrect.t2);
+	}
+
+	pqxx::result result = prep.exec();
 
 	// TODO: global attributes
 
