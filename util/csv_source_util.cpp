@@ -310,7 +310,6 @@ void CSVSourceUtil::readAnyCollection(SimpleFeatureCollection *collection, std::
 						throw OperatorException(concat("CSVSource: error parsing double value from string '", tuple[pos_numeric[k]], "' on feature #", current_idx));
 					case ErrorHandling::SKIP:
 						collection->removeLastFeature();
-						fprintf(stderr, "skip numeric\n");
 						added = false;
 						break;
 					case ErrorHandling::KEEP:
