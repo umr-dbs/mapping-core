@@ -36,6 +36,11 @@ public:
 	virtual DataSetMetaData loadDataSetMetaData(const UserDB::User &owner, const std::string &dataSetName) = 0;
 
 	/**
+	 * load meta data for a given data set
+	 */
+	virtual DataSetMetaData loadDataSetMetaData(datasetid_t dataSetId) = 0;
+
+	/**
 	 * create a data set for given user
 	 */
 	virtual datasetid_t createPoints(UserDB::User &user, const std::string &dataSetName, const PointCollection &collection) = 0;

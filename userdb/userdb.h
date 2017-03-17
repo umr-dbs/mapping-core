@@ -45,6 +45,7 @@ class UserDB {
 
 		class Permissions {
 			friend class UserDB;
+			friend class FeatureCollectionDB;
 			public:
 				Permissions() = default;
 				void addPermission(const std::string &permission);

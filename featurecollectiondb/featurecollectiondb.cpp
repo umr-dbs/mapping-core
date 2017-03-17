@@ -4,6 +4,7 @@
 #include "util/configuration.h"
 
 #include <unordered_map>
+#include <string.h>
 
 
 
@@ -53,8 +54,24 @@ void FeatureCollectionDB::shutdown() {
 
 
 std::vector<FeatureCollectionDB::DataSetMetaData> FeatureCollectionDB::loadDataSets(UserDB::User& user) {
-	// TODO: resolve user permissions to load all accessible data sets (shared)
+	std::vector<FeatureCollectionDB::DataSetMetaData> dataSets;
+
+	// resolve accessible data sets
+	// TODO: implement a getPermissions(prefix) method for users to avoid scanning through ALL permissions
+	for(const std::string &permission : user.all_permissions.set) {
+		if(permission.find("data.featurecollectiondb.") == 0){
+			size_t artifactid = std::stoi(permission.substr(strlen("data.featurecollectiondb.")));
+			auto dataSet = featurecollectiondb_backend->loadDataSetMetaData(artifactid);
+			dataSets.push_back(dataSet);
+		}
+	}
+
 	return featurecollectiondb_backend->loadDataSetsMetaData(user);
+}
+
+FeatureCollectionDB::DataSetMetaData FeatureCollectionDB::loadDataSet(const std::string &owner, const std::string &dataSetName) {
+	auto user = UserDB::loadUser(owner);
+	return featurecollectiondb_backend->loadDataSetMetaData(*user, dataSetName);
 }
 
 std::unique_ptr<PointCollection> FeatureCollectionDB::loadPoints(const std::string &owner, const std::string &dataSetName, const QueryRectangle &qrect) {

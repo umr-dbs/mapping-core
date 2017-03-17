@@ -35,6 +35,7 @@ class FeatureCollectionDBSourceOperator : public GenericOperator {
 		virtual std::unique_ptr<PointCollection> getPointCollection(const QueryRectangle &rect, const QueryTools &tools);
 		virtual std::unique_ptr<LineCollection> getLineCollection(const QueryRectangle &rect, const QueryTools &tools);
 		virtual std::unique_ptr<PolygonCollection> getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools);
+		virtual void getProvenance(ProvenanceCollection &pc);
 		#endif
 
 	private:
@@ -55,6 +56,14 @@ std::unique_ptr<LineCollection> FeatureCollectionDBSourceOperator::getLineCollec
 
 std::unique_ptr<PolygonCollection> FeatureCollectionDBSourceOperator::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools){
 	return FeatureCollectionDB::loadPolygons(owner, dataSetName, rect);
+}
+
+void FeatureCollectionDBSourceOperator::getProvenance(ProvenanceCollection &pc) {
+	std::string local_identifier = concat("data.", getType(), ".", FeatureCollectionDB::loadDataSet(owner, dataSetName).dataSetId);
+
+	// TODO: load provenance
+
+	pc.add(Provenance("", "", "", local_identifier));
 }
 
 
