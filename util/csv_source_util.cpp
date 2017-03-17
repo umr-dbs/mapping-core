@@ -317,9 +317,13 @@ void CSVSourceUtil::readAnyCollection(SimpleFeatureCollection *collection, std::
 						collection->feature_attributes.numeric(columns_numeric[k]).set(current_idx, value);
 				}
 			}
+			if (!added) {
+				break;
+			}
 		}
-		if (!added)
+		if (!added) {
 			continue;
+		}
 		for (size_t k=0;k<columns_textual.size();k++) {
 			collection->feature_attributes.textual(columns_textual[k]).set(current_idx, tuple[pos_textual[k]]);
 		}

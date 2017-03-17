@@ -398,7 +398,7 @@ void PointCollection::validateSpecifics() const {
 
 void PointCollection::removeLastFeature(){
 	bool isTime = hasTime();
-	if(start_feature.back() == coordinates.size()){
+	if((start_feature.size() > 1) && (start_feature.back() == coordinates.size())){
 		start_feature.pop_back();
 	}
 	coordinates.erase(coordinates.begin() + start_feature.back(), coordinates.end());
@@ -407,7 +407,9 @@ void PointCollection::removeLastFeature(){
 	size_t featureCount = getFeatureCount();
 
 	if(isTime) {
+		fprintf(stderr, "%d\n", featureCount);
 		time.resize(featureCount);
+
 	}
 	feature_attributes.resize(featureCount);
 }
