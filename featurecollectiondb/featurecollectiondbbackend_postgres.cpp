@@ -254,7 +254,7 @@ void PostgresFeatureCollectionDBBackend::insertDataIntoTable(pqxx::work &work, c
 
 	query << "geom, feature_index";
 	// TODO: SRID
-	placeholders << "ST_SetSRID(ST_GeomFromText($" << parameterId++ << "),$" << parameterId++;
+	placeholders << "ST_GeomFromText($" << parameterId++ << "),$" << parameterId++;
 
 	query << ") VALUES (" << placeholders.str() << ")";
 
