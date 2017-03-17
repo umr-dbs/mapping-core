@@ -127,10 +127,10 @@ FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::
 
 FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::loadDataSetMetaData(const UserDB::User &owner, const std::string &dataSetName) {
 	// TODO avoid preparing statements redundantly
-	connection.prepare("select_dataset", "SELECT datasetid, userid, name, type, numeric_attributes, textual_attributes, has_time FROM datasets WHERE userid = $1 AND name = $2");
+	connection.prepare("select_dataset_by_owner_name", "SELECT datasetid, userid, name, type, numeric_attributes, textual_attributes, has_time FROM datasets WHERE userid = $1 AND name = $2");
 	pqxx::work work(connection);
 
-	pqxx::result result = work.prepared("select_dataset")(owner.userid)(dataSetName).exec();
+	pqxx::result result = work.prepared("select_dataset_by_owner_name")(owner.userid)(dataSetName).exec();
 
 	if(result.size() < 1) {
 		throw ArgumentException("PostgresFeatureCollectionDB: data set with given owner and name does not exist");
@@ -142,10 +142,10 @@ FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::
 }
 
 FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::loadDataSetMetaData(datasetid_t dataSetId) {
-	connection.prepare("select_dataset", "SELECT datasetid, userid, name, type, numeric_attributes, textual_attributes, has_time FROM datasets WHERE datasetid = $1");
+	connection.prepare("select_dataset_by_id", "SELECT datasetid, userid, name, type, numeric_attributes, textual_attributes, has_time FROM datasets WHERE datasetid = $1");
 	pqxx::work work(connection);
 
-	pqxx::result result = work.prepared("select_dataset")(dataSetId).exec();
+	pqxx::result result = work.prepared("select_dataset_by_id")(dataSetId).exec();
 
 	if(result.size() < 1) {
 		throw ArgumentException("PostgresFeatureCollectionDB: data set with given id does not exist");
