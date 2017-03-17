@@ -904,6 +904,17 @@ TEST(PolygonCollection, removeLastFeature){
 	CollectionTestUtil::checkEquality(*result, *polygons);
 }
 
+TEST(PolygonCollection, removeLastFeatureEmptyCollection){
+	auto polygons = make_unique<PolygonCollection>(SpatioTemporalReference::unreferenced());
+
+	polygons->removeLastFeature();
+	polygons->validate();
+
+	auto result = make_unique<PolygonCollection>(SpatioTemporalReference::unreferenced());
+
+	CollectionTestUtil::checkEquality(*result, *polygons);
+}
+
 TEST(PolygonCollection, removeLastFeatureUnfinishedRing){
 	auto polygons = createPolygonsWithAttributesAndTime();
 

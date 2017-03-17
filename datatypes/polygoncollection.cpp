@@ -469,9 +469,9 @@ void PolygonCollection::validateSpecifics() const {
 
 void PolygonCollection::removeLastFeature(){
 	bool isTime = hasTime();
-	if(start_feature.back() == start_polygon.size() - 1  &&
-			start_polygon.back() == start_ring.size() -1 &&
-			start_ring.back() == coordinates.size()){
+	if((start_feature.size() > 1) && (start_feature.back() == start_polygon.size() - 1)  &&
+			(start_polygon.back() == start_ring.size() -1) &&
+			(start_ring.back() == coordinates.size())){
 		start_feature.pop_back();
 	}
 	start_polygon.erase(start_polygon.begin() + start_feature.back() + 1, start_polygon.end());

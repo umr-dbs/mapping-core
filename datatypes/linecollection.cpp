@@ -238,7 +238,7 @@ void LineCollection::validateSpecifics() const {
 
 void LineCollection::removeLastFeature(){
 	bool isTime = hasTime();
-	if(start_feature.back() == start_line.size() - 1 && start_line.back() == coordinates.size()){
+	if((start_feature.size() > 1) && (start_feature.back() == start_line.size() - 1) && (start_line.back() == coordinates.size())){
 		start_feature.pop_back();
 	}
 	start_line.erase(start_line.begin() + start_feature.back() + 1, start_line.end());

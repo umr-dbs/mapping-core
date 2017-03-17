@@ -622,6 +622,17 @@ TEST(LineCollection, removeLastFeature){
 	CollectionTestUtil::checkEquality(*result, *lines);
 }
 
+TEST(LineCollection, removeLastFeatureEmptyCollection){
+	auto lines = make_unique<LineCollection>(SpatioTemporalReference::unreferenced());
+
+	lines->removeLastFeature();
+	lines->validate();
+
+	auto result = make_unique<LineCollection>(SpatioTemporalReference::unreferenced());
+
+	CollectionTestUtil::checkEquality(*result, *lines);
+}
+
 TEST(LineCollection, removeLastFeatureUnfinishedLine){
 	auto lines = createLinesWithAttributesAndTime();
 

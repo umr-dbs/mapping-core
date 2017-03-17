@@ -630,6 +630,17 @@ TEST(PointCollection, removeLastFeature){
 	CollectionTestUtil::checkEquality(*result, *points);
 }
 
+TEST(PointCollection, removeLastFeatureEmptyCollection){
+	auto points = make_unique<PointCollection>(SpatioTemporalReference::unreferenced());
+
+	points->removeLastFeature();
+	points->validate();
+
+	auto result = make_unique<PointCollection>(SpatioTemporalReference::unreferenced());
+
+	CollectionTestUtil::checkEquality(*result, *points);
+}
+
 TEST(PointCollection, removeLastFeatureUnfinished){
 	auto points = createPointsWithAttributesAndTime();
 
