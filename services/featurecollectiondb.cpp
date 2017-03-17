@@ -139,7 +139,7 @@ void FeatureCollectionDBService::run() {
 			throw ArgumentException("FeatureCollectionDBService: invalid type");
 		}
 
-		// TODO: set permissions in userdb
+		user.addPermission(concat("data.featurecollectiondb_source.", metaData.dataSetId));
 
 		Json::Value json = metaDataToJson(metaData);
 		response.sendSuccessJSON(json);

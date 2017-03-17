@@ -43,6 +43,11 @@ public:
 	static std::vector<DataSetMetaData> loadDataSets(UserDB::User& user);
 
 	/**
+	 * Load Info of given data set
+	 */
+	static DataSetMetaData loadDataSet(const std::string &owner, const std::string &dataSetName);
+
+	/**
 	 * load a feature collection
 	 */
 	static std::unique_ptr<PointCollection> loadPoints(const std::string &owner, const std::string &dataSetName, const QueryRectangle &qrect);

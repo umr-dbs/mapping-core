@@ -22,6 +22,7 @@ public:
 
 	virtual std::vector<FeatureCollectionDBBackend::DataSetMetaData> loadDataSetsMetaData(UserDB::User &user);
 	virtual FeatureCollectionDBBackend::DataSetMetaData loadDataSetMetaData(const UserDB::User &owner, const std::string &dataSetName);
+	virtual DataSetMetaData loadDataSetMetaData(datasetid_t dataSetId);
 	virtual FeatureCollectionDBBackend::datasetid_t createPoints(UserDB::User &user, const std::string &dataSetName, const PointCollection &collection);
 	virtual FeatureCollectionDBBackend::datasetid_t createLines(UserDB::User &user, const std::string &dataSetName, const LineCollection &collection);
 	virtual FeatureCollectionDBBackend::datasetid_t createPolygons(UserDB::User &user, const std::string &dataSetName, const PolygonCollection &collection);
@@ -130,6 +131,21 @@ FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::
 	pqxx::work work(connection);
 
 	pqxx::result result = work.prepared("select_dataset")(owner.userid)(dataSetName).exec();
+
+	if(result.size() < 1) {
+		throw ArgumentException("PostgresFeatureCollectionDB: data set with given owner and name does not exist");
+	}
+
+	auto row = result[0];
+
+	return dataSetRowToMetaData(row);
+}
+
+FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::loadDataSetMetaData(datasetid_t dataSetId) {
+	connection.prepare("select_dataset", "SELECT datasetid, userid, name, type, numeric_attributes, textual_attributes, has_time FROM datasets WHERE datasetid = $1");
+	pqxx::work work(connection);
+
+	pqxx::result result = work.prepared("select_dataset")(dataSetId).exec();
 
 	if(result.size() < 1) {
 		throw ArgumentException("PostgresFeatureCollectionDB: data set with given id does not exist");
