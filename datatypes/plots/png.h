@@ -16,7 +16,7 @@ class PNGPlot : public GenericPlot {
 		const std::string toJSON() const;
 
 		std::unique_ptr<GenericPlot> clone() const {
-			return std::unique_ptr<GenericPlot>();
+			return make_unique<PNGPlot>(binary);
 		}
 
 	private:
