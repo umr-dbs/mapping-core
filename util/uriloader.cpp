@@ -3,6 +3,8 @@
 #include "util/make_unique.h"
 
 #include <fstream>
+#include <string.h>
+#include <algorithm>
 
 std::unique_ptr<std::istream> URILoader::loadFromURI(const std::string &uri) {
 
@@ -40,18 +42,32 @@ std::unique_ptr<std::istream> URILoader::loadFromURI(const std::string &uri) {
 			throw ArgumentException("URILoader: malformed data URI");
 		}
 
-		// TODO: avoid copy
-		std::string data = path.substr(dataSep + 1);
-
 		std::string mediaType;
+		std::string charset;
 		bool base64 = false;
 		if (dataSep > 0) {
-			// TODO: character encoding
 			// media type + base64 extension
-			size_t mediaTypeSep = path.find(";");
 
-			if (mediaTypeSep != std::string::npos && mediaTypeSep < dataSep) {
-				std::string encoding = path.substr(mediaTypeSep, dataSep);
+			// character encoding
+			size_t charsetSep = path.find(";charset=");
+			size_t encodingSep;
+			if(charsetSep != std::string::npos) {
+				size_t startPos = charsetSep + strlen(";charset=");
+				std::string rest = path.substr(startPos, dataSep - startPos);
+
+				encodingSep = rest.find(";");
+
+				if(encodingSep != std::string::npos) {
+					charset = rest.substr(0, encodingSep);
+				} else {
+					charset = rest;
+				}
+			} else {
+				encodingSep = path.find(";");
+			}
+
+			if (encodingSep != std::string::npos && encodingSep < dataSep) {
+				std::string encoding = path.substr(encodingSep + 1, dataSep - encodingSep - 1);
 				if (encoding == "base64") {
 					base64 = true;
 				} else {
@@ -59,8 +75,11 @@ std::unique_ptr<std::istream> URILoader::loadFromURI(const std::string &uri) {
 				}
 			}
 
-			mediaType = path.substr(0, dataSep);
+			mediaType = path.substr(0, std::min(dataSep, std::min(charsetSep, encodingSep)));
 		}
+
+		// TODO: avoid copy
+		std::string data = path.substr(dataSep + 1);
 
 
 		if (mediaType != "text/plain" || base64) {
