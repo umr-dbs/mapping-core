@@ -10,17 +10,10 @@ std::unique_ptr<std::istream> URILoader::loadFromURI(const std::string &uri) {
 
 	std::string scheme;
 	std::string path;
-	size_t schemePos = uri.find("://");
-	if (schemePos == std::string::npos) {
-		if (uri.find("data:") == 0) {
-			scheme = "data";
-			// TODO: avoid copy
-			path = uri.substr(5);
-		} else {
-			// fallback to file, should probably be removed
-			scheme = "file";
-			path = uri;
-		}
+	if (uri.find("data:") == 0) {
+		scheme = "data";
+		// TODO: avoid copy
+		path = uri.substr(5);
 	} else {
 		scheme = uri.substr(0, uri.find(("://")));
 		path = uri.substr(uri.find("://") + 3);

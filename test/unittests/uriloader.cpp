@@ -42,3 +42,9 @@ TEST(URILoader, dataUriCarchsetBase64) {
 	// TODO adjust once Base64 is supported
 	EXPECT_THROW(URILoader::loadFromURI("data:text/plain;charset=ASCII;base64,test"), ArgumentException);
 }
+
+TEST(URILoader, dataUriinUri) {
+	auto ss = URILoader::loadFromURI("data:text/plain,url: http://example.org");
+
+	EXPECT_EQ("url: http://example.org", getAsString(*ss));
+}
