@@ -16,8 +16,10 @@ class TextPlot : public GenericPlot {
 		const std::string toJSON() const;
 
 		std::unique_ptr<GenericPlot> clone() const {
-			return std::unique_ptr<GenericPlot>();
+			return make_unique<TextPlot>(text);
 		}
+
+
 
 	private:
 		std::string text;
