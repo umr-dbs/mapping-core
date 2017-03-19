@@ -8,6 +8,7 @@
 #include <archive_entry.h>
 #include <cstring>
 #include <vector>
+#include <algorithm>
 
 
 epsg_t OGCService::parseEPSG(const Parameters &params, const std::string &key, epsg_t defaultValue) {
@@ -186,7 +187,8 @@ void OGCService::exportZip(const char* data, size_t dataLength, const std::strin
 	struct archive *archive;
 	struct archive_entry *entry;
 
-	size_t bufferSize = dataLength * 2; //TODO determine reasonable size?
+	size_t minBufferSize = 1024 * 1024;
+	size_t bufferSize = std::max(minBufferSize, dataLength * 2); //TODO determine reasonable size?
 	std::vector<char> buffer(bufferSize);
 
 	archive = archive_write_new();
