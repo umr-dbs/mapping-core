@@ -20,10 +20,9 @@ static EnumConverter<Query::ResultType> featureTypeConverter(featureTypeMap);
  *
  * Operations:
  * - request = save: save the results of a query in the db
- *   - parameters
+ *   - parameters (based on OGC)
  *     - query: the query string
- *     - time_start
- *     - time_stop
+ *     - time: start/end
  *     - bbox
  *     - crs
  *     - type: points, lines, polyogons
