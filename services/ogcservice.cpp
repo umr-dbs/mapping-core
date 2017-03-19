@@ -170,7 +170,7 @@ void OGCService::outputSimpleFeatureCollectionARFF(SimpleFeatureCollection* coll
 	response << collection->toARFF();
 }
 
-void OGCService::exportZip(const char* data, size_t dataLength, const std::string &format, ProvenanceCollection &provenance) {
+void OGCService::exportZip(const std::string &operatorGraph, const char* data, size_t dataLength, const std::string &format, ProvenanceCollection &provenance) {
 	//data file name
 	std::string fileExtension;
 	if (format == "application/json")
@@ -183,12 +183,14 @@ void OGCService::exportZip(const char* data, size_t dataLength, const std::strin
 		throw ArgumentException("OGCService: unknown output format");
 	std::string fileName = "data." + fileExtension;
 
+	std::string provenanceJson = provenance.toJson();
+
 	//archive creation
 	struct archive *archive;
 	struct archive_entry *entry;
 
 	size_t minBufferSize = 1024 * 1024;
-	size_t bufferSize = std::max(minBufferSize, dataLength * 2); //TODO determine reasonable size?
+	size_t bufferSize = std::max(minBufferSize, operatorGraph.length() + dataLength + provenanceJson.length() + 1024);
 	std::vector<char> buffer(bufferSize);
 
 	archive = archive_write_new();
@@ -196,6 +198,17 @@ void OGCService::exportZip(const char* data, size_t dataLength, const std::strin
 	archive_write_set_format_zip(archive);
 	size_t used;
 	archive_write_open_memory(archive, buffer.data(), bufferSize, &used);
+
+	//operatorGraph
+	entry = archive_entry_new();
+	archive_entry_set_pathname(entry, "workflow.json");
+	archive_entry_set_size(entry, operatorGraph.length());
+	archive_entry_set_filetype(entry, AE_IFREG);
+	archive_entry_set_perm(entry, 0644);
+	archive_write_header(archive, entry);
+
+	archive_write_data(archive, operatorGraph.c_str(), operatorGraph.length());
+	archive_entry_free(entry);
 
 	//data
 	entry = archive_entry_new();
@@ -210,15 +223,15 @@ void OGCService::exportZip(const char* data, size_t dataLength, const std::strin
 
 	//provenance info
 	//TODO: format provenance info
-	std::string json = provenance.toJson();
+
 	entry = archive_entry_new();
-	archive_entry_set_pathname(entry, "provenance.txt");
-	archive_entry_set_size(entry, json.length());
+	archive_entry_set_pathname(entry, "provenance.json");
+	archive_entry_set_size(entry, provenanceJson.length());
 	archive_entry_set_filetype(entry, AE_IFREG);
 	archive_entry_set_perm(entry, 0644);
 	archive_write_header(archive, entry);
 
-	archive_write_data(archive, json.c_str(), json.length());
+	archive_write_data(archive, provenanceJson.c_str(), provenanceJson.length());
 	archive_entry_free(entry);
 
 	archive_write_close(archive);
