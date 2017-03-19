@@ -173,7 +173,7 @@ void WFSService::getFeature() {
 		throw ArgumentException("WFSService: unknown output format");
 
 	if(exportMode) {
-		exportZip(output.c_str(), output.length(), format, result->getProvenance());
+		exportZip(operatorgraph, output.c_str(), output.length(), format, result->getProvenance());
 	} else {
 		response.sendContentType(format + "; charset=utf-8");
 		response.finishHeaders();

@@ -24,7 +24,7 @@ class OGCService : public HTTPService {
 		void outputSimpleFeatureCollectionCSV(SimpleFeatureCollection *collection);
 		void outputSimpleFeatureCollectionARFF(SimpleFeatureCollection* collection);
 
-		void exportZip(const char* data, size_t dataLength, const std::string &format, ProvenanceCollection &provenance);
+		void exportZip(const std::string &operatorGraph, const char* data, size_t dataLength, const std::string &format, ProvenanceCollection &provenance);
 
 		static constexpr const char* EXPORT_MIME_PREFIX = "application/x-export;";
 };

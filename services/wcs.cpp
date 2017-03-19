@@ -166,7 +166,7 @@ void WCSService::run() {
 			throw ArgumentException("WCSService: unknown format");
 
 		if(exportMode) {
-			exportZip(reinterpret_cast<char*>(outDataBuffer), static_cast<size_t>(length), format, result->getProvenance());
+			exportZip(params.get("coverageid"), reinterpret_cast<char*>(outDataBuffer), static_cast<size_t>(length), format, result->getProvenance());
 		} else {
 			//put the HTML headers for download
 			//response.sendContentType("???"); // TODO
