@@ -60,9 +60,13 @@ std::vector<FeatureCollectionDB::DataSetMetaData> FeatureCollectionDB::loadDataS
 	// TODO: implement a getPermissions(prefix) method for users to avoid scanning through ALL permissions
 	for(const std::string &permission : user.all_permissions.set) {
 		if(permission.find("data.featurecollectiondb_source.") == 0){
-			size_t artifactid = std::stoi(permission.substr(strlen("data.featurecollectiondb_source.")));
-			auto dataSet = featurecollectiondb_backend->loadDataSetMetaData(artifactid);
-			dataSets.push_back(dataSet);
+			size_t dataSetId = std::stoi(permission.substr(strlen("data.featurecollectiondb_source.")));
+			try {
+				auto dataSet = featurecollectiondb_backend->loadDataSetMetaData(dataSetId);
+				dataSets.push_back(dataSet);
+			} catch (const std::exception& e) {
+				fprintf(stderr, "FeatureCollectionDB: Could not load dataset with id %d", dataSetId);
+			}
 		}
 	}
 
