@@ -183,7 +183,6 @@ std::unique_ptr<PointCollection> GenericOperator::getCachedPointCollection(const
 	try {
 		result = cache.query( *this, rect, parent_profiler );
 		if(rect.t1 > result->stref.t1 || rect.t2 < result->stref.t2) {
-			fprintf(stderr, "such filter\n");
 			result->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
 		}
 	} catch ( NoSuchElementException &nse ) {
