@@ -10,6 +10,7 @@
 #include <sstream>
 #include <cmath>
 #include <json/json.h>
+#include <ctime>
 
 
 /**
@@ -28,6 +29,7 @@ class RasterDBSourceOperator : public GenericOperator {
 #ifndef MAPPING_OPERATOR_STUBS
 		virtual void getProvenance(ProvenanceCollection &pc);
 		virtual std::unique_ptr<GenericRaster> getRaster(const QueryRectangle &rect, const QueryTools &tools);
+		virtual std::unique_ptr<GenericRaster> getCachedRaster(const QueryRectangle &rect, const QueryTools &tools, RasterQM query_mode);
 #endif
 	protected:
 		void writeSemanticParameters(std::ostringstream &stream);
@@ -82,4 +84,50 @@ void RasterDBSourceOperator::writeSemanticParameters(std::ostringstream &stream)
 	stream << "{\"sourcename\": \"" << sourcename << "\",";
 	stream << " \"channel\": " << channel << ",";
 	stream << " \"transform\": " << trans << "}";
+}
+
+std::unique_ptr<GenericRaster> RasterDBSourceOperator::getCachedRaster(const QueryRectangle &rect, const QueryTools &tools, RasterQM query_mode) {
+	// this is an ugly hack to avoid loading the 12 worldclim raster hundreds of times for long range computations
+	// it maps all requests to year 1970. as the rasters validity is periodical this does not change the result
+	if(sourcename == "worldclim") {
+
+		// change year to 1970
+		QueryRectangle fakeQrect(rect);
+		fakeQrect.epsg = rect.epsg;
+
+		time_t time = rect.t1;
+		std::tm tm;
+		gmtime_r(&time, &tm);
+
+		int originalYear = tm.tm_year;
+		tm.tm_year = 70;
+
+		time_t fakeTime = timegm(&tm);
+
+		fakeQrect.t1 = fakeTime + (rect.t1 - time);
+		fakeQrect.t2 = fakeQrect.t1 + fakeQrect.epsilon();
+
+		auto result = GenericOperator::getCachedRaster(fakeQrect, tools, query_mode);
+		SpatioTemporalReference stref(result->stref);
+		stref.epsg = result->stref.epsg;
+
+		// change year back
+		time = result->stref.t1;
+		gmtime_r(&time, &tm);
+		tm.tm_year = originalYear;
+		time = timegm(&tm);
+		stref.t1 = time;
+
+		time = result->stref.t2;
+		gmtime_r(&time, &tm);
+		tm.tm_year = originalYear;
+		time = timegm(&tm);
+		stref.t2 = time;
+
+		result->replaceSTRef(stref);
+
+		return result;
+	} else {
+		return GenericOperator::getCachedRaster(rect, tools, query_mode);
+	}
 }

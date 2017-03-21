@@ -68,7 +68,7 @@ class GenericOperator {
 
 		virtual ~GenericOperator();
 
-		std::unique_ptr<GenericRaster> getCachedRaster(const QueryRectangle &rect, const QueryTools &tools, RasterQM query_mode = RasterQM::LOOSE);
+		virtual std::unique_ptr<GenericRaster> getCachedRaster(const QueryRectangle &rect, const QueryTools &tools, RasterQM query_mode = RasterQM::LOOSE);
 		std::unique_ptr<PointCollection> getCachedPointCollection(const QueryRectangle &rect, const QueryTools &tools, FeatureCollectionQM query_mode = FeatureCollectionQM::ANY_FEATURE);
 		std::unique_ptr<LineCollection> getCachedLineCollection(const QueryRectangle &rect, const QueryTools &tools, FeatureCollectionQM query_mode = FeatureCollectionQM::ANY_FEATURE);
 		std::unique_ptr<PolygonCollection> getCachedPolygonCollection(const QueryRectangle &rect, const QueryTools &tools, FeatureCollectionQM query_mode = FeatureCollectionQM::ANY_FEATURE);
