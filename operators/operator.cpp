@@ -182,7 +182,9 @@ std::unique_ptr<PointCollection> GenericOperator::getCachedPointCollection(const
 	std::unique_ptr<PointCollection> result;
 	try {
 		result = cache.query( *this, rect, parent_profiler );
-		if(rect.t1 > result->stref.t1 || rect.t2 < result->stref.t2) {
+		if (rect.t1 > result->stref.t1 || rect.t2 < result->stref.t2
+				|| rect.x1 > result->stref.x1 || rect.x2 < result->stref.x2
+				|| rect.y1 > result->stref.y1 || rect.y2 < result->stref.y2) {
 			result->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
 		}
 	} catch ( NoSuchElementException &nse ) {
@@ -215,8 +217,9 @@ std::unique_ptr<LineCollection> GenericOperator::getCachedLineCollection(const Q
 	std::unique_ptr<LineCollection> result;
 	try {
 		result = cache.query( *this, rect, parent_profiler );
-		result = cache.query( *this, rect, parent_profiler );
-		if(rect.t1 > result->stref.t1 || rect.t2 < result->stref.t2) {
+		if (rect.t1 > result->stref.t1 || rect.t2 < result->stref.t2
+				|| rect.x1 > result->stref.x1 || rect.x2 < result->stref.x2
+				|| rect.y1 > result->stref.y1 || rect.y2 < result->stref.y2) {
 			result->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
 		}
 	} catch ( NoSuchElementException &nse ) {
@@ -249,8 +252,9 @@ std::unique_ptr<PolygonCollection> GenericOperator::getCachedPolygonCollection(c
 	std::unique_ptr<PolygonCollection> result;
 	try {
 		result = cache.query( *this, rect, parent_profiler );
-		result = cache.query( *this, rect, parent_profiler );
-		if(rect.t1 > result->stref.t1 || rect.t2 < result->stref.t2) {
+		if (rect.t1 > result->stref.t1 || rect.t2 < result->stref.t2
+				|| rect.x1 > result->stref.x1 || rect.x2 < result->stref.x2
+				|| rect.y1 > result->stref.y1 || rect.y2 < result->stref.y2) {
 			result->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
 		}
 	} catch ( NoSuchElementException &nse ) {
