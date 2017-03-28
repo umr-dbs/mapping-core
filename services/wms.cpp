@@ -119,8 +119,7 @@ void WMSService::run() {
 			}
 
 			outputImage(result_raster.get(), flipx, flipy, colorizer, overlay.get());
-		}
-		catch (const std::exception &e) {
+		}  catch (const std::exception &e) {
 			// Alright, something went wrong.
 			// We're still in a WMS request though, so do our best to output an image with a clear error message.
 
@@ -129,8 +128,19 @@ void WMSService::run() {
 			auto errorraster = GenericRaster::create(dd, SpatioTemporalReference::unreferenced(), output_width, output_height);
 			errorraster->clear(0);
 
-			auto msg = e.what();
-			errorraster->printCentered(1, msg);
+			std::string msg(e.what());
+
+			// determine exception type from error message. This is an ugly hack because the actual exception class gets lost in the QueryResult. Maybe needs refactoring.
+			if (msg.find("NoRasterForGivenTimeException") != std::string::npos) {
+				// no raster for given time: it's application dependent whether this is an error
+				// dpeneding on config, output the error or just output a blank tile
+				if (Configuration::getBool("wms.norasterforgiventimeexception",	true)) {
+					errorraster->printCentered(1, msg.c_str());
+				}
+			} else {
+				// gneral exceptions: print error
+				errorraster->printCentered(1, msg.c_str());
+			}
 
 			outputImage(errorraster.get(), false, false, "hsv");
 		}
