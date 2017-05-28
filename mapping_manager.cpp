@@ -339,8 +339,9 @@ static void runquery(int argc, char *argv[]) {
 			fprintf(stderr, "invalid query mode");
 			exit(5);
 		}
-
-		auto raster = graph->getCachedRaster(qrect, QueryTools(profiler), queryMode);
+		
+		auto raster = graph->getCachedRaster(qrect, QueryTools(profiler), queryMode); 
+		
 		printf("flip: %d %d\n", flipx, flipy);
 		printf("QRect(%f,%f -> %f,%f)\n", qrect.x1, qrect.y1, qrect.x2, qrect.y2);
 		if (flipx || flipy)
