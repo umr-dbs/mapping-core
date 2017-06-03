@@ -31,7 +31,7 @@ class RasterGDALSourceOperator : public GenericOperator {
 		std::string sourcename;
 		int channel;
 		bool transform;
-		std::unique_ptr<GenericRaster> loadDataset( const char *filename, 
+		std::unique_ptr<GenericRaster> loadDataset( std::string filename, 
 													int rasterid, 													
 													epsg_t epsg, 
 													bool clip, 
@@ -84,7 +84,7 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 }
 
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {	
-	return loadDataset(sourcename.c_str(), channel, rect.epsg, true, rect);
+	return loadDataset(sourcename, channel, rect.epsg, true, rect);
 }
 
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset *dataset, int rasteridx, double origin_x, double origin_y, double scale_x, double scale_y, epsg_t default_epsg, bool clip, double clip_x1, double clip_y1, double clip_x2, double clip_y2, const QueryRectangle& qrect) {
@@ -190,10 +190,10 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	return raster;
 }
 
-std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(const char *filename, int rasterid, epsg_t epsg, bool clip, const QueryRectangle &qrect) {
+std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string filename, int rasterid, epsg_t epsg, bool clip, const QueryRectangle &qrect) {
 	GDAL::init();
 
-	GDALDataset *dataset = (GDALDataset *) GDALOpen(filename, GA_ReadOnly);
+	GDALDataset *dataset = (GDALDataset *) GDALOpen(filename.c_str(), GA_ReadOnly);
 
 	if (dataset == NULL)
 		throw ImporterException(concat("Could not open dataset ", filename));
