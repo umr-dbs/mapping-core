@@ -185,34 +185,33 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 		type, 0, 0, extraArg);	//NULL instead of extraArg Pointer. &extraArg
 
 	if (res != CE_None)
-		throw ImporterException("GDAL: RasterIO failed");
+		throw OperatorException("GDAL Source: RasterIO failed");
 
 	return raster;
 }
 
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string filename, int rasterid, epsg_t epsg, bool clip, const QueryRectangle &qrect) {
+	
 	GDAL::init();
 
 	GDALDataset *dataset = (GDALDataset *) GDALOpen(filename.c_str(), GA_ReadOnly);
 
 	if (dataset == NULL)
-		throw ImporterException(concat("Could not open dataset ", filename));
+		throw OperatorException(concat("GDAL Source: Could not open dataset ", filename));
 
 	double adfGeoTransform[6];
 
 	// http://www.gdal.org/classGDALDataset.html#af9593cc241e7d140f5f3c4798a43a668
 	if( dataset->GetGeoTransform( adfGeoTransform ) != CE_None ) {
 		GDALClose(dataset);
-		throw ImporterException("no GeoTransform information in raster");
+		throw OperatorException("GDAL Source: No GeoTransform information in raster");
 	}
-
-	printf("GeoTransform: %f, %f, %f, %f, %f, %f \n", adfGeoTransform[0], adfGeoTransform[1], adfGeoTransform[2], adfGeoTransform[3], adfGeoTransform[4], adfGeoTransform[5], adfGeoTransform[6] );
 
 	int rastercount = dataset->GetRasterCount();
 
 	if (rasterid < 1 || rasterid > rastercount) {
 		GDALClose(dataset);
-		throw ImporterException("rasterid not found");
+		throw OperatorException("GDAL Source: rasterid not found");
 	}
 
 	auto raster = loadRaster(dataset, rasterid, adfGeoTransform[0], adfGeoTransform[3], adfGeoTransform[1], adfGeoTransform[5], epsg, clip, qrect.x1, qrect.y1, qrect.x2, qrect.y2, qrect);
