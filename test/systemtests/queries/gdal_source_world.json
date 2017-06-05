@@ -1,0 +1,29 @@
+{
+    "name": "Load world raster",
+	"query_result": "raster",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1388534400
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },
+    "resolution": {
+    	"type": "pixels",
+        "x": 3600,
+        "y": 1800
+    },
+    "query_mode": "exact",
+    "query": {        
+        "params": {
+       		"channel": 1,
+            "sourcename": "test/systemtests/data/ndvi/MOD13A2_M_NDVI_2015-01-01_rgb_3600x1800.TIFF"
+        },
+        "type": "gdal_source"
+    },
+    "query_expected_hash": "c65f09a46739944514f9f79ed30df76211ddfdc0"
+}

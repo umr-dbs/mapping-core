@@ -83,8 +83,10 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 	stream << " \"transform\": " << trans << "}";
 }
 
-std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {	
-	return loadDataset(sourcename, channel, rect.epsg, true, rect);
+std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {		
+	auto raster = loadDataset(sourcename, channel, rect.epsg, true, rect);	
+	//flip here because the tiff result will be flipped else
+	return raster->flip(false, true);
 }
 
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset *dataset, int rasteridx, double origin_x, double origin_y, double scale_x, double scale_y, epsg_t default_epsg, bool clip, double clip_x1, double clip_y1, double clip_x2, double clip_y2, const QueryRectangle& qrect) {
@@ -109,25 +111,17 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	int hasnodata = true;
 	int success;
 	double nodata = poBand->GetNoDataValue(&success);
-	if (!success /*|| nodata < adfMinMax[0] || nodata > adfMinMax[1]*/) {
+
+	if (!success) {
 		hasnodata = false;
 		nodata = 0;
 	}
-
-	// Figure out the data type
-	epsg_t epsg = default_epsg;
+	
 	double minvalue = adfMinMax[0];
 	double maxvalue = adfMinMax[1];
 
-	//if (type == GDT_Byte) maxvalue = 255;
-	if(epsg == EPSG_GEOSMSG){
-		hasnodata = true;
-		nodata = 0;
-		type = GDT_Int16; // TODO: sollte GDT_UInt16 sein!
-	}
-
-	int   nXSize = poBand->GetXSize();
-	int   nYSize = poBand->GetYSize();
+	int nXSize = poBand->GetXSize();
+	int nYSize = poBand->GetYSize();
 
 	int pixel_x1 = 0;
 	int pixel_y1 = 0;
@@ -154,10 +148,10 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 		pixel_height = pixel_y2 - pixel_y1 + 1;
 	}
 
-	double x1 = origin_x + scale_x * (pixel_x1 - 0.5) + 0.05;
-	double y1 = origin_y + scale_y * (pixel_y1 - 0.5) - 0.05;
+	double x1 = origin_x + scale_x * pixel_x1;
+	double y1 = origin_y + scale_y * pixel_y1;
 	double x2 = x1 + scale_x * pixel_width;
-	double y2 = y1 + scale_y * pixel_height - 0.05;
+	double y2 = y1 + scale_y * pixel_height;
 
 	const TemporalReference &tref = (const TemporalReference &)qrect;
 
