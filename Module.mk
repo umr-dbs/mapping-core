@@ -25,7 +25,7 @@ OBJS_CORE += o/core/processing/query.o o/core/processing/queryprocessor.o o/core
 #
 # HTTP Services
 #
-OBJS_SERVICES += o/core/services/httpservice.o o/core/services/httpparsing.o o/core/services/user.o o/core/services/ogcservice.o o/core/services/wms.o o/core/services/wcs.o o/core/services/wfs.o o/core/services/plot.o o/core/services/provenance.o o/core/services/artifact.o
+OBJS_SERVICES += o/core/services/httpservice.o o/core/services/httpparsing.o o/core/services/user.o o/core/services/ogcservice.o o/core/services/wms.o o/core/services/wcs.o o/core/services/wfs.o o/core/services/plot.o o/core/services/provenance.o o/core/services/artifact.o o/core/services/gdalservice.o
 # pointvisualization is only used by services, so that's where it goes
 OBJS_SERVICES += o/core/pointvisualization/BoundingBox.o o/core/pointvisualization/Circle.o o/core/pointvisualization/Coordinate.o o/core/pointvisualization/Dimension.o o/core/pointvisualization/FindResult.o o/core/pointvisualization/QuadTreeNode.o o/core/pointvisualization/CircleClusteringQuadTree.o
 OBJS_SERVICES += o/core/services/featurecollectiondb.o
