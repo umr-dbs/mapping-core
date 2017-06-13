@@ -3,7 +3,7 @@
 	"query_result": "raster",
     "temporal_reference": {
         "type": "UNIX",
-        "start": 1388534400
+        "start": 1397520000
     },
     "spatial_reference": {
         "projection": "EPSG:4326",
@@ -21,7 +21,7 @@
     "query": {        
         "params": {
        		"channel": 1,
-            "sourcename": "test/systemtests/data/ndvi/MOD13A2_M_NDVI_2015-01-01_rgb_3600x1800.TIFF"
+            "sourcename": "MOD13A2_M_NDVI(copy)"
         },
         "type": "gdal_source"
     },
