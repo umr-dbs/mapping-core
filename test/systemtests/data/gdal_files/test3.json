@@ -1,7 +1,0 @@
-{
-	"filename" : "MOD13A2_M_NDVI_2014-06-01.TIFF",	
-	"path" : "test/systemtests/data/gdal_files",
-	"channel" : 1,
-	"description" : "test files 3",
-	"timestamps" : "2014-06-01"
-}
