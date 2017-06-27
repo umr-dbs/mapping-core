@@ -5,6 +5,7 @@
 #include "operators/operator.h"
 #include "util/configuration.h"
 #include "util/timeparser.h"
+#include "util/gdal_timesnap.h"
 
 #include "datatypes/raster/raster_priv.h"
 #include "util/gdal.h"
@@ -33,31 +34,7 @@ class RasterGDALSourceOperator : public GenericOperator {
 		void writeSemanticParameters(std::ostringstream &stream);
 	private:
 
-		const std::string DATASET_PATH = "test/systemtests/data/gdal_files";
-
-		enum class TimeUnit {
-		    Year 	= 0,
-		    Month 	= 1,
-		    Day 	= 2,
-		    Hour 	= 3,
-			Minute  = 4,
-		    Second  = 5
-		};
-		
-		static const std::map<std::string, RasterGDALSourceOperator::TimeUnit> string_to_TimeUnit;
-		static TimeUnit createTimeUnit(std::string value);
-
-
-		int maxValueForTimeUnit(TimeUnit part) const;
-		int minValueForTimeUnit(TimeUnit part) const;
-		std::string tmStructToString(tm *tm, std::string format);
-		std::string unixTimeToString(double unix_time, std::string format);
-		tm tmDifference(tm &first, tm &second);
-		int getUnitDifference(tm diff, TimeUnit snapUnit);		
-		void setTimeUnitValueInTm(tm &time, TimeUnit unit, int value);
-		int getTimeUnitValueFromTm(tm &time, TimeUnit unit);
-		void handleOverflow(tm &snapped, TimeUnit intervalUnit);
-
+		const std::string DATASET_PATH = "test/systemtests/data/gdal_files";					
 
 		std::string sourcename;
 		int channel;
@@ -77,7 +54,6 @@ class RasterGDALSourceOperator : public GenericOperator {
 																					   const QueryRectangle &qrect);
 		Json::Value getDatasetJson(std::string datasetName);
 		std::string getDatasetFilename(Json::Value datasetJson, double wantedTimeUnix);
-		tm snapToInterval(RasterGDALSourceOperator::TimeUnit unit, int unitValue, tm startTime, tm wantedTime);		
 };
 
 
@@ -267,19 +243,19 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 		throw OperatorException("Requested time is not in range of dataset");
 	}
 
-	Json::Value time_interval = datasetJson.get("time_interval", NULL);
+	Json::Value timeInterval = datasetJson.get("time_interval", NULL);
 
-	TimeUnit interval_unit 	= createTimeUnit(time_interval.get("unit", "Month").asString());
-	int interval_value 		= time_interval.get("value", 1).asInt();
+	TimeUnit intervalUnit 	= createTimeUnit(timeInterval.get("unit", "Month").asString());
+	int intervalValue 		= timeInterval.get("value", 1).asInt();
 	
-	//std::cout << "Interval unit: " << (int)interval_unit << ", interval value: " << interval_value << std::endl;
+	//std::cout << "Interval unit: " << (int)intervalUnit << ", interval value: " << intervalValue << std::endl;
 
-	if(interval_unit != TimeUnit::Year){
-		if(maxValueForTimeUnit(interval_unit) % interval_value != 0){
+	if(intervalUnit != TimeUnit::Year){
+		if(maxValueForTimeUnit(intervalUnit) % intervalValue != 0){
 			throw OperatorException("GDALSource: dataset invalid, interval value modulo unit-length must be 0. e.g. 4 % 12, for Months, or 30%60 for Minutes");
 		}
 	} else {
-		if(interval_value != 1){
+		if(intervalValue != 1){
 			throw OperatorException("GDALSource: dataset invalid, interval value for interval unit Year has to be 1.");	
 		}
 	}
@@ -292,136 +268,24 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 	tm startTimeTm = *(gmtime(&startTimeTimet));
 	//std::cout << "StartTime: " << unixTimeToString(startUnix, time_format) << std::endl;
 
-	tm snapped_time = snapToInterval(interval_unit, interval_value, startTimeTm, wantedTimeTm);
+	tm snappedTime = snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
 	
 	// get string of snapped time and put the file path, name together
 	
-	std::string snapped_time_string  = tmStructToString(&snapped_time, time_format);
+	std::string snappedTimeString  = tmStructToString(&snappedTime, time_format);
 	//std::cout << "Snapped Time: " << snapped_time_string << std::endl;
 
 	std::string path = datasetJson.get("path", "").asString();
-	std::string file_name = datasetJson.get("file_name", "").asString();
+	std::string fileName = datasetJson.get("file_name", "").asString();
 
 	std::string placeholder = "%%%TIME_STRING%%%";
-	size_t placeholer_pos = file_name.find(placeholder);
+	size_t placeholerPos = fileName.find(placeholder);
 
-	file_name = file_name.replace(placeholer_pos, placeholder.length(), snapped_time_string);
-	return path + "/" + file_name;
+	fileName = fileName.replace(placeholerPos, placeholder.length(), snappedTimeString);
+	return path + "/" + fileName;
 }
 
-tm RasterGDALSourceOperator::snapToInterval(RasterGDALSourceOperator::TimeUnit snapUnit, int intervalValue, tm startTime, tm wantedTime){
-	
-	tm diff 	= tmDifference(wantedTime, startTime);
-	tm snapped 	= startTime;
 
-	int unitDiffValue 	= getUnitDifference(diff, snapUnit);
-	int unitDiffModulo 	= unitDiffValue % intervalValue;	
-	unitDiffValue 		-= unitDiffModulo; 
-
-	if(snapUnit == TimeUnit::Day)	//because day is the only value in tm struct that is not 0 based
-		unitDiffValue -= 1;
-
-	// add the units difference on the start value
-	setTimeUnitValueInTm(snapped, snapUnit, getTimeUnitValueFromTm(snapped, snapUnit) + unitDiffValue);
-
-	// handle the created overflow
-	handleOverflow(snapped, snapUnit);
-
-	return snapped;
-}
-
-int RasterGDALSourceOperator::getUnitDifference(tm diff, TimeUnit snapUnit){
-	const int snapUnitAsInt = (int)snapUnit;	
-	int unitDiff = getTimeUnitValueFromTm(diff, snapUnit);
-
-	if(snapUnitAsInt > 0){
-		// add all the bigger time units from diff together as the one unit above the snapUnit. eg 1 year -> 12 month
-		for(int i = 0; i < snapUnitAsInt - 1; i++){
-			TimeUnit tu = (TimeUnit)i;
-			int val = getTimeUnitValueFromTm(diff, tu);
-			if(val > 0){
-				TimeUnit nextTu = (TimeUnit)(i+1);
-				int newValue = getTimeUnitValueFromTm(diff, nextTu) + val * maxValueForTimeUnit(nextTu);
-				setTimeUnitValueInTm(diff, nextTu, newValue);
-			}
-		}		
-		TimeUnit unitBefore = (TimeUnit)(snapUnitAsInt - 1);
-		int valueBefore = getTimeUnitValueFromTm(diff, unitBefore);		
-		unitDiff += valueBefore * maxValueForTimeUnit(snapUnit);
-	}
-
-	//if one of the smaller time units than snapUnit is negative -> unitdiff -= 1 because one part of the difference was not a whole unit
-	for(int i = snapUnitAsInt+1; i <= (int)TimeUnit::Second; i++){
-		TimeUnit tu = (TimeUnit)i;		
-		if(getTimeUnitValueFromTm(diff, tu) < minValueForTimeUnit(tu)){
-			unitDiff -= 1;
-			break;
-		}
-	}
-
-	return unitDiff;
-}
-
-void RasterGDALSourceOperator::handleOverflow(tm &snapped, TimeUnit snapUnit){
-	const int snapUnitAsInt = (int)snapUnit;
-	
-	for(int i = snapUnitAsInt; i > 0; i--){
-		TimeUnit tu = (TimeUnit)i;
-		int value = getTimeUnitValueFromTm(snapped, tu);
-		int maxValue = maxValueForTimeUnit(tu);
-		if(tu == TimeUnit::Day)
-			maxValue += 1;	//because day is 1 based, and next value > maxValue-1 is checked
-
-		if(value > maxValue - 1){
-			TimeUnit tuBefore = (TimeUnit)(i-1);
-			int mod = value % maxValue;
-			int div = value / maxValue;			
-			setTimeUnitValueInTm(snapped, tu, mod);			
-			setTimeUnitValueInTm(snapped, tuBefore, getTimeUnitValueFromTm(snapped, tuBefore) + div);						
-		}
-	}	
-
-}
-
-void RasterGDALSourceOperator::setTimeUnitValueInTm(tm &time, TimeUnit unit, int value){
-	switch(unit){
-		case RasterGDALSourceOperator::TimeUnit::Year:
-			time.tm_year = value;
-			return;
-		case RasterGDALSourceOperator::TimeUnit::Month:
-			time.tm_mon = value;
-			return;
-		case RasterGDALSourceOperator::TimeUnit::Day:
-			time.tm_mday = value;
-			return;
-		case RasterGDALSourceOperator::TimeUnit::Hour:
-			time.tm_hour = value;
-			return;
-		case RasterGDALSourceOperator::TimeUnit::Minute:
-			time.tm_min = value;
-			return;
-		case RasterGDALSourceOperator::TimeUnit::Second:
-			time.tm_sec = value;
-			return;
-	}	
-}
-
-int RasterGDALSourceOperator::getTimeUnitValueFromTm(tm &time, TimeUnit unit){	
-	switch(unit){
-		case RasterGDALSourceOperator::TimeUnit::Year:
-			return time.tm_year;
-		case RasterGDALSourceOperator::TimeUnit::Month:
-			return time.tm_mon;
-		case RasterGDALSourceOperator::TimeUnit::Day:
-			return time.tm_mday;
-		case RasterGDALSourceOperator::TimeUnit::Hour:
-			return time.tm_hour;
-		case RasterGDALSourceOperator::TimeUnit::Minute:
-			return time.tm_min;
-		case RasterGDALSourceOperator::TimeUnit::Second:
-			return time.tm_sec;
-	}
-}
 
 Json::Value RasterGDALSourceOperator::getDatasetJson(std::string datasetName){
 	// opens the standard path for datasets and returns the dataset with the name datasetName as Json::Value
@@ -460,69 +324,4 @@ Json::Value RasterGDALSourceOperator::getDatasetJson(std::string datasetName){
 
     closedir(dir);
     throw OperatorException("GDAL Source: Dataset " + datasetName + " does not exist.");
-}
-
-const std::map<std::string, RasterGDALSourceOperator::TimeUnit> RasterGDALSourceOperator::string_to_TimeUnit {
-	{"Second", 	RasterGDALSourceOperator::TimeUnit::Second},
-	{"Minute", 	RasterGDALSourceOperator::TimeUnit::Minute},
-	{"Hour", 	RasterGDALSourceOperator::TimeUnit::Hour},
-	{"Day", 	RasterGDALSourceOperator::TimeUnit::Day},
-	{"Month", 	RasterGDALSourceOperator::TimeUnit::Month},
-	{"Year", 	RasterGDALSourceOperator::TimeUnit::Year}
-};
-
-RasterGDALSourceOperator::TimeUnit RasterGDALSourceOperator::createTimeUnit(std::string value) {
-	return string_to_TimeUnit.at(value);
-}
-
-int RasterGDALSourceOperator::minValueForTimeUnit(TimeUnit part) const {
-	// based on tm struct: see http://www.cplusplus.com/reference/ctime/tm/ for value ranges of tm struct
-	if(part == TimeUnit::Day)
-		return 1;
-	else 
-		return 0;
-}
-
-int RasterGDALSourceOperator::maxValueForTimeUnit(TimeUnit part) const {
-	switch(part){
-		case TimeUnit::Year:
-			return 0;
-		case TimeUnit::Month:
-			return 12;			
-		case TimeUnit::Day:	//TODO: how to handle 31, 28 day months?
-			return 30;			
-		case TimeUnit::Hour:
-			return 24;
-		case TimeUnit::Minute:
-			return 60;
-		case TimeUnit::Second:
-			return 60;
-	}
-}
-
-std::string RasterGDALSourceOperator::tmStructToString(tm *tm, std::string format){	
-	char date[20];	//max length of a time string is 19 + zero termination
-	strftime(date, sizeof(date), format.c_str(), tm);
-	return std::string(date);
-}
-
-std::string RasterGDALSourceOperator::unixTimeToString(double unix_time, std::string format){
-	time_t tt = unix_time;
-	struct tm *tm = gmtime(&tt);
-	char date[20];	//max length of a time string is 19 + zero termination
-	strftime(date, sizeof(date), format.c_str(), tm);
-	return std::string(date);
-}
-
-tm RasterGDALSourceOperator::tmDifference(tm &first, tm &second){
-	// igonres tm_wday and tm_yday and tm_isdst, because they are not needed
-	tm diff;
-	diff.tm_year 	= first.tm_year - second.tm_year;
-	diff.tm_mon 	= first.tm_mon - second.tm_mon;
-	diff.tm_mday 	= first.tm_mday - second.tm_mday;
-	diff.tm_hour 	= first.tm_hour - second.tm_hour;
-	diff.tm_min 	= first.tm_min - second.tm_min;
-	diff.tm_sec 	= first.tm_sec - second.tm_sec;
-
-	return diff;
 }

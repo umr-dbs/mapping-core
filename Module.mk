@@ -33,7 +33,7 @@ OBJS_SERVICES += o/core/services/featurecollectiondb.o
 #
 # Operators
 #
-OBJS_OPERATORS += o/core/operators/source/csv_source.o o/core/operators/source/postgres_source.o o/core/operators/source/rasterdb_source.o o/core/operators/source/wkt_source.o o/core/operators/source/gdal_source.o
+OBJS_OPERATORS += o/core/operators/source/csv_source.o o/core/operators/source/postgres_source.o o/core/operators/source/rasterdb_source.o o/core/operators/source/wkt_source.o o/core/operators/source/gdal_source.o o/core/util/gdal_timesnap.o
 OBJS_OPERATORS += o/core/util/csv_source_util.o
 OBJS_OPERATORS += o/core/operators/processing/raster/matrixkernel.o o/core/operators/processing/raster/expression.o o/core/operators/processing/raster/classification.o o/core/operators/processing/raster/temporal_aggregation.o
 OBJS_OPERATORS += o/core/operators/processing/features/difference.o o/core/operators/processing/features/numeric_attribute_filter.o o/core/operators/processing/features/point_in_polygon_filter.o
