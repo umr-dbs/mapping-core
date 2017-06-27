@@ -17,9 +17,6 @@ class GDALService : public OGCService {
 		using OGCService::OGCService;
 		virtual ~GDALService() = default;
 		virtual void run();
-
-	private:
-		Json::Value writeFileToJson(std::string datasetName, std::string description, double timeStart);
 };
 
 REGISTER_HTTP_SERVICE(GDALService, "GDAL");
@@ -74,7 +71,11 @@ void GDALService::run() {
 			std::string description = root.get("description", "").asString();
 			std::string timeStart 	= root.get("time_start", "0").asString();
 			
-			jsonFiles.append(writeFileToJson(datasetName, description, timeParser->parse(timeStart)));           
+			Json::Value item(Json::ValueType::objectValue);
+			item["name"] 		= datasetName;
+			item["description"] = description;			
+			item["time_start"] 	= timeParser->parse(timeStart);
+			jsonFiles.append(item);		
         }
     }   
 
@@ -88,15 +89,4 @@ void GDALService::run() {
     response.sendContentType("application/json; charset=utf-8");
 	response.finishHeaders();
 	response << writer.write(jsonOuterValue);		
-}
-
-Json::Value GDALService::writeFileToJson(std::string datasetName, std::string description, double timeStart)
-{
-	Json::Value item(Json::ValueType::objectValue);
-	item["name"] = datasetName;
-	item["description"] = description;
-	
-	item["time_start"] = timeStart;
-
-	return item;
 }
