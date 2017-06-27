@@ -240,7 +240,7 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 	//double endUnix 		= timeParser->parse(time_end);
 	
 	if(wantedTimeUnix < startUnix){		// || (endUnix > 0 && wantedTimeUnix > endUnix)){
-		throw OperatorException("Requested time is not in range of dataset");
+		throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
 	}
 
 	Json::Value timeInterval = datasetJson.get("time_interval", NULL);
