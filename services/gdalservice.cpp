@@ -19,7 +19,7 @@ class GDALService : public OGCService {
 		virtual void run();
 
 	private:
-		Json::Value writeFileToJson(std::string path, std::string filename, std::string description, double unixTime, int channel);
+		Json::Value writeFileToJson(std::string datasetName, std::string description, double timeStart);
 };
 
 REGISTER_HTTP_SERVICE(GDALService, "GDAL");
@@ -41,20 +41,17 @@ void GDALService::run() {
 	DIR *dir = opendir(path.c_str());
 
 	if (dir == NULL) {
-        return; //throw exception.
+        throw MustNotHappenException("GDAL_Service: Directory for gdal dataset files could not be found.");
     }
-
-    auto timeParser = TimeParser::createCustom("%Y-%m-%d"); //TimeParser::Format::ISO);
-
+    
     //Json Array to write the file entries to
 	Json::Value jsonFiles(Json::ValueType::arrayValue);
 
     while ((entry = readdir(dir)) != NULL) {
-
-        std::string filename = entry->d_name;        
+        std::string filename = entry->d_name;                
         size_t found = filename.find(suffix, filename.length() - suffix_length);	//check if file ends with the suffix
-
-        if(found == suffix_length){ 	// could also check if found != std::string::npos, would mean the same here.
+		
+        if(found != std::string::npos) {
 
     		//open file then read json object from it
         	std::ifstream file(path + "/" + filename);
@@ -70,54 +67,14 @@ void GDALService::run() {
 				exit(5);
 			}				
 
-			//read path, if no path given in file, that the standard file path is used
-			std::string fpath = root.get("path", std_file_path).asString();
-			std::string fname = root.get("filename", "").asString();
-			std::string fdescription = root.get("description", "").asString();
-			int channel = root.get("channel", 1).asInt();
-			Json::Value timestamps = root.get("timestamps", NULL);
-
-			if(timestamps != NULL && timestamps.isArray())
-			{
-				//for every timestamp in the array create write a single file
-				for(unsigned int i = 0; i < timestamps.size(); i++)
-				{
-					std::string timestamp = timestamps[i].get("time", "").asString();
-					
-					double unixTime = timeParser->parse(timestamp);
-					
-					std::string concatName = fname;
-
-					//find position where to insert timestamp string to filename
-					size_t position = fname.length();
-					for(int k = position - 1; k >= 0; k--)
-					{
-						if(fname[k] == '.')
-						{
-							position = k;
-							break;
-						}
-					}
-
-					if(position == fname.length()){
-						throw OperatorException("GDAL Service: filename has no fileending");
-					} else {
-						concatName.insert(position, timestamp);
-					}
-				
-					Json::Value entry = writeFileToJson(fpath, concatName, fdescription, unixTime, channel);
-					jsonFiles.append(entry);
-				}
-
-			} 
-			else 
-			{
-				double unixTime = 0;
-				if(timestamps != NULL)
-					unixTime = timeParser->parse(timestamps.asString());
-				jsonFiles.append(writeFileToJson(fpath, fname, fdescription, unixTime, channel));
-			} 
-            
+			std::string timeFormat 	= root.get("time_format", "%Y-%m-%d").asString();
+			auto timeParser 		= TimeParser::createCustom("%Y-%m-%d");
+	
+			std::string datasetName = root.get("dataset_name", "").asString();
+			std::string description = root.get("description", "").asString();
+			std::string timeStart 	= root.get("time_start", "0").asString();
+			
+			jsonFiles.append(writeFileToJson(datasetName, description, timeParser->parse(timeStart)));           
         }
     }   
 
@@ -125,27 +82,21 @@ void GDALService::run() {
 
     //wrap files array in a json value
 	Json::Value jsonOuterValue(Json::ValueType::objectValue);
-	jsonOuterValue["files"] = jsonFiles;
-	Json::FastWriter writer;
-	std::cout << jsonOuterValue << std::endl;
+	jsonOuterValue["datasets"] = jsonFiles;
+	Json::FastWriter writer;	
 
     response.sendContentType("application/json; charset=utf-8");
 	response.finishHeaders();
 	response << writer.write(jsonOuterValue);		
 }
 
-Json::Value GDALService::writeFileToJson(std::string path, std::string filename, std::string description, double unixTime, int channel)
+Json::Value GDALService::writeFileToJson(std::string datasetName, std::string description, double timeStart)
 {
 	Json::Value item(Json::ValueType::objectValue);
-	item["file"] = path + "/" + filename;
+	item["name"] = datasetName;
 	item["description"] = description;
-	item["channel"] = channel;
-
-	Json::Value tref(Json::ValueType::objectValue);
-	tref["type"] = "Unix";
-	tref["start"] = unixTime;
 	
-	item["temporal_reference"] = tref;
+	item["time_start"] = timeStart;
 
 	return item;
 }
