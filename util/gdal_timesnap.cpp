@@ -1,5 +1,7 @@
 #include "gdal_timesnap.h"
 
+#include <iostream>
+
 tm snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTime, tm wantedTime){
 	
 	tm diff 	= tmDifference(wantedTime, startTime);
@@ -8,16 +10,21 @@ tm snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTime, tm wantedT
 	int unitDiffValue 	= getUnitDifference(diff, snapUnit);
 	int unitDiffModulo 	= unitDiffValue % intervalValue;	
 	unitDiffValue 		-= unitDiffModulo; 
-
-	if(snapUnit == TimeUnit::Day)	//because day is the only value in tm struct that is not 0 based
-		unitDiffValue -= 1;
-
+	
 	// add the units difference on the start value
 	setTimeUnitValueInTm(snapped, snapUnit, getTimeUnitValueFromTm(snapped, snapUnit) + unitDiffValue);
 
-	// handle the created overflow
-	handleOverflow(snapped, snapUnit);
-
+	//automatically handles the overflow by making time_t from tm, than tm from that time_t. No performance difference noticeable
+	if(snapUnit != TimeUnit::Day){
+		//day being 1 based is always one of for the other units...?!?!
+		setTimeUnitValueInTm(snapped, TimeUnit::Day, getTimeUnitValueFromTm(snapped, TimeUnit::Day) + 1);			
+	}
+	time_t snappedToTimeT = mktime(&snapped);
+	snapped = *gmtime(&snappedToTimeT);		
+	
+	// handle the created overflow, old way
+	//handleOverflow(snapped, snapUnit);		
+	
 	return snapped;
 }
 

@@ -262,18 +262,18 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 
 	time_t wantedTimeTimet = wantedTimeUnix;	
 	tm wantedTimeTm = *(gmtime(&wantedTimeTimet));
-	//std::cout << "WantedTime: " << unixTimeToString(wantedTimeUnix, time_format) << std::endl;
+	std::cout << "WantedTime: " << unixTimeToString(wantedTimeUnix, time_format) << std::endl;
 
 	time_t startTimeTimet = startUnix;	
 	tm startTimeTm = *(gmtime(&startTimeTimet));
-	//std::cout << "StartTime: " << unixTimeToString(startUnix, time_format) << std::endl;
+	std::cout << "StartTime: " << unixTimeToString(startUnix, time_format) << std::endl;
 
 	tm snappedTime = snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
 	
 	// get string of snapped time and put the file path, name together
 	
 	std::string snappedTimeString  = tmStructToString(&snappedTime, time_format);
-	//std::cout << "Snapped Time: " << snapped_time_string << std::endl;
+	std::cout << "Snapped Time: " << snappedTimeString << std::endl;
 
 	std::string path = datasetJson.get("path", "").asString();
 	std::string fileName = datasetJson.get("file_name", "").asString();
