@@ -95,8 +95,8 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
 	Json::Value datasetJson = getDatasetJson(sourcename);	
-	std::string file_path = getDatasetFilename(datasetJson, rect.t1);	
-	auto raster = loadDataset(file_path, channel, rect.epsg, true, rect);	
+	std::string file_path 	= getDatasetFilename(datasetJson, rect.t1);	
+	auto raster 			= loadDataset(file_path, channel, rect.epsg, true, rect);	
 	//flip here so the tiff result will not be flipped
 	return raster->flip(false, true);
 }
@@ -219,6 +219,11 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string
 		GDALClose(dataset);
 		throw OperatorException("GDAL Source: rasterid not found");
 	}
+
+	// overviews have to be build on the dataset for the tiff format, not on the RasterBand
+	// http://www.gdal.org/classGDALRasterBand.html#a21f1e3c996dbe55f21a7462fdc0b8893
+	int anOverviewList[4] = { 2, 4, 8, 16};
+	dataset->BuildOverviews("NEAREST", 4, anOverviewList, 0, NULL, NULL, NULL);
 
 	auto raster = loadRaster(dataset, rasterid, adfGeoTransform[0], adfGeoTransform[3], adfGeoTransform[1], adfGeoTransform[5], epsg, clip, qrect.x1, qrect.y1, qrect.x2, qrect.y2, qrect);
 
