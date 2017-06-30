@@ -2,7 +2,16 @@
 
 #include <iostream>
 
-tm snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTime, tm wantedTime){
+const std::map<std::string, TimeUnit> GDALTimesnap::string_to_TimeUnit = {
+			{"Second", 	TimeUnit::Second},
+			{"Minute", 	TimeUnit::Minute},
+			{"Hour", 	TimeUnit::Hour},
+			{"Day", 	TimeUnit::Day},
+			{"Month", 	TimeUnit::Month},
+			{"Year", 	TimeUnit::Year}
+		};
+
+tm GDALTimesnap::snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTime, tm wantedTime){
 	
 	tm diff 	= tmDifference(wantedTime, startTime);
 	tm snapped 	= startTime;
@@ -28,7 +37,7 @@ tm snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTime, tm wantedT
 	return snapped;
 }
 
-void handleOverflow(tm &snapped, TimeUnit snapUnit){
+void GDALTimesnap::handleOverflow(tm &snapped, TimeUnit snapUnit){
 	const int snapUnitAsInt = (int)snapUnit;
 	
 	for(int i = snapUnitAsInt; i > 0; i--){
@@ -49,7 +58,7 @@ void handleOverflow(tm &snapped, TimeUnit snapUnit){
 
 }
 
-tm tmDifference(tm &first, tm &second){
+tm GDALTimesnap::tmDifference(tm &first, tm &second){
 	// igonres tm_wday and tm_yday and tm_isdst, because they are not needed
 	tm diff;
 	diff.tm_year 	= first.tm_year - second.tm_year;
@@ -62,7 +71,7 @@ tm tmDifference(tm &first, tm &second){
 	return diff;
 }
 
-int getUnitDifference(tm diff, TimeUnit snapUnit){
+int GDALTimesnap::getUnitDifference(tm diff, TimeUnit snapUnit){
 	const int snapUnitAsInt = (int)snapUnit;	
 	int unitDiff = getTimeUnitValueFromTm(diff, snapUnit);
 
@@ -94,13 +103,13 @@ int getUnitDifference(tm diff, TimeUnit snapUnit){
 	return unitDiff;
 }
 
-std::string tmStructToString(tm *tm, std::string format){	
+std::string GDALTimesnap::tmStructToString(tm *tm, std::string format){	
 	char date[20];	//max length of a time string is 19 + zero termination
 	strftime(date, sizeof(date), format.c_str(), tm);
 	return std::string(date);
 }
 
-std::string unixTimeToString(double unix_time, std::string format){
+std::string GDALTimesnap::unixTimeToString(double unix_time, std::string format){
 	time_t tt = unix_time;
 	struct tm *tm = gmtime(&tt);
 	char date[20];	//max length of a time string is 19 + zero termination
@@ -108,11 +117,11 @@ std::string unixTimeToString(double unix_time, std::string format){
 	return std::string(date);
 }
 
-TimeUnit createTimeUnit(std::string value) {
+TimeUnit GDALTimesnap::createTimeUnit(std::string value) {
 	return string_to_TimeUnit.at(value);
 }
 
-void setTimeUnitValueInTm(tm &time, TimeUnit unit, int value){
+void GDALTimesnap::setTimeUnitValueInTm(tm &time, TimeUnit unit, int value){
 	switch(unit){
 		case TimeUnit::Year:
 			time.tm_year = value;
@@ -135,7 +144,7 @@ void setTimeUnitValueInTm(tm &time, TimeUnit unit, int value){
 	}	
 }
 
-int getTimeUnitValueFromTm(tm &time, TimeUnit unit){	
+int GDALTimesnap::getTimeUnitValueFromTm(tm &time, TimeUnit unit){	
 	switch(unit){
 		case TimeUnit::Year:
 			return time.tm_year;
@@ -152,7 +161,7 @@ int getTimeUnitValueFromTm(tm &time, TimeUnit unit){
 	}
 }
 
-int minValueForTimeUnit(TimeUnit part) {
+int GDALTimesnap::minValueForTimeUnit(TimeUnit part) {
 	// based on tm struct: see http://www.cplusplus.com/reference/ctime/tm/ for value ranges of tm struct
 	if(part == TimeUnit::Day)
 		return 1;
@@ -160,7 +169,7 @@ int minValueForTimeUnit(TimeUnit part) {
 		return 0;
 }
 
-int maxValueForTimeUnit(TimeUnit part) {
+int GDALTimesnap::maxValueForTimeUnit(TimeUnit part) {
 	switch(part){
 		case TimeUnit::Year:
 			return 0;

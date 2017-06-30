@@ -46,12 +46,15 @@ class RasterGDALSourceOperator : public GenericOperator {
 													bool clip, 
 													const QueryRectangle &qrect);
 		
-		std::unique_ptr<GenericRaster> loadRaster(GDALDataset *dataset, int rasteridx, double origin_x, double origin_y, 
-																					   double scale_x, double scale_y, 																					   
-																					   epsg_t default_epsg, bool clip, 
-																					   double clip_x1, double clip_y1, 
-																					   double clip_x2, double clip_y2,
-																					   const QueryRectangle &qrect);
+		std::unique_ptr<GenericRaster> loadRaster(  GDALDataset *dataset, 
+													int rasteridx, double origin_x, 
+													double origin_y, 
+													double scale_x, double scale_y, 																					   
+													epsg_t default_epsg, bool clip, 
+													double clip_x1, double clip_y1, 
+													double clip_x2, double clip_y2,
+													const QueryRectangle &qrect);
+		
 		Json::Value getDatasetJson(std::string datasetName);
 		std::string getDatasetFilename(Json::Value datasetJson, double wantedTimeUnix);
 };
@@ -250,13 +253,13 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 
 	Json::Value timeInterval = datasetJson.get("time_interval", NULL);
 
-	TimeUnit intervalUnit 	= createTimeUnit(timeInterval.get("unit", "Month").asString());
+	TimeUnit intervalUnit 	= GDALTimesnap::createTimeUnit(timeInterval.get("unit", "Month").asString());
 	int intervalValue 		= timeInterval.get("value", 1).asInt();
 	
 	//std::cout << "Interval unit: " << (int)intervalUnit << ", interval value: " << intervalValue << std::endl;
 
 	if(intervalUnit != TimeUnit::Year){
-		if(maxValueForTimeUnit(intervalUnit) % intervalValue != 0){
+		if(GDALTimesnap::maxValueForTimeUnit(intervalUnit) % intervalValue != 0){
 			throw OperatorException("GDALSource: dataset invalid, interval value modulo unit-length must be 0. e.g. 4 % 12, for Months, or 30%60 for Minutes");
 		}
 	} else {
@@ -267,17 +270,17 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 
 	time_t wantedTimeTimet = wantedTimeUnix;	
 	tm wantedTimeTm = *(gmtime(&wantedTimeTimet));
-	std::cout << "WantedTime: " << unixTimeToString(wantedTimeUnix, time_format) << std::endl;
+	std::cout << "WantedTime: " << GDALTimesnap::unixTimeToString(wantedTimeUnix, time_format) << std::endl;
 
 	time_t startTimeTimet = startUnix;	
 	tm startTimeTm = *(gmtime(&startTimeTimet));
-	std::cout << "StartTime: " << unixTimeToString(startUnix, time_format) << std::endl;
+	std::cout << "StartTime: " << GDALTimesnap::unixTimeToString(startUnix, time_format) << std::endl;
 
-	tm snappedTime = snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
+	tm snappedTime = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
 	
 	// get string of snapped time and put the file path, name together
 	
-	std::string snappedTimeString  = tmStructToString(&snappedTime, time_format);
+	std::string snappedTimeString  = GDALTimesnap::tmStructToString(&snappedTime, time_format);
 	std::cout << "Snapped Time: " << snappedTimeString << std::endl;
 
 	std::string path = datasetJson.get("path", "").asString();

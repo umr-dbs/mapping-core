@@ -13,27 +13,23 @@ enum class TimeUnit {
     Second  = 5
 };
 
-const std::map<std::string, TimeUnit> string_to_TimeUnit {
-	{"Second", 	TimeUnit::Second},
-	{"Minute", 	TimeUnit::Minute},
-	{"Hour", 	TimeUnit::Hour},
-	{"Day", 	TimeUnit::Day},
-	{"Month", 	TimeUnit::Month},
-	{"Year", 	TimeUnit::Year}
+class GDALTimesnap {
+	public:
+		static TimeUnit createTimeUnit(std::string value);
+		static const std::map<std::string, TimeUnit> string_to_TimeUnit;
+
+		static tm snapToInterval(TimeUnit unit, int unitValue, tm startTime, tm wantedTime);
+		static void handleOverflow(tm &snapped, TimeUnit intervalUnit);
+		static tm tmDifference(tm &first, tm &second);
+		static int getUnitDifference(tm diff, TimeUnit snapUnit);		
+
+		static std::string tmStructToString(tm *tm, std::string format);
+		static std::string unixTimeToString(double unix_time, std::string format);
+
+		static void setTimeUnitValueInTm(tm &time, TimeUnit unit, int value);
+		static int getTimeUnitValueFromTm(tm &time, TimeUnit unit);
+		static int minValueForTimeUnit(TimeUnit part);
+		static int maxValueForTimeUnit(TimeUnit part);	
 };
-
-tm snapToInterval(TimeUnit unit, int unitValue, tm startTime, tm wantedTime);
-void handleOverflow(tm &snapped, TimeUnit intervalUnit);
-tm tmDifference(tm &first, tm &second);
-int getUnitDifference(tm diff, TimeUnit snapUnit);		
-
-std::string tmStructToString(tm *tm, std::string format);
-std::string unixTimeToString(double unix_time, std::string format);
-
-TimeUnit createTimeUnit(std::string value);
-void setTimeUnitValueInTm(tm &time, TimeUnit unit, int value);
-int getTimeUnitValueFromTm(tm &time, TimeUnit unit);
-int minValueForTimeUnit(TimeUnit part);
-int maxValueForTimeUnit(TimeUnit part);
 
 #endif
