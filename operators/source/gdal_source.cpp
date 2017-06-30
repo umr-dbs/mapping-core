@@ -34,7 +34,7 @@ class RasterGDALSourceOperator : public GenericOperator {
 		void writeSemanticParameters(std::ostringstream &stream);
 	private:
 
-		const std::string DATASET_PATH = "test/systemtests/data/gdal_files";					
+		std::string datasetPath;
 
 		std::string sourcename;
 		int channel;
@@ -69,7 +69,7 @@ RasterGDALSourceOperator::RasterGDALSourceOperator(int sourcecounts[], GenericOp
 	
 	channel = params.get("channel", 1).asInt();
 	transform = params.get("transform", true).asBool();
-	
+	datasetPath = Configuration::get("gdalsource.datasetpath");					
 }
 
 RasterGDALSourceOperator::~RasterGDALSourceOperator(){
@@ -298,7 +298,7 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 Json::Value RasterGDALSourceOperator::getDatasetJson(std::string datasetName){
 	// opens the standard path for datasets and returns the dataset with the name datasetName as Json::Value
 	struct dirent *entry;
-	DIR *dir = opendir(DATASET_PATH.c_str());
+	DIR *dir = opendir(datasetPath.c_str());
 
 	if (dir == NULL) {
         throw OperatorException("GDAL Source: directory for dataset json files does not exist.");
@@ -311,7 +311,7 @@ Json::Value RasterGDALSourceOperator::getDatasetJson(std::string datasetName){
         if(withoutExtension == datasetName){
         	
         	//open file then read json object from it
-        	std::ifstream file(DATASET_PATH + "/" + filename);
+        	std::ifstream file(datasetPath + filename);
 			if (!file.is_open()) {
 			    closedir(dir);
 				throw OperatorException("GDAL Source Operator: unable to dataset file " + datasetName);
