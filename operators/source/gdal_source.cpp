@@ -16,7 +16,7 @@
 #include <fstream>
 #include <cmath>
 #include <json/json.h>
-#include <ctime>
+#include <time.h>
 #include <dirent.h>
 
 /**
@@ -269,11 +269,13 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 	}
 
 	time_t wantedTimeTimet = wantedTimeUnix;	
-	tm wantedTimeTm = *(gmtime(&wantedTimeTimet));
+	tm wantedTimeTm;
+	gmtime_r(&wantedTimeTimet, &wantedTimeTm);
 	std::cout << "WantedTime: " << GDALTimesnap::unixTimeToString(wantedTimeUnix, time_format) << std::endl;
 
 	time_t startTimeTimet = startUnix;	
-	tm startTimeTm = *(gmtime(&startTimeTimet));
+	tm startTimeTm;
+	gmtime_r(&startTimeTimet, &startTimeTm);
 	std::cout << "StartTime: " << GDALTimesnap::unixTimeToString(startUnix, time_format) << std::endl;
 
 	tm snappedTime = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);

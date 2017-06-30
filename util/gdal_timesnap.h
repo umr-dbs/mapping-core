@@ -2,7 +2,7 @@
 #define UTIL_GDAL_TIMESNAP_H_
 
 #include <map>
-#include <ctime>
+#include <time.h>
 
 enum class TimeUnit {
     Year 	= 0,
@@ -23,7 +23,7 @@ class GDALTimesnap {
 		static tm tmDifference(tm &first, tm &second);
 		static int getUnitDifference(tm diff, TimeUnit snapUnit);		
 
-		static std::string tmStructToString(tm *tm, std::string format);
+		static std::string tmStructToString(const tm *tm, std::string format);
 		static std::string unixTimeToString(double unix_time, std::string format);
 
 		static void setTimeUnitValueInTm(tm &time, TimeUnit unit, int value);

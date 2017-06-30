@@ -28,8 +28,8 @@ tm GDALTimesnap::snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTi
 		//day being 1 based is always one of for the other units...?!?!
 		setTimeUnitValueInTm(snapped, TimeUnit::Day, getTimeUnitValueFromTm(snapped, TimeUnit::Day) + 1);			
 	}
-	time_t snappedToTimeT = mktime(&snapped);
-	snapped = *gmtime(&snappedToTimeT);		
+	time_t snappedToTimeT = mktime(&snapped);	
+	gmtime_r(&snappedToTimeT, &snapped);
 	
 	// handle the created overflow, old way
 	//handleOverflow(snapped, snapUnit);		
@@ -103,7 +103,7 @@ int GDALTimesnap::getUnitDifference(tm diff, TimeUnit snapUnit){
 	return unitDiff;
 }
 
-std::string GDALTimesnap::tmStructToString(tm *tm, std::string format){	
+std::string GDALTimesnap::tmStructToString(const tm *tm, std::string format){	
 	char date[20];	//max length of a time string is 19 + zero termination
 	strftime(date, sizeof(date), format.c_str(), tm);
 	return std::string(date);
@@ -111,9 +111,10 @@ std::string GDALTimesnap::tmStructToString(tm *tm, std::string format){
 
 std::string GDALTimesnap::unixTimeToString(double unix_time, std::string format){
 	time_t tt = unix_time;
-	struct tm *tm = gmtime(&tt);
+	tm time;
+	gmtime_r(&tt, &time);
 	char date[20];	//max length of a time string is 19 + zero termination
-	strftime(date, sizeof(date), format.c_str(), tm);
+	strftime(date, sizeof(date), format.c_str(), &time);
 	return std::string(date);
 }
 
