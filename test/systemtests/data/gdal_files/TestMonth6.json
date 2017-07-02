@@ -1,11 +1,11 @@
 {
 	"dataset_name" : "TestMonth6",
 	"path" : "test/systemtests/data/gdal_files/TestMonth6",
-	"file_name" : "MOD13A2_M_NDVI_%%%TIME_STRING%%%.TIFF",
+	"file_name" : "6Month_%%%TIME_STRING%%%.TIFF",
 	
 	"time_format" : "%Y-%m-%d",
 	"time_start" : "2014-09-05",
-	"time_end" : "2017-03-05",
+	"time_end" : "2016-09-05",
 	
 	"time_interval" : {
 		"unit" : "Month",
