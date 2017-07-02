@@ -3,7 +3,7 @@
 	"query_result": "raster",
     "temporal_reference": {
         "type": "UNIX",
-        "start": 1421712000
+        "start": 1492419600
     },
     "spatial_reference": {
         "projection": "EPSG:4326",        
@@ -13,7 +13,7 @@
         "y2": 30
     },
     "resolution": {
-    	"type": "pixels",
+        "type": "pixels",
         "x": 1800,
         "y": 900
     },
@@ -21,7 +21,7 @@
     "query": {        
         "params": {
        		"channel": 1,
-            "sourcename": "Test3"
+            "sourcename": "TestMonth6"
         },
         "type": "gdal_source"
     },
