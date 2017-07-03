@@ -22,6 +22,7 @@ OBJS_CORE += o/core/operators/operator.o o/core/operators/provenance.o o/core/op
 # processing goes to core, too
 OBJS_CORE += o/core/processing/query.o o/core/processing/queryprocessor.o o/core/processing/queryprocessor_backend.o o/core/processing/backend_local.o
 
+
 #
 # HTTP Services
 #
@@ -33,7 +34,7 @@ OBJS_SERVICES += o/core/services/featurecollectiondb.o
 #
 # Operators
 #
-OBJS_OPERATORS += o/core/operators/source/csv_source.o o/core/operators/source/postgres_source.o o/core/operators/source/rasterdb_source.o o/core/operators/source/wkt_source.o o/core/operators/source/gdal_source.o o/core/util/gdal_timesnap.o
+OBJS_OPERATORS += o/core/operators/source/csv_source.o o/core/operators/source/postgres_source.o o/core/operators/source/rasterdb_source.o o/core/operators/source/wkt_source.o o/core/operators/source/gdal_source.o o/core/util/gdal_timesnap.o o/core/util/gdal_dataset_importer.o
 OBJS_OPERATORS += o/core/util/csv_source_util.o
 OBJS_OPERATORS += o/core/operators/processing/raster/matrixkernel.o o/core/operators/processing/raster/expression.o o/core/operators/processing/raster/classification.o o/core/operators/processing/raster/temporal_aggregation.o
 OBJS_OPERATORS += o/core/operators/processing/features/difference.o o/core/operators/processing/features/numeric_attribute_filter.o o/core/operators/processing/features/point_in_polygon_filter.o
@@ -43,7 +44,6 @@ OBJS_OPERATORS += o/core/util/sunpos.o
 OBJS_OPERATORS += o/core/operators/plots/histogram.o o/core/operators/plots/feature_attributes_plot.o
 OBJS_OPERATORS += o/core/datatypes/plots/text.o o/core/datatypes/plots/png.o
 OBJS_OPERATORS += o/core/operators/source/featurecollectiondb_source.o
-
 
 # Cache: needs to be core for now
 OBJS_CORE += o/core/cache/common.o o/core/cache/priv/shared.o o/core/cache/priv/requests.o o/core/cache/priv/connection.o o/core/cache/priv/redistribution.o o/core/cache/priv/cache_stats.o o/core/cache/priv/cache_structure.o o/core/cache/node/node_cache.o o/core/cache/manager.o o/core/cache/priv/caching_strategy.o o/core/cache/priv/cube.o

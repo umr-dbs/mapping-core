@@ -12,6 +12,8 @@
 
 #include "userdb/userdb.h"
 
+#include "util/gdal_dataset_importer.h"
+
 #include "util/binarystream.h"
 #include "util/configuration.h"
 #include "util/gdal.h"
@@ -66,7 +68,8 @@ static void usage() {
 		printf("%s testquery <queryname> [S|F]\n", program_name);
 		printf("%s showprovenance <queryname>\n", program_name);
 		printf("%s enumeratesources [verbose]\n", program_name);
-		printf("%s userdb ...", program_name);
+		printf("%s userdb ...\n", program_name);
+		printf("%s importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> \n", program_name);
 		exit(5);
 }
 
@@ -661,6 +664,25 @@ static int userdb(int argc, char *argv[]) {
 	}
 }
 
+static int importdataset(int argc, char *argv[]){
+
+	if(argc < 6){
+		usage();
+	}
+
+	//importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value>
+	std::string dataset_name		= argv[2];
+	std::string dataset_filename 	= argv[3];
+	std::string dataset_file_path 	= argv[4];
+	std::string time_format 		= argv[5];
+	std::string time_start 			= argv[6];
+	std::string time_unit 			= argv[7];
+	std::string interval_value		= argv[8];
+
+	DatasetImporter::importDataset(dataset_name, dataset_filename, dataset_file_path, time_format, time_start, time_unit, interval_value);
+	return 1;
+}
+
 int main(int argc, char *argv[]) {
 
 	program_name = argv[0];
@@ -742,6 +764,9 @@ int main(int argc, char *argv[]) {
 		printf("maximum buffer size is %ud (%d MB)\n", mbs, mbs/1024/1024);
 	}
 #endif
+	else if(strcmp(command, "importdataset") == 0){
+		importdataset(argc, argv);
+	}
 	else {
 		usage();
 	}

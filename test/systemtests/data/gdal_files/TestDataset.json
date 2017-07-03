@@ -1,0 +1,30 @@
+{
+   "channels" : [
+      {
+         "datatype" : "Byte",
+         "nodata" : 255,
+         "unit" : {
+            "interpolation" : "unknown",
+            "max" : 254,
+            "measurement" : "unknown",
+            "min" : 0,
+            "unit" : "unknown"
+         }
+      }
+   ],
+   "coords" : {
+      "epsg" : "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433],AUTHORITY[\"EPSG\",\"4326\"]]",
+      "origin" : [ -180, 90 ],
+      "scale" : [ 0.10000000000000001, -0.10000000000000001 ],
+      "size" : [ 3600, 1800 ]
+   },
+   "dataset_name" : "TestDataset",
+   "file_name" : "6Month_2014-09-05.TIFF",
+   "path" : "test/systemtests/data/gdal_files/TestMonth6/",
+   "time_format" : "%Y-%m-%d",
+   "time_interval" : {
+      "unit" : "Month",
+      "value" : "6"
+   },
+   "time_start" : "2014-09-05"
+}
