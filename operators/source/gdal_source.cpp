@@ -112,8 +112,9 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 
 	bool flipx = false, flipy = false;
 
+
 	poBand = dataset->GetRasterBand( rasteridx );
-	poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
+	poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );	
 
 	GDALDataType type = poBand->GetRasterDataType();
 
@@ -196,6 +197,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	if (res != CE_None)
 		throw OperatorException("GDAL Source: RasterIO failed");
 
+	//GDALRasterBand is not to be freed, is owned by GDALDataset that will be closed later
 	return raster;
 }
 
@@ -223,11 +225,6 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string
 		throw OperatorException("GDAL Source: rasterid not found");
 	}
 
-	// overviews have to be build on the dataset for the tiff format, not on the RasterBand
-	// http://www.gdal.org/classGDALRasterBand.html#a21f1e3c996dbe55f21a7462fdc0b8893
-	int anOverviewList[4] = { 2, 4, 8, 16};
-	dataset->BuildOverviews("NEAREST", 4, anOverviewList, 0, NULL, NULL, NULL);
-
 	auto raster = loadRaster(dataset, rasterid, adfGeoTransform[0], adfGeoTransform[3], adfGeoTransform[1], adfGeoTransform[5], epsg, clip, qrect.x1, qrect.y1, qrect.x2, qrect.y2, qrect);
 
 	GDALClose(dataset);
@@ -236,7 +233,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string
 }
 
 std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson, double wantedTimeUnix){
-	
+
 	std::string time_format = datasetJson.get("time_format", "%Y-%m-%d").asString();
 	std::string time_start 	= datasetJson.get("time_start", "0").asString();
 	std::string time_end 	= datasetJson.get("time_end", "0").asString();
@@ -250,7 +247,6 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 	if(wantedTimeUnix < startUnix){		// || (endUnix > 0 && wantedTimeUnix > endUnix)){
 		throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
 	}
-
 	Json::Value timeInterval = datasetJson.get("time_interval", NULL);
 
 	TimeUnit intervalUnit 	= GDALTimesnap::createTimeUnit(timeInterval.get("unit", "Month").asString());
@@ -289,9 +285,9 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 	std::string fileName = datasetJson.get("file_name", "").asString();
 
 	std::string placeholder = "%%%TIME_STRING%%%";
-	size_t placeholerPos = fileName.find(placeholder);
+	size_t placeholderPos = fileName.find(placeholder);
 
-	fileName = fileName.replace(placeholerPos, placeholder.length(), snappedTimeString);
+	fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
 	return path + "/" + fileName;
 }
 
