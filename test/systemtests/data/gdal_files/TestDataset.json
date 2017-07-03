@@ -19,12 +19,12 @@
       "size" : [ 3600, 1800 ]
    },
    "dataset_name" : "TestDataset",
-   "file_name" : "6Month_2014-09-05.TIFF",
+   "file_name" : "6Month_%%%TIME_STRING%%%.TIFF",
    "path" : "test/systemtests/data/gdal_files/TestMonth6/",
    "time_format" : "%Y-%m-%d",
    "time_interval" : {
       "unit" : "Month",
-      "value" : "6"
+      "value" : 6
    },
    "time_start" : "2014-09-05"
 }

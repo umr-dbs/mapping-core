@@ -56,11 +56,7 @@ void DatasetImporter::importDataset(std::string dataset_name, std::string datase
 	//create json 
 	Json::Value timeIntervalJson(Json::ValueType::objectValue);
 	timeIntervalJson["unit"] 	= time_unit;
-	timeIntervalJson["value"] 	= interval_value;
-
-	std::string fileToOpen = dataset_filename_with_placeholder.replace(placeholderPos, placeholder.length(), time_start);
-
-	GDALDataset *dataset = openGDALDataset(dataset_file_path + fileToOpen);
+	timeIntervalJson["value"] 	= interval;
 
 	Json::Value datasetJson(Json::ValueType::objectValue);
 	datasetJson["dataset_name"] = dataset_name;
@@ -69,6 +65,10 @@ void DatasetImporter::importDataset(std::string dataset_name, std::string datase
 	datasetJson["time_format"] 	= time_format;
 	datasetJson["time_start"] 	= time_start;
 	datasetJson["time_interval"]= timeIntervalJson;
+
+	std::string fileToOpen = dataset_filename_with_placeholder.replace(placeholderPos, placeholder.length(), time_start);
+
+	GDALDataset *dataset = openGDALDataset(dataset_file_path + fileToOpen);
 	
 	datasetJson["coords"]		= readCoords(dataset);
 	datasetJson["channels"]		= readChannels(dataset);
