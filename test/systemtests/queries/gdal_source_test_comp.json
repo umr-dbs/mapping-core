@@ -21,7 +21,7 @@
     "query": {        
         "params": {
        		"channel": 1,
-            "sourcename": "TestMonth6"
+            "sourcename": "TestMonth6Compressed"
         },
         "type": "gdal_source"
     },
