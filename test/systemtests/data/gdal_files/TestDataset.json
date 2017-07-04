@@ -20,7 +20,7 @@
    },
    "dataset_name" : "TestDataset",
    "file_name" : "6Month_%%%TIME_STRING%%%.TIFF",
-   "path" : "test/systemtests/data/gdal_files/TestMonth6/",
+   "path" : "test/systemtests/data/gdal_files/TestMonth6",
    "time_format" : "%Y-%m-%d",
    "time_interval" : {
       "unit" : "Month",

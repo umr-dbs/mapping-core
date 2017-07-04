@@ -68,7 +68,7 @@ void DatasetImporter::importDataset(std::string dataset_name, std::string datase
 
 	std::string fileToOpen = dataset_filename_with_placeholder.replace(placeholderPos, placeholder.length(), time_start);
 
-	GDALDataset *dataset = openGDALDataset(dataset_file_path + fileToOpen);
+	GDALDataset *dataset = openGDALDataset(dataset_file_path + "/" + fileToOpen);
 	
 	datasetJson["coords"]		= readCoords(dataset);
 	datasetJson["channels"]		= readChannels(dataset);
