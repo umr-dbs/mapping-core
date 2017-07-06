@@ -2,13 +2,12 @@
    "channels" : [
       {
          "datatype" : "Byte",
-         "nodata" : 255,
+         "nodata" : 0,
          "unit" : {
             "interpolation" : "unknown",
             "max" : 254,
             "measurement" : "unknown",
-            "min" : 0,
-            "unit" : "unknown"
+            "min" : 0
          }
       }
    ],
@@ -21,6 +20,11 @@
    "dataset_name" : "TestDataset",
    "file_name" : "6Month_%%%TIME_STRING%%%.TIFF",
    "path" : "test/systemtests/data/gdal_files/TestMonth6",
+   "provenance" : {
+      "citation" : "citation dup dup",
+      "license" : "some license",
+      "uri" : "uri uri slash dot uri"
+   },
    "time_format" : "%Y-%m-%d",
    "time_interval" : {
       "unit" : "Month",

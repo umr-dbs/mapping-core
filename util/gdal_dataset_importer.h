@@ -8,7 +8,16 @@
 
 class DatasetImporter {
 public:
-	static void importDataset(std::string dataset_name, std::string dataset_filename_with_placeholder, std::string dataset_file_path, std::string time_format, std::string time_start, std::string time_unit, std::string interval_value);
+	static void importDataset(std::string dataset_name, 
+							  std::string dataset_filename_with_placeholder, 
+							  std::string dataset_file_path, 
+							  std::string time_format, 
+							  std::string time_start, 
+							  std::string time_unit, 
+							  std::string interval_value, 
+							  std::string citation, 
+							  std::string license, 
+							  std::string uri);
 
 
 private:
@@ -16,6 +25,7 @@ private:
 	static GDALDataset* openGDALDataset(std::string file_name);
 	static Json::Value readCoords(GDALDataset *dataset);
 	static Json::Value readChannels(GDALDataset *dataset);
+	static std::string dataTypeToString(GDALDataType type);
 
 };
 

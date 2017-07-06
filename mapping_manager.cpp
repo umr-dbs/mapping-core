@@ -69,7 +69,7 @@ static void usage() {
 		printf("%s showprovenance <queryname>\n", program_name);
 		printf("%s enumeratesources [verbose]\n", program_name);
 		printf("%s userdb ...\n", program_name);
-		printf("%s importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> \n", program_name);
+		printf("%s importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> <provenance_citation> <provenance_license> <provenence_uri>\n", program_name);
 		exit(5);
 }
 
@@ -666,11 +666,13 @@ static int userdb(int argc, char *argv[]) {
 
 static int importdataset(int argc, char *argv[]){
 
-	if(argc < 6){
+	if(argc != 12){
 		usage();
 	}
 
-	//importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value>
+	//importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> 
+	//	<time_start> <time_unit> <interval_value> <provenance_citation> <provenance_license> <provenence_uri>
+	
 	std::string dataset_name		= argv[2];
 	std::string dataset_filename 	= argv[3];
 	std::string dataset_file_path 	= argv[4];
@@ -678,8 +680,11 @@ static int importdataset(int argc, char *argv[]){
 	std::string time_start 			= argv[6];
 	std::string time_unit 			= argv[7];
 	std::string interval_value		= argv[8];
+	std::string citation 			= argv[9];
+	std::string license 			= argv[10];
+	std::string uri 				= argv[11];
 
-	DatasetImporter::importDataset(dataset_name, dataset_filename, dataset_file_path, time_format, time_start, time_unit, interval_value);
+	DatasetImporter::importDataset(dataset_name, dataset_filename, dataset_file_path, time_format, time_start, time_unit, interval_value, citation, license, uri);
 	return 1;
 }
 

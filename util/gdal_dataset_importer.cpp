@@ -21,7 +21,16 @@ GDALDataset* DatasetImporter::openGDALDataset(std::string file_name){
 }
 
 
-void DatasetImporter::importDataset(std::string dataset_name, std::string dataset_filename_with_placeholder, std::string dataset_file_path, std::string time_format, std::string time_start, std::string time_unit, std::string interval_value){
+void DatasetImporter::importDataset(std::string dataset_name, 
+									std::string dataset_filename_with_placeholder, 
+									std::string dataset_file_path, 
+									std::string time_format, 
+									std::string time_start, 
+									std::string time_unit, 
+									std::string interval_value, 
+									std::string citation, 
+									std::string license, 
+									std::string uri){
 		
 	size_t placeholderPos =	dataset_filename_with_placeholder.find(placeholder);
 
@@ -72,7 +81,13 @@ void DatasetImporter::importDataset(std::string dataset_name, std::string datase
 	
 	datasetJson["coords"]		= readCoords(dataset);
 	datasetJson["channels"]		= readChannels(dataset);
-	
+
+	Json::Value provenanceJson(Json::ValueType::objectValue);
+	provenanceJson["citation"] 	= citation;
+	provenanceJson["license"] 	= license;
+	provenanceJson["uri"] 		= uri;
+	datasetJson["provenance"] 	= provenanceJson;
+
 	GDALClose(dataset);
 	
 
@@ -125,15 +140,30 @@ Json::Value DatasetImporter::readChannels(GDALDataset *dataset){
 		//GDALRasterBand is not to be freed, is owned by GDALDataset that will be closed later
 		GDALRasterBand *raster = dataset->GetRasterBand(i);
 
+		int success;
 		Json::Value unitJson;
+		
 		unitJson["interpolation"] 	= "unknown";
-		unitJson["max"] 			= 254.0;
 		unitJson["measurement"] 	= "unknown";
-		unitJson["min"] 			= 0.0;
-		unitJson["unit"] 			= "unknown";
+		
+		GDALDataType dataType 		= raster->GetRasterDataType();
+		channelJson["datatype"] 	= dataTypeToString(dataType);
+		
+		double minimum 				= raster->GetMinimum(&success);
+		if(!success)
+			minimum 				= 0.0;
+		unitJson["min"] 			= minimum;
 
-		channelJson["datatype"] 	= "Byte";
-		channelJson["nodata"] 		= 255.0;
+		double maximum 				= raster->GetMaximum(&success);
+		if(!success)
+			maximum = 254.0;
+		unitJson["max"] 			= maximum;		
+
+		double nodata = raster->GetNoDataValue(&success);
+		if(!success)
+			nodata = 255.0;
+		channelJson["nodata"] 		= nodata;
+
 		channelJson["unit"]			= unitJson;
 
 		channelsJson.append(channelJson);
@@ -142,6 +172,62 @@ Json::Value DatasetImporter::readChannels(GDALDataset *dataset){
 	return channelsJson;
 }
 
+std::string DatasetImporter::dataTypeToString(GDALDataType type){
+	switch(type){
+		case GDT_Byte:
+			return "Byte";
+		case GDT_UInt16:
+			return "UInt16";
+		case GDT_Int16:
+			return "Int16";
+		case GDT_UInt32:
+			return "UInt32";
+		case GDT_Int32:
+			return "Int32";
+		default:
+		case GDT_Unknown:
+			return "Unknown";
+	}
+}
+
+/*
+GDT_Unknown 	
+
+Unknown or unspecified type
+GDT_Byte 	
+
+Eight bit unsigned integer
+GDT_UInt16 	
+
+Sixteen bit unsigned integer
+GDT_Int16 	
+
+Sixteen bit signed integer
+GDT_UInt32 	
+
+Thirty two bit unsigned integer
+GDT_Int32 	
+
+Thirty two bit signed integer
+GDT_Float32 	
+
+Thirty two bit floating point
+GDT_Float64 	
+
+Sixty four bit floating point
+GDT_CInt16 	
+
+Complex Int16
+GDT_CInt32 	
+
+Complex Int32
+GDT_CFloat32 	
+
+Complex Float32
+GDT_CFloat64 	
+
+Complex Float64 
+*/
 
 /* ndvi.json
 {
