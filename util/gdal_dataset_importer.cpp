@@ -184,50 +184,23 @@ std::string DatasetImporter::dataTypeToString(GDALDataType type){
 			return "UInt32";
 		case GDT_Int32:
 			return "Int32";
+		case GDT_Float32:
+			return "Float32";
+		case GDT_Float64:
+			return "Float64";
+		case GDT_CInt16:
+			return "CInt16";
+		case GDT_CInt32:
+			return "CInt32";
+		case GDT_CFloat32:
+			return "CFloat32";
+		case GDT_CFloat64:
+			return "CFloat64";
 		default:
 		case GDT_Unknown:
 			return "Unknown";
 	}
 }
-
-/*
-GDT_Unknown 	
-
-Unknown or unspecified type
-GDT_Byte 	
-
-Eight bit unsigned integer
-GDT_UInt16 	
-
-Sixteen bit unsigned integer
-GDT_Int16 	
-
-Sixteen bit signed integer
-GDT_UInt32 	
-
-Thirty two bit unsigned integer
-GDT_Int32 	
-
-Thirty two bit signed integer
-GDT_Float32 	
-
-Thirty two bit floating point
-GDT_Float64 	
-
-Sixty four bit floating point
-GDT_CInt16 	
-
-Complex Int16
-GDT_CInt32 	
-
-Complex Int32
-GDT_CFloat32 	
-
-Complex Float32
-GDT_CFloat64 	
-
-Complex Float64 
-*/
 
 /* ndvi.json
 {
