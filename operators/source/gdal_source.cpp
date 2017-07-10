@@ -38,7 +38,6 @@ class RasterGDALSourceOperator : public GenericOperator {
 
 		std::string sourcename;
 		int channel;
-		bool transform;
 
 		std::unique_ptr<GenericRaster> loadDataset( std::string filename, 
 													int rasterid, 													
@@ -55,7 +54,7 @@ class RasterGDALSourceOperator : public GenericOperator {
 													double clip_x2, double clip_y2,
 													const QueryRectangle &qrect);
 		
-		Json::Value getDatasetJson(std::string datasetName);
+		Json::Value getDatasetJson();
 		std::string getDatasetFilename(Json::Value datasetJson, double wantedTimeUnix);
 };
 
@@ -68,8 +67,7 @@ RasterGDALSourceOperator::RasterGDALSourceOperator(int sourcecounts[], GenericOp
 
 	
 	channel = params.get("channel", 1).asInt();
-	transform = params.get("transform", true).asBool();
-	datasetPath = Configuration::get("gdalsource.datasetpath");					
+	datasetPath = Configuration::get("gdalsource.datasetpath");	
 }
 
 RasterGDALSourceOperator::~RasterGDALSourceOperator(){
@@ -79,25 +77,27 @@ RasterGDALSourceOperator::~RasterGDALSourceOperator(){
 REGISTER_OPERATOR(RasterGDALSourceOperator, "gdal_source");
 
 void RasterGDALSourceOperator::getProvenance(ProvenanceCollection &pc) {
-	/*std::string local_identifier = "data." + getType() + "." + sourcename;
+	std::string local_identifier = "data.gdal_source." + sourcename;
+	Json::Value datasetJson = getDatasetJson();
 
-	auto sp = rasterdb->getProvenance();
-	if (sp == nullptr)
+	Json::Value provenanceinfo = datasetJson["provenance"];
+	if (provenanceinfo.isObject()) {
+		pc.add(Provenance(provenanceinfo.get("citation", "").asString(),
+								provenanceinfo.get("license", "").asString(),
+								provenanceinfo.get("uri", "").asString(),
+								local_identifier));
+	} else {
 		pc.add(Provenance("", "", "", local_identifier));
-	else
-		pc.add(Provenance(sp->citation, sp->license, sp->uri, local_identifier));
-		*/
+	}	
 }
 
 void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &stream) {
-	std::string trans = transform ? "true" : "false";
 	stream << "{\"sourcename\": \"" << sourcename << "\",";
-	stream << " \"channel\": " << channel << ",";
-	stream << " \"transform\": " << trans << "}";
+	stream << " \"channel\": " << channel << "}";
 }
 
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
-	Json::Value datasetJson = getDatasetJson(sourcename);	
+	Json::Value datasetJson = getDatasetJson();	
 	std::string file_path 	= getDatasetFilename(datasetJson, rect.t1);	
 	auto raster 			= loadDataset(file_path, channel, rect.epsg, true, rect);	
 	//flip here so the tiff result will not be flipped
@@ -293,7 +293,7 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 
 
 
-Json::Value RasterGDALSourceOperator::getDatasetJson(std::string datasetName){
+Json::Value RasterGDALSourceOperator::getDatasetJson(){
 	// opens the standard path for datasets and returns the dataset with the name datasetName as Json::Value
 	struct dirent *entry;
 	DIR *dir = opendir(datasetPath.c_str());
@@ -306,13 +306,13 @@ Json::Value RasterGDALSourceOperator::getDatasetJson(std::string datasetName){
         std::string filename = entry->d_name;
         std::string withoutExtension = filename.substr(0, filename.length() - 5);
         
-        if(withoutExtension == datasetName){
+        if(withoutExtension == sourcename){
         	
         	//open file then read json object from it
         	std::ifstream file(datasetPath + filename);
 			if (!file.is_open()) {
 			    closedir(dir);
-				throw OperatorException("GDAL Source Operator: unable to dataset file " + datasetName);
+				throw OperatorException("GDAL Source Operator: unable to dataset file " + sourcename);
 			}
 
 			Json::Reader reader(Json::Features::strictMode());
@@ -329,5 +329,5 @@ Json::Value RasterGDALSourceOperator::getDatasetJson(std::string datasetName){
     }
 
     closedir(dir);
-    throw OperatorException("GDAL Source: Dataset " + datasetName + " does not exist.");
+    throw OperatorException("GDAL Source: Dataset " + sourcename + " does not exist.");
 }
