@@ -269,15 +269,25 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 	gmtime_r(&wantedTimeTimet, &wantedTimeTm);
 	std::cout << "WantedTime: " << GDALTimesnap::unixTimeToString(wantedTimeUnix, time_format) << std::endl;
 
-	time_t startTimeTimet = startUnix;	
+	time_t startTimeTimet = startUnix;				
 	tm startTimeTm;
 	gmtime_r(&startTimeTimet, &startTimeTm);
-	std::cout << "StartTime: " << GDALTimesnap::unixTimeToString(startUnix, time_format) << std::endl;
+
+	// this is an ugly workaround for time formats not containing days. because than the day value is 31 of the month before
+	if(time_format.find("%d") == std::string::npos){
+		int currDayValue = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Day);
+		if(currDayValue == 31 || currDayValue == 32){
+			GDALTimesnap::setTimeUnitValueInTm(startTimeTm, TimeUnit::Day, 33);
+			time_t overflow = mktime(&startTimeTm);	
+			gmtime_r(&overflow, &startTimeTm);
+		}
+	}
+	
+	std::cout << "StartTime: " << GDALTimesnap::tmStructToString(&startTimeTm, time_format) << std::endl;
 
 	tm snappedTime = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
 	
 	// get string of snapped time and put the file path, name together
-	
 	std::string snappedTimeString  = GDALTimesnap::tmStructToString(&snappedTime, time_format);
 	std::cout << "Snapped Time: " << snappedTimeString << std::endl;
 
@@ -290,8 +300,6 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 	fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
 	return path + "/" + fileName;
 }
-
-
 
 Json::Value RasterGDALSourceOperator::getDatasetJson(){
 	// opens the standard path for datasets and returns the dataset with the name datasetName as Json::Value

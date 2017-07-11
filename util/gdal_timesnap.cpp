@@ -16,23 +16,32 @@ tm GDALTimesnap::snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTi
 	tm diff 	= tmDifference(wantedTime, startTime);
 	tm snapped 	= startTime;
 
+	//std::cout << "StartTime: " << GDALTimesnap::tmStructToString(&startTime, "%Y-%m-%d") << std::endl;
+	//std::cout << "WantedTime: " << GDALTimesnap::tmStructToString(&wantedTime, "%Y-%m-%d") << std::endl;
+	//std::cout << "Diff Time: " << GDALTimesnap::tmStructToString(&diff, "%Y-%m-%d") << std::endl;
+
 	int unitDiffValue 	= getUnitDifference(diff, snapUnit);
-	int unitDiffModulo 	= unitDiffValue % intervalValue;	
-	unitDiffValue 		-= unitDiffModulo; 
+	int unitDiffModulo 	= unitDiffValue % intervalValue;
+	unitDiffValue 		-= unitDiffModulo; 	
 	
 	// add the units difference on the start value
 	setTimeUnitValueInTm(snapped, snapUnit, getTimeUnitValueFromTm(snapped, snapUnit) + unitDiffValue);
 
 	//automatically handles the overflow by making time_t from tm, than tm from that time_t. No performance difference noticeable
-	if(snapUnit != TimeUnit::Day){
+	if(snapUnit < TimeUnit::Day){
 		//day being 1 based is always one of for the other units...?!?!
+		//edit: only for "bigger units" like month, year, so its snapUnit < Day, not !=.
 		setTimeUnitValueInTm(snapped, TimeUnit::Day, getTimeUnitValueFromTm(snapped, TimeUnit::Day) + 1);			
 	}
-	time_t snappedToTimeT = mktime(&snapped);	
-	gmtime_r(&snappedToTimeT, &snapped);
+
+
+	if(snapUnit == TimeUnit::Hour){
+		handleOverflow(snapped, snapUnit);
+	} else {
+		time_t snappedToTimeT = mktime(&snapped);
+		gmtime_r(&snappedToTimeT, &snapped);
+	}
 	
-	// handle the created overflow, old way
-	//handleOverflow(snapped, snapUnit);		
 	
 	return snapped;
 }
@@ -95,7 +104,8 @@ int GDALTimesnap::getUnitDifference(tm diff, TimeUnit snapUnit){
 	for(int i = snapUnitAsInt+1; i <= (int)TimeUnit::Second; i++){
 		TimeUnit tu = (TimeUnit)i;		
 		if(getTimeUnitValueFromTm(diff, tu) < minValueForTimeUnit(tu)){
-			unitDiff -= 1;
+			if(unitDiff > 0)
+				unitDiff -= 1;
 			break;
 		}
 	}

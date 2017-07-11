@@ -144,7 +144,7 @@ Json::Value DatasetImporter::readChannels(GDALDataset *dataset){
 		Json::Value unitJson;
 		
 		unitJson["interpolation"] 	= "unknown";
-		unitJson["measurement"] 	= "unknown";
+		unitJson["measurement"] 	= raster->GetUnitType(); //"unknown";
 		
 		GDALDataType dataType 		= raster->GetRasterDataType();
 		channelJson["datatype"] 	= dataTypeToString(dataType);
