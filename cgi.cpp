@@ -75,14 +75,24 @@ int main() {
 		cm = make_unique<NopCacheManager>();
 	}
 	else {
-		cm = make_unique<LocalCacheManager>("always", "lru",
-				Configuration::getInt("nodeserver.cache.raster.size"),
-				Configuration::getInt("nodeserver.cache.points.size"),
-				Configuration::getInt("nodeserver.cache.lines.size"),
-				Configuration::getInt("nodeserver.cache.polygons.size"),
-				Configuration::getInt("nodeserver.cache.plots.size"),
-				Configuration::getInt("nodeserver.cache.provenance.size")
-		);
+		std::string cacheType = Configuration::get("cache.type");
+
+		if(cacheType == "local") {
+			cm = make_unique<LocalCacheManager>(Configuration::get("cache.strategy"), Configuration::get("cache.replacement"),
+					Configuration::getInt("cache.raster.size"),
+					Configuration::getInt("cache.points.size"),
+					Configuration::getInt("cache.lines.size"),
+					Configuration::getInt("cache.polygons.size"),
+					Configuration::getInt("cache.plots.size"),
+					Configuration::getInt("cache.provenance.size")
+			);
+		} else if(cacheType == "remote") {
+			std::string host = Configuration::get("indexserver.host");
+			int port = atoi( Configuration::get("indexserver.port").c_str() );
+			cm = make_unique<ClientCacheManager>(host,port);
+		} else {
+			throw ArgumentException("Invalid cache.type");
+		}
 	}
 	CacheManager::init( cm.get() );
 
