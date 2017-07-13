@@ -31,7 +31,7 @@
 				{
 					"params" : 
 					{
-						"filename" : "test/systemtests/data/osm_highways_3_lanes/osm_highways_3lanes.csv",
+						"filename" : "file://test/systemtests/data/osm_highways_3_lanes/osm_highways_3lanes.csv",
 						"separator" : ";",
 						"geometry": "wkt",
 						"time": "none",
