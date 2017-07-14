@@ -13,16 +13,21 @@ const std::map<std::string, TimeUnit> GDALTimesnap::string_to_TimeUnit = {
 
 tm GDALTimesnap::snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTime, tm wantedTime){
 	
+	std::cout << "HOURS start: " << getTimeUnitValueFromTm(startTime, TimeUnit::Hour) << ", wanted: " << getTimeUnitValueFromTm(wantedTime, TimeUnit::Hour) << std::endl;;
+
 	tm diff 	= tmDifference(wantedTime, startTime);
 	tm snapped 	= startTime;
 
-	//std::cout << "StartTime: " << GDALTimesnap::tmStructToString(&startTime, "%Y-%m-%d") << std::endl;
-	//std::cout << "WantedTime: " << GDALTimesnap::tmStructToString(&wantedTime, "%Y-%m-%d") << std::endl;
-	//std::cout << "Diff Time: " << GDALTimesnap::tmStructToString(&diff, "%Y-%m-%d") << std::endl;
+	printTime(diff);
+
+	std::cout << "StartTime: " << GDALTimesnap::tmStructToString(&startTime, "%Y-%m-%d") << std::endl;
+	std::cout << "WantedTime: " << GDALTimesnap::tmStructToString(&wantedTime, "%Y-%m-%d") << std::endl;
+	std::cout << "Diff Time: " << GDALTimesnap::tmStructToString(&diff, "%Y-%m-%d") << std::endl;
 
 	int unitDiffValue 	= getUnitDifference(diff, snapUnit);
-	int unitDiffModulo 	= unitDiffValue % intervalValue;
+	int unitDiffModulo 	= unitDiffValue % intervalValue;	
 	unitDiffValue 		-= unitDiffModulo; 	
+
 	
 	// add the units difference on the start value
 	setTimeUnitValueInTm(snapped, snapUnit, getTimeUnitValueFromTm(snapped, snapUnit) + unitDiffValue);
@@ -69,9 +74,9 @@ void GDALTimesnap::handleOverflow(tm &snapped, TimeUnit snapUnit){
 
 tm GDALTimesnap::tmDifference(tm &first, tm &second){
 	// igonres tm_wday and tm_yday and tm_isdst, because they are not needed
-	tm diff;
+	tm diff = {};
 	diff.tm_year 	= first.tm_year - second.tm_year;
-	diff.tm_mon 	= first.tm_mon - second.tm_mon;
+	diff.tm_mon 	= first.tm_mon - second.tm_mon;	
 	diff.tm_mday 	= first.tm_mday - second.tm_mday;
 	diff.tm_hour 	= first.tm_hour - second.tm_hour;
 	diff.tm_min 	= first.tm_min - second.tm_min;
@@ -81,6 +86,7 @@ tm GDALTimesnap::tmDifference(tm &first, tm &second){
 }
 
 int GDALTimesnap::getUnitDifference(tm diff, TimeUnit snapUnit){
+	std::cout << "GEt UNit difference" << std::endl;
 	const int snapUnitAsInt = (int)snapUnit;	
 	int unitDiff = getTimeUnitValueFromTm(diff, snapUnit);
 
@@ -100,16 +106,19 @@ int GDALTimesnap::getUnitDifference(tm diff, TimeUnit snapUnit){
 		unitDiff += valueBefore * maxValueForTimeUnit(snapUnit);
 	}
 
+	std::cout << "Unit diff middle: " << unitDiff << std::endl;
+
 	//if one of the smaller time units than snapUnit is negative -> unitdiff -= 1 because one part of the difference was not a whole unit
 	for(int i = snapUnitAsInt+1; i <= (int)TimeUnit::Second; i++){
 		TimeUnit tu = (TimeUnit)i;		
 		if(getTimeUnitValueFromTm(diff, tu) < minValueForTimeUnit(tu)){
+			std::cout << "Unit: " << (int)tu << ", unitvalue: " << getTimeUnitValueFromTm(diff, tu) << ", min value: " << minValueForTimeUnit(tu) << std::endl;
 			if(unitDiff > 0)
 				unitDiff -= 1;
 			break;
 		}
 	}
-
+	std::cout << "Unit diff end: " << unitDiff << std::endl;
 	return unitDiff;
 }
 
@@ -195,4 +204,22 @@ int GDALTimesnap::maxValueForTimeUnit(TimeUnit part) {
 		case TimeUnit::Second:
 			return 60;
 	}
+}
+
+void GDALTimesnap::printTime(tm &time){
+	std::cout << "Y: " << time.tm_year << ", M: " << time.tm_mon << ", D: " << time.tm_mday << ", H: " << time.tm_hour << ", M: " << time.tm_min << ", S: " << time.tm_sec << std::endl;
+}
+
+// Takes the acutal month and year numbers, not how they would be in tm struct.
+int GDALTimesnap::daysOfMonth(int year, int month){
+	if(month == 4 || month == 6 || month == 9 || month == 11)
+		return 30;
+	else if(month == 2){		
+		if((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0))
+			return 29;
+		else 
+			return 28;
+	}
+	else
+		return 31;
 }

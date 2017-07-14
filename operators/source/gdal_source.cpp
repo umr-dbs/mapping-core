@@ -265,24 +265,30 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 	}
 
 	time_t wantedTimeTimet = wantedTimeUnix;	
-	tm wantedTimeTm;
+	tm wantedTimeTm = {};
 	gmtime_r(&wantedTimeTimet, &wantedTimeTm);
-	std::cout << "WantedTime: " << GDALTimesnap::unixTimeToString(wantedTimeUnix, time_format) << std::endl;
+	GDALTimesnap::printTime(wantedTimeTm);
 
 	time_t startTimeTimet = startUnix;				
-	tm startTimeTm;
+	tm startTimeTm = {};
 	gmtime_r(&startTimeTimet, &startTimeTm);
+	GDALTimesnap::printTime(startTimeTm);
 
-	// this is an ugly workaround for time formats not containing days. because than the day value is 31 of the month before
+	// this is an ugly workaround for time formats not containing days. because than the date is the last day before the wanted date
 	if(time_format.find("%d") == std::string::npos){
-		int currDayValue = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Day);
-		if(currDayValue == 31 || currDayValue == 32){
-			GDALTimesnap::setTimeUnitValueInTm(startTimeTm, TimeUnit::Day, 33);
+		int currDayValue  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Day);
+		int currHourValue = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Hour);
+		int yearValue  	  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Year);
+		int monthValue 	  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Month);
+			
+		if(currDayValue == GDALTimesnap::daysOfMonth(yearValue + 1900, monthValue + 1)){
+			GDALTimesnap::setTimeUnitValueInTm(startTimeTm, TimeUnit::Day, currDayValue + 1);
 			time_t overflow = mktime(&startTimeTm);	
-			gmtime_r(&overflow, &startTimeTm);
+			localtime_r(&overflow, &startTimeTm);
+			GDALTimesnap::setTimeUnitValueInTm(startTimeTm, TimeUnit::Hour, 0);
 		}
 	}
-	
+	GDALTimesnap::printTime(startTimeTm);	
 	std::cout << "StartTime: " << GDALTimesnap::tmStructToString(&startTimeTm, time_format) << std::endl;
 
 	tm snappedTime = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);

@@ -30,6 +30,8 @@ class GDALTimesnap {
 		static int getTimeUnitValueFromTm(tm &time, TimeUnit unit);
 		static int minValueForTimeUnit(TimeUnit part);
 		static int maxValueForTimeUnit(TimeUnit part);	
+		static void printTime(tm &time);
+		static int daysOfMonth(int year, int month);
 };
 
 #endif
