@@ -122,13 +122,56 @@ Json::Value DatasetImporter::readCoords(GDALDataset *dataset){
 	sizeJson.append(dataset->GetRasterXSize());
 	sizeJson.append(dataset->GetRasterYSize());
 
-	coordsJson["epsg"] = dataset->GetProjectionRef();	//this is an internal string, direct write into the json should be okay. Alternative: GetGCPProjection(), dont know the difference
+	std::string epsg = getEpsg(dataset->GetProjectionRef());	//this is an internal string
+	coordsJson["epsg"] = epsg;
 	coordsJson["origin"] = originJson;
 	coordsJson["scale"] = scaleJson;
 	coordsJson["size"] = sizeJson;
 
 	return coordsJson;
 }
+
+std::string DatasetImporter::getEpsg(std::string gdalInput){
+	int index = 0;
+	int openBrackets = 0;
+	while(index < gdalInput.length()){
+		const char c = gdalInput[index];
+		if(c == '[')
+		{
+			openBrackets++;
+		} 
+		else if(c == ']')
+		{
+			openBrackets--;
+		}
+		else if(c == ',')
+		{
+			if(openBrackets == 1 && gdalInput.compare(index+1, 9, "AUTHORITY") == 0)
+			{
+				while(gdalInput[index] != '['){
+					index++;
+				}
+				index += 2;
+				int closingQuote = index;
+				while(gdalInput[closingQuote] != '"'){
+					closingQuote++;
+				}
+				std::string desc = gdalInput.substr(index,closingQuote-index);
+				index = closingQuote + 3;
+				closingQuote = index;
+				while(gdalInput[closingQuote] != '"'){
+					closingQuote++;
+				}
+				std::string val = gdalInput.substr(index, closingQuote - index);
+				return val;
+			}
+		}
+
+		index++;
+	}
+	return "unknown";
+}
+
 
 Json::Value DatasetImporter::readChannels(GDALDataset *dataset){
 	Json::Value channelsJson(Json::ValueType::arrayValue);

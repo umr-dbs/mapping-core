@@ -26,6 +26,7 @@ private:
 	static Json::Value readCoords(GDALDataset *dataset);
 	static Json::Value readChannels(GDALDataset *dataset);
 	static std::string dataTypeToString(GDALDataType type);
+	static std::string getEpsg(std::string gdalInput);
 
 };
 
