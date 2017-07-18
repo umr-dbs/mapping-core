@@ -1,0 +1,16 @@
+{
+	"dataset_name" : "TestHour",
+	"path" : "test/systemtests/data/gdal_files/TestMinute",
+	"file_name" : "MOD13A2_M_NDVI_%%%TIME_STRING%%%.TIFF",
+	
+	"time_format" : "%Y-%m-%dT%H:%M:%S",
+	"time_start" : "2014-09-01T17:00:00",	
+	
+	"time_interval" : {
+		"unit" : "Minute",
+		"value" : 10	
+	},
+
+	"channel" : 1,
+	"description" : "test files 1"
+}

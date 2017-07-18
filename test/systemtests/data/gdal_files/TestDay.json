@@ -4,7 +4,7 @@
 	"file_name" : "MOD13A2_M_NDVI_%%%TIME_STRING%%%.TIFF",
 	
 	"time_format" : "%Y-%m-%d",
-	"time_start" : "2014-09-01",
+	"time_start" : "2014-08-31",
 	"time_end" : "2014-10-15",
 	
 	"time_interval" : {
