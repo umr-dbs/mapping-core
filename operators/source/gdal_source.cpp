@@ -112,12 +112,10 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 
 	bool flipx = false, flipy = false;
 
-
 	poBand = dataset->GetRasterBand( rasteridx );
 	poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );	
 
 	GDALDataType type = poBand->GetRasterDataType();
-
 
 	adfMinMax[0] = poBand->GetMinimum( &bGotMin );
 	adfMinMax[1] = poBand->GetMaximum( &bGotMax );
@@ -182,17 +180,11 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	auto raster = GenericRaster::create(dd, stref, pixel_width, pixel_height);
 	void *buffer = raster->getDataForWriting();
 
-	
-	GDALRasterIOExtraArg *extraArg = NULL; //new GDALRasterIOExtraArg;
-	//extraArg->nVersion = 0; //without settings this its throwing an "Importer Exception" with "Unhandled version of GDALRasterIOExtraArg" Whit setting it its an segmentation fault
-	//extraArg->eResampleAlg = GRIORA_Bilinear;
-	
-
 	// Read Pixel data
 	auto res = poBand->RasterIO( GF_Read,
 		pixel_x1, pixel_y1, pixel_width, pixel_height, // rectangle in the source raster
 		buffer, raster->width, raster->height, // position and size of the destination buffer
-		type, 0, 0, extraArg);	//NULL instead of extraArg Pointer. &extraArg
+		type, 0, 0, NULL);
 
 	if (res != CE_None)
 		throw OperatorException("GDAL Source: RasterIO failed");
@@ -242,9 +234,8 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 
     //check if requested time is in range of dataset timestamps
 	double startUnix 	= timeParser->parse(time_start);
-	//double endUnix 		= timeParser->parse(time_end);
 	
-	if(wantedTimeUnix < startUnix){		// || (endUnix > 0 && wantedTimeUnix > endUnix)){
+	if(wantedTimeUnix < startUnix){
 		throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
 	}
 	Json::Value timeInterval = datasetJson.get("time_interval", NULL);
@@ -252,29 +243,17 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 	TimeUnit intervalUnit 	= GDALTimesnap::createTimeUnit(timeInterval.get("unit", "Month").asString());
 	int intervalValue 		= timeInterval.get("value", 1).asInt();
 	
-	//std::cout << "Interval unit: " << (int)intervalUnit << ", interval value: " << intervalValue << std::endl;
-
-	if(intervalUnit != TimeUnit::Year){
-		if(GDALTimesnap::maxValueForTimeUnit(intervalUnit) % intervalValue != 0){
-			throw OperatorException("GDALSource: dataset invalid, interval value modulo unit-length must be 0. e.g. 4 % 12, for Months, or 30%60 for Minutes");
-		}
-	} else {
-		if(intervalValue != 1){
-			throw OperatorException("GDALSource: dataset invalid, interval value for interval unit Year has to be 1.");	
-		}
-	}
 
 	time_t wantedTimeTimet = wantedTimeUnix;	
 	tm wantedTimeTm = {};
 	gmtime_r(&wantedTimeTimet, &wantedTimeTm);
-	GDALTimesnap::printTime(wantedTimeTm);
 
 	time_t startTimeTimet = startUnix;				
 	tm startTimeTm = {};
 	gmtime_r(&startTimeTimet, &startTimeTm);
-	GDALTimesnap::printTime(startTimeTm);
+	std::cout << "WantedTime: " << GDALTimesnap::tmStructToString(&wantedTimeTm, time_format) << std::endl;
 
-	// this is an ugly workaround for time formats not containing days. because than the date is the last day before the wanted date
+	// this is a workaround for time formats not containing days. because than the date is the last day before the wanted date
 	if(time_format.find("%d") == std::string::npos){
 		int currDayValue  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Day);
 		int currHourValue = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Hour);
@@ -288,7 +267,6 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 			GDALTimesnap::setTimeUnitValueInTm(startTimeTm, TimeUnit::Hour, 0);
 		}
 	}
-	GDALTimesnap::printTime(startTimeTm);	
 	std::cout << "StartTime: " << GDALTimesnap::tmStructToString(&startTimeTm, time_format) << std::endl;
 
 	tm snappedTime = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
