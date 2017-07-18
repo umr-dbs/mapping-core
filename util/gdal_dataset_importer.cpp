@@ -122,7 +122,7 @@ Json::Value DatasetImporter::readCoords(GDALDataset *dataset){
 	sizeJson.append(dataset->GetRasterXSize());
 	sizeJson.append(dataset->GetRasterYSize());
 
-	std::string epsg = getEpsg(dataset->GetProjectionRef());	//this is an internal string
+	std::string epsg = getEpsg(dataset);
 	coordsJson["epsg"] = epsg;
 	coordsJson["origin"] = originJson;
 	coordsJson["scale"] = scaleJson;
@@ -131,7 +131,10 @@ Json::Value DatasetImporter::readCoords(GDALDataset *dataset){
 	return coordsJson;
 }
 
-std::string DatasetImporter::getEpsg(std::string gdalInput){
+//reads the epsg information from GetProjectionRef String of the GDALDataset
+std::string DatasetImporter::getEpsg(GDALDataset *dataset){
+	std::string gdalInput = dataset->GetProjectionRef(); //this returns an internal char*
+
 	int index = 0;
 	int openBrackets = 0;
 	while(index < gdalInput.length()){
@@ -145,7 +148,7 @@ std::string DatasetImporter::getEpsg(std::string gdalInput){
 			openBrackets--;
 		}
 		else if(c == ',')
-		{
+		{			
 			if(openBrackets == 1 && gdalInput.compare(index+1, 9, "AUTHORITY") == 0)
 			{
 				while(gdalInput[index] != '['){
@@ -156,7 +159,8 @@ std::string DatasetImporter::getEpsg(std::string gdalInput){
 				while(gdalInput[closingQuote] != '"'){
 					closingQuote++;
 				}
-				std::string desc = gdalInput.substr(index,closingQuote-index);
+				//between index and closingQuote is the description of the value. has to be EPSG
+				//std::string desc = gdalInput.substr(index,closingQuote-index);
 				index = closingQuote + 3;
 				closingQuote = index;
 				while(gdalInput[closingQuote] != '"'){
@@ -244,32 +248,3 @@ std::string DatasetImporter::dataTypeToString(GDALDataType type){
 			return "Unknown";
 	}
 }
-
-/* ndvi.json
-{
-   "channels" : [
-      {
-         "datatype" : "Byte",
-         "nodata" : 255.0,
-         "unit" : {
-            "interpolation" : "unknown",
-            "max" : 254.0,
-            "measurement" : "unknown",
-            "min" : 0.0,
-            "unit" : "unknown"
-         }
-      }
-   ],
-   "coords" : {
-      "epsg" : 4326
-      "origin" : [ -180.0, -90 ],
-      "scale" : [ 0.10, 0.10 ],
-      "size" : [ 3600, 1800 ]
-   },
-   "provenance": {
-   	"citation": "NVDI, Images by Reto Stockli, NASA's Earth Observatory Group, using data provided by the MODIS Land Science Team.",
-   	"license": "public domain",
-   	"uri": "http://neo.sci.gsfc.nasa.gov/view.php?datasetId=MOD13A2_E_NDVI"
-   }
-}
-*/
