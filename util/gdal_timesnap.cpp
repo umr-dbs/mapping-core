@@ -13,41 +13,28 @@ const std::map<std::string, TimeUnit> GDALTimesnap::string_to_TimeUnit = {
 
 tm GDALTimesnap::snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTime, tm wantedTime){
 	
-	std::cout << "HOURS start: " << getTimeUnitValueFromTm(startTime, TimeUnit::Hour) << ", wanted: " << getTimeUnitValueFromTm(wantedTime, TimeUnit::Hour) << std::endl;;
-
 	tm diff 	= tmDifference(wantedTime, startTime);
 	tm snapped 	= startTime;
-
-	printTime(diff);
-
-	std::cout << "StartTime: " << GDALTimesnap::tmStructToString(&startTime, "%Y-%m-%d") << std::endl;
-	std::cout << "WantedTime: " << GDALTimesnap::tmStructToString(&wantedTime, "%Y-%m-%d") << std::endl;
-	std::cout << "Diff Time: " << GDALTimesnap::tmStructToString(&diff, "%Y-%m-%d") << std::endl;
 
 	int unitDiffValue 	= getUnitDifference(diff, snapUnit);
 	int unitDiffModulo 	= unitDiffValue % intervalValue;	
 	unitDiffValue 		-= unitDiffModulo; 	
-
 	
 	// add the units difference on the start value
 	setTimeUnitValueInTm(snapped, snapUnit, getTimeUnitValueFromTm(snapped, snapUnit) + unitDiffValue);
-
-	//automatically handles the overflow by making time_t from tm, than tm from that time_t. No performance difference noticeable
-	if(snapUnit < TimeUnit::Day){
-		//day being 1 based is always one of for the other units...?!?!
-		//edit: only for "bigger units" like month, year, so its snapUnit < Day, not !=.
+	
+	if(snapUnit <= TimeUnit::Day){
+		//day being 1 based is always one of except for units bigger than Day (so except for Hour, Minute, Second)		
 		setTimeUnitValueInTm(snapped, TimeUnit::Day, getTimeUnitValueFromTm(snapped, TimeUnit::Day) + 1);			
 	}
 
-
-	if(snapUnit == TimeUnit::Hour){
+	if(snapUnit == TimeUnit::Hour || snapUnit == TimeUnit::Minute || snapUnit == TimeUnit::Second){
 		handleOverflow(snapped, snapUnit);
 	} else {
 		time_t snappedToTimeT = mktime(&snapped);
 		gmtime_r(&snappedToTimeT, &snapped);
 	}
-	
-	
+		
 	return snapped;
 }
 
@@ -86,7 +73,6 @@ tm GDALTimesnap::tmDifference(tm &first, tm &second){
 }
 
 int GDALTimesnap::getUnitDifference(tm diff, TimeUnit snapUnit){
-	std::cout << "GEt UNit difference" << std::endl;
 	const int snapUnitAsInt = (int)snapUnit;	
 	int unitDiff = getTimeUnitValueFromTm(diff, snapUnit);
 
@@ -106,19 +92,15 @@ int GDALTimesnap::getUnitDifference(tm diff, TimeUnit snapUnit){
 		unitDiff += valueBefore * maxValueForTimeUnit(snapUnit);
 	}
 
-	std::cout << "Unit diff middle: " << unitDiff << std::endl;
-
 	//if one of the smaller time units than snapUnit is negative -> unitdiff -= 1 because one part of the difference was not a whole unit
 	for(int i = snapUnitAsInt+1; i <= (int)TimeUnit::Second; i++){
 		TimeUnit tu = (TimeUnit)i;		
-		if(getTimeUnitValueFromTm(diff, tu) < minValueForTimeUnit(tu)){
-			std::cout << "Unit: " << (int)tu << ", unitvalue: " << getTimeUnitValueFromTm(diff, tu) << ", min value: " << minValueForTimeUnit(tu) << std::endl;
+		if(getTimeUnitValueFromTm(diff, tu) < minValueForTimeUnit(tu)){			
 			if(unitDiff > 0)
 				unitDiff -= 1;
 			break;
 		}
-	}
-	std::cout << "Unit diff end: " << unitDiff << std::endl;
+	}	
 	return unitDiff;
 }
 
