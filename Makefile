@@ -173,8 +173,8 @@ o/core/%.san.o: %.cpp | $${@D}/.f $(CL_HEADERS)
 
 # note: use /usr/bin/time instead of time, because the latter may be a shell's builtin without the required POSIX options
 # The || true at the end is to prevent make from aborting after the first failed test. The actual return code is in the log. 
-o/testresults/%.log: test/systemtests/queries/%.json ${TARGET_MANAGER_SAN_NAME} | $${@D}/.f
-	export MAPPING_CONFIGURATION=test/systemtests/mapping_test.conf ASAN_SYMBOLIZER_PATH="${LLVM_SYMBOLIZER}" ASAN_OPTIONS="${ASAN_OPTIONS}" UBSAN_OPTIONS="${UBSAN_OPTIONS}" LSAN_OPTIONS="suppressions=test/systemtests/lsan.suppressions" ; /usr/bin/time --format="\nTESTCASE_ELAPSED_TIME: %e\nTESTCASE_RETURN_CODE: %x" ./${TARGET_MANAGER_SAN_NAME} testquery $< >$@ 2>&1 || true
+o/testresults/%.log: test/systemtests/queries/%.json ${TARGET_MANAGER_NAME} | $${@D}/.f
+	export MAPPING_CONFIGURATION=test/systemtests/mapping_test.conf ASAN_SYMBOLIZER_PATH="${LLVM_SYMBOLIZER}" ASAN_OPTIONS="${ASAN_OPTIONS}" UBSAN_OPTIONS="${UBSAN_OPTIONS}" LSAN_OPTIONS="suppressions=test/systemtests/lsan.suppressions" ; /usr/bin/time --format="\nTESTCASE_ELAPSED_TIME: %e\nTESTCASE_RETURN_CODE: %x" ./${TARGET_MANAGER_NAME} testquery $< >$@ 2>&1 || true
 
 # now we need to create similar rules once for each included module
 define MODULE_template
@@ -187,8 +187,8 @@ o/$(1)/%.o: $$(MODULES_PATH)/$(1)/%.cpp | $$$${@D}/.f #$$(CL_HEADERS)
 o/$(1)/%.san.o: $$(MODULES_PATH)/$(1)/%.cpp | $$$${@D}/.f #$(CL_HEADERS)
 	$${CPP} $${CPPFLAGS} $${SANITIZE_FLAGS} -I$$(MODULES_PATH)/$(1)/ -MMD -MF $${@:.o=.d} -c $$< -o $$@
 
-o/testresults/%.log: $$(MODULES_PATH)/$(1)/test/systemtests/queries/%.json $${TARGET_MANAGER_SAN_NAME} | $$$${@D}/.f
-	export MAPPING_CONFIGURATION=test/systemtests/mapping_test.conf ASAN_SYMBOLIZER_PATH="$${LLVM_SYMBOLIZER}" ASAN_OPTIONS="$${ASAN_OPTIONS}" UBSAN_OPTIONS="$${UBSAN_OPTIONS}" LSAN_OPTIONS="suppressions=test/systemtests/lsan.suppressions" ; /usr/bin/time --format="\nTESTCASE_ELAPSED_TIME: %e\nTESTCASE_RETURN_CODE: %x" ./$${TARGET_MANAGER_SAN_NAME} testquery $$< >$$@ 2>&1 || true
+o/testresults/%.log: $$(MODULES_PATH)/$(1)/test/systemtests/queries/%.json $${TARGET_MANAGER_NAME} | $$$${@D}/.f
+	export MAPPING_CONFIGURATION=test/systemtests/mapping_test.conf ASAN_SYMBOLIZER_PATH="$${LLVM_SYMBOLIZER}" ASAN_OPTIONS="$${ASAN_OPTIONS}" UBSAN_OPTIONS="$${UBSAN_OPTIONS}" LSAN_OPTIONS="suppressions=test/systemtests/lsan.suppressions" ; /usr/bin/time --format="\nTESTCASE_ELAPSED_TIME: %e\nTESTCASE_RETURN_CODE: %x" ./$${TARGET_MANAGER_NAME} testquery $$< >$$@ 2>&1 || true
 
 endef
 $(foreach module,$(MODULES_LIST),$(eval $(call MODULE_template,$(module))))
