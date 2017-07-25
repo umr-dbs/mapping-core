@@ -115,6 +115,8 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	poBand = dataset->GetRasterBand( rasteridx );
 	poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );	
 
+	std::cout << "Overviews: " << poBand->GetOverviewCount() << std::endl;
+
 	GDALDataType type = poBand->GetRasterDataType();
 
 	adfMinMax[0] = poBand->GetMinimum( &bGotMin );
@@ -177,7 +179,8 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	unit.setMinMax(minvalue, maxvalue);
 	DataDescription dd(type, unit, hasnodata, nodata);
 
-	auto raster = GenericRaster::create(dd, stref, pixel_width, pixel_height);
+
+	auto raster = GenericRaster::create(dd, stref, qrect.xres, qrect.yres);
 	void *buffer = raster->getDataForWriting();
 
 	// Read Pixel data
@@ -251,29 +254,27 @@ std::string RasterGDALSourceOperator::getDatasetFilename(Json::Value datasetJson
 	time_t startTimeTimet = startUnix;				
 	tm startTimeTm = {};
 	gmtime_r(&startTimeTimet, &startTimeTm);
-	std::cout << "WantedTime: " << GDALTimesnap::tmStructToString(&wantedTimeTm, time_format) << std::endl;
+	std::cout << "WantedTime: " << GDALTimesnap::tmStructToString(&wantedTimeTm, time_format) << std::endl;	
 
 	// this is a workaround for time formats not containing days. because than the date is the last day before the wanted date
 	if(time_format.find("%d") == std::string::npos){
-		int currDayValue  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Day);
-		int currHourValue = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Hour);
+		int currDayValue  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Day);		
 		int yearValue  	  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Year);
 		int monthValue 	  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Month);
 			
-		if(currDayValue == GDALTimesnap::daysOfMonth(yearValue + 1900, monthValue + 1)){
+		if(currDayValue == GDALTimesnap::daysOfMonth(yearValue + 1900, monthValue + 1)){			
 			GDALTimesnap::setTimeUnitValueInTm(startTimeTm, TimeUnit::Day, currDayValue + 1);
-			time_t overflow = mktime(&startTimeTm);	
-			localtime_r(&overflow, &startTimeTm);
-			GDALTimesnap::setTimeUnitValueInTm(startTimeTm, TimeUnit::Hour, 0);
+			time_t overflow = mktime(&startTimeTm) - timezone;	// because mktime depends on the timezone the timezone field of time.h has to be substracted
+			gmtime_r(&overflow, &startTimeTm);			
 		}
 	}
-	std::cout << "StartTime: " << GDALTimesnap::tmStructToString(&startTimeTm, time_format) << std::endl;
+	std::cout << "StartTime: " << GDALTimesnap::tmStructToString(&startTimeTm, time_format) << std::endl;	
 
 	tm snappedTime = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
 	
 	// get string of snapped time and put the file path, name together
 	std::string snappedTimeString  = GDALTimesnap::tmStructToString(&snappedTime, time_format);
-	std::cout << "Snapped Time: " << snappedTimeString << std::endl;
+	std::cout << "Snapped Time: " << snappedTimeString << std::endl;	
 
 	std::string path = datasetJson.get("path", "").asString();
 	std::string fileName = datasetJson.get("file_name", "").asString();

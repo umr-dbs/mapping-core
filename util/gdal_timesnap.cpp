@@ -13,7 +13,7 @@ const std::map<std::string, TimeUnit> GDALTimesnap::string_to_TimeUnit = {
 
 tm GDALTimesnap::snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTime, tm wantedTime){
 	
-	tm diff 	= tmDifference(wantedTime, startTime);
+	tm diff 	= tmDifference(wantedTime, startTime);	
 	tm snapped 	= startTime;
 
 	int unitDiffValue 	= getUnitDifference(diff, snapUnit);
@@ -21,18 +21,13 @@ tm GDALTimesnap::snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTi
 	unitDiffValue 		-= unitDiffModulo; 	
 	
 	// add the units difference on the start value
-	setTimeUnitValueInTm(snapped, snapUnit, getTimeUnitValueFromTm(snapped, snapUnit) + unitDiffValue);
-	
-	if(snapUnit <= TimeUnit::Day){
-		//day being 1 based is always one of except for units bigger than Day (so except for Hour, Minute, Second)		
-		setTimeUnitValueInTm(snapped, TimeUnit::Day, getTimeUnitValueFromTm(snapped, TimeUnit::Day) + 1);			
-	}
+	setTimeUnitValueInTm(snapped, snapUnit, getTimeUnitValueFromTm(snapped, snapUnit) + unitDiffValue);	
 
 	if(snapUnit == TimeUnit::Hour || snapUnit == TimeUnit::Minute || snapUnit == TimeUnit::Second){
 		handleOverflow(snapped, snapUnit);
-	} else {
-		time_t snappedToTimeT = mktime(&snapped);
-		gmtime_r(&snappedToTimeT, &snapped);
+	} else {		
+		time_t snappedToTimeT = mktime(&snapped) - timezone;	// because mktime depends on the timezone the timezone field of time.h has to be substracted
+		gmtime_r(&snappedToTimeT, &snapped);		
 	}
 		
 	return snapped;
@@ -178,7 +173,7 @@ int GDALTimesnap::maxValueForTimeUnit(TimeUnit part) {
 		case TimeUnit::Month:
 			return 12;			
 		case TimeUnit::Day:	//TODO: how to handle 31, 28 day months?
-			return 30;			
+			return 31;			
 		case TimeUnit::Hour:
 			return 24;
 		case TimeUnit::Minute:
