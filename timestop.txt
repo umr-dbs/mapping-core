@@ -1,3 +1,156 @@
+gdal_sourcve_1.json
+Anfrage: 1800x900
+"x1": -180,
+"x2": 180,
+"y1": -90,
+"y2": 90
+
+Overviews:
+117
+115
+117
+118
+119
+113
+116
+119
+119
+118
+115
+118
+118
+117
+113
+118
+
+
+No overviews:
+142
+141
+140
+144
+150
+145
+140
+145
+145
+142
+141
+142
+144
+145
+142
+
+
+rasterdb_source_world_test.json
+gleiche Parameter wie oben
+
+96
+98
+93
+103
+92
+91
+93
+97
+92
+93
+93
+92
+95
+95
+93
+96
+96
+101
+
+
+
+
+gdal_source_1.json
+
+Original Res: 3600x1800
+Anfrage: 450x225
+"x1": -180,
+"x2": 0,
+"y1": 0,
+"y2": 90
+
+No overviews:
+
+40
+40
+39
+40
+38
+39
+41
+42
+40
+38
+40
+38
+40
+41
+40
+41
+40
+
+
+Mit overviews:
+29
+30
+28
+30
+30
+30
+31
+29
+30
+28
+29
+27
+31
+30
+30
+30
+29
+27
+
+
+
+rasterdb_source-world_test.json
+Original Res: 3600x1800
+Anfrage: 450x225
+"x1": -180
+"x2": 0
+"y1": 0
+"y2": 90
+
+35
+30
+34
+30
+30
+32
+31
+31
+34
+31
+30
+28
+30
+31
+31
+31
+30
+30
+
+
+
+
+
+
 time ./mapping_manager query path...json test
 
 real -> total time passed. including time the process was not executed but waiting
