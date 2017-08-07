@@ -3,6 +3,12 @@
 
 #include <map>
 #include <time.h>
+#include <json/json.h>
+#include <dirent.h>
+#include <sstream>
+#include <fstream>
+#include "util/exceptions.h"
+#include "util/timeparser.h"
 
 enum class TimeUnit {
     Year 	= 0,
@@ -32,6 +38,9 @@ class GDALTimesnap {
 		static int maxValueForTimeUnit(TimeUnit part);	
 		static void printTime(tm &time);
 		static int daysOfMonth(int year, int month);
+
+		static Json::Value getDatasetJson(std::string wantedDatasetName, std::string datasetPath);
+		static std::string getDatasetFilename(Json::Value datasetJson, double wantedTimeUnix);
 };
 
 #endif

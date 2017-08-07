@@ -200,3 +200,102 @@ int GDALTimesnap::daysOfMonth(int year, int month){
 	else
 		return 31;
 }
+
+Json::Value GDALTimesnap::getDatasetJson(std::string wantedDatasetName, std::string datasetPath){
+// opens the standard path for datasets and returns the dataset with the name datasetName as Json::Value
+	struct dirent *entry;
+	DIR *dir = opendir(datasetPath.c_str());
+
+	if (dir == NULL) {
+        throw OperatorException("GDAL Source: directory for dataset json files does not exist.");
+    }
+
+	while ((entry = readdir(dir)) != NULL) {
+        std::string filename = entry->d_name;
+        std::string withoutExtension = filename.substr(0, filename.length() - 5);
+        
+        if(withoutExtension == wantedDatasetName){
+        	
+        	//open file then read json object from it
+        	std::ifstream file(datasetPath + filename);
+			if (!file.is_open()) {
+			    closedir(dir);
+				throw OperatorException("GDAL Source Operator: unable to dataset file " + wantedDatasetName);
+			}
+
+			Json::Reader reader(Json::Features::strictMode());
+			Json::Value json;
+			if (!reader.parse(file, json)) {
+			    closedir(dir);
+				throw OperatorException("GDAL Source Operator: unable to read json" + reader.getFormattedErrorMessages());				
+			}				
+
+		    closedir(dir);
+        	return json;
+        }
+
+    }
+
+    closedir(dir);
+    throw OperatorException("GDAL Source: Dataset " + wantedDatasetName + " does not exist.");
+}
+
+
+std::string GDALTimesnap::getDatasetFilename(Json::Value datasetJson, double wantedTimeUnix){
+
+	std::string time_format = datasetJson.get("time_format", "%Y-%m-%d").asString();
+	std::string time_start 	= datasetJson.get("time_start", "0").asString();
+	std::string time_end 	= datasetJson.get("time_end", "0").asString();
+    
+    auto timeParser = TimeParser::createCustom(time_format); 
+
+    //check if requested time is in range of dataset timestamps
+	double startUnix 	= timeParser->parse(time_start);
+	
+	if(wantedTimeUnix < startUnix){
+		throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
+	}
+	Json::Value timeInterval = datasetJson.get("time_interval", NULL);
+
+	TimeUnit intervalUnit 	= GDALTimesnap::createTimeUnit(timeInterval.get("unit", "Month").asString());
+	int intervalValue 		= timeInterval.get("value", 1).asInt();
+	
+
+	time_t wantedTimeTimet = wantedTimeUnix;	
+	tm wantedTimeTm = {};
+	gmtime_r(&wantedTimeTimet, &wantedTimeTm);
+
+	time_t startTimeTimet = startUnix;				
+	tm startTimeTm = {};
+	gmtime_r(&startTimeTimet, &startTimeTm);
+	std::cout << "WantedTime: " << GDALTimesnap::tmStructToString(&wantedTimeTm, time_format) << std::endl;	
+
+	// this is a workaround for time formats not containing days. because than the date is the last day before the wanted date
+	if(time_format.find("%d") == std::string::npos){
+		int currDayValue  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Day);		
+		int yearValue  	  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Year);
+		int monthValue 	  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Month);
+			
+		if(currDayValue == GDALTimesnap::daysOfMonth(yearValue + 1900, monthValue + 1)){			
+			GDALTimesnap::setTimeUnitValueInTm(startTimeTm, TimeUnit::Day, currDayValue + 1);
+			time_t overflow = mktime(&startTimeTm) - timezone;	// because mktime depends on the timezone the timezone field of time.h has to be substracted
+			gmtime_r(&overflow, &startTimeTm);			
+		}
+	}
+	std::cout << "StartTime: " << GDALTimesnap::tmStructToString(&startTimeTm, time_format) << std::endl;	
+
+	tm snappedTime = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
+	
+	// get string of snapped time and put the file path, name together
+	std::string snappedTimeString  = GDALTimesnap::tmStructToString(&snappedTime, time_format);
+	std::cout << "Snapped Time: " << snappedTimeString << std::endl;	
+
+	std::string path = datasetJson.get("path", "").asString();
+	std::string fileName = datasetJson.get("file_name", "").asString();
+
+	std::string placeholder = "%%%TIME_STRING%%%";
+	size_t placeholderPos = fileName.find(placeholder);
+
+	fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
+	return path + "/" + fileName;
+}
