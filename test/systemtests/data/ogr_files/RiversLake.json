@@ -1,0 +1,34 @@
+{
+   "channels" : [
+      {
+         "datatype" : "Byte",
+         "nodata" : 0,
+         "unit" : {
+            "interpolation" : "unknown",
+            "max" : 254,
+            "measurement" : "",
+            "min" : 0
+         }
+      }
+   ],
+   "coords" : {
+      "epsg" : "GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0],UNIT[\"degree\",0.0174532925199433],AUTHORITY[\"EPSG\",\"4326\"]]",
+      "origin" : [ -180, 90 ],
+      "scale" : [ 0.10000000000000001, -0.10000000000000001 ],
+      "size" : [ 3600, 1800 ]
+   },
+   "dataset_name" : "RiversLake",
+   "file_name" : "rivers_lake_%%%TIME_STRING%%%.shp",
+   "path" : "test/systemtests/data/ogr_files",
+   "provenance" : {
+      "citation" : "citation dup dup",
+      "license" : "some license",
+      "uri" : "uri uri slash dot uri"
+   },
+   "time_format" : "%Y",
+   "time_interval" : {
+      "unit" : "Year",
+      "value" : 1
+   },
+   "time_start" : "2008"
+}

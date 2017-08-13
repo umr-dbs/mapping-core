@@ -15,7 +15,7 @@
 
 /*
 	params:
-		- sourcename
+		- filename
  */
 class OGRSourceOperator : public GenericOperator {
 	public:
@@ -30,23 +30,19 @@ class OGRSourceOperator : public GenericOperator {
 		void writeSemanticParameters(std::ostringstream& stream);
 		virtual void getProvenance(ProvenanceCollection &pc);
 		
-	private:
-		std::string datasetPath;
-		std::string sourcename;
-		Json::Value datasetJson;
-
+	private:		
+		std::string filename;
 		GDALDataset *dataset;
 
 		OGRLayer* loadLayer(const QueryRectangle &rect);
+		void readRingToPolygonCollection(const OGRLinearRing *ring, std::unique_ptr<PolygonCollection> &collection);
+		void readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection);
 		
 };
 
 OGRSourceOperator::OGRSourceOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params) : GenericOperator(sourcecounts, sources) {
-	assumeSources(0);
-
-	datasetPath = Configuration::get("ogrsource.datasetpath");
-	sourcename 	= params.get("sourcename", "").asString();
-	datasetJson = GDALTimesnap::getDatasetJson(sourcename, datasetPath);
+	assumeSources(0);	
+	filename = params.get("filename", "").asString();	
 }
 
 
@@ -71,8 +67,8 @@ void OGRSourceOperator::writeSemanticParameters(std::ostringstream& stream) {
 }
 
 void OGRSourceOperator::getProvenance(ProvenanceCollection &pc) {
-	std::string local_identifier 	= "data.ogr_source." + sourcename;
-	Json::Value provenanceinfo 		= datasetJson["provenance"];
+	std::string local_identifier 	= "data.ogr_source." + filename;
+	/*Json::Value provenanceinfo 		= datasetJson["provenance"];
 
 	if (provenanceinfo.isObject()) {
 		pc.add(Provenance(	provenanceinfo.get("citation", "").asString(),
@@ -81,19 +77,17 @@ void OGRSourceOperator::getProvenance(ProvenanceCollection &pc) {
 							local_identifier));
 	} else {
 		pc.add(Provenance("", "", "", local_identifier));
-	}		
+	}*/		
 }
 
 OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect){
-
-	std::string file = GDALTimesnap::getDatasetFilename(datasetJson, rect.t1);
-	
+		
 	GDALAllRegister();
 	
-	dataset = (GDALDataset*)GDALOpenEx(file.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
+	dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
 
 	if(dataset == NULL){
-		throw OperatorException("Cant load dataset");
+		throw OperatorException("Can not load dataset");
 	}
 
 	if(dataset->GetLayerCount() < 1){
@@ -143,7 +137,10 @@ std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const Que
 					}
 				}
 				else 
+				{
+					OGRFeature::DestroyFeature(feature);
 					throw OperatorException("OGR Source: Dataset is not a Point Collection");				
+				}
 			}
 		}
 
@@ -152,8 +149,9 @@ std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const Que
 	}
 
 	GDALClose(dataset);
-	//return points;
-	return points->filterBySpatioTemporalReferenceIntersection(rect);	//could be double filtering because of layer->SetSpatialFilterRect
+	points->validate();
+	return points;
+	//return points->filterBySpatioTemporalReferenceIntersection(rect);	//could be double filtering because of layer->SetSpatialFilterRect
 }
 
 std::unique_ptr<LineCollection> OGRSourceOperator::getLineCollection(const QueryRectangle &rect, const QueryTools &tools) {
@@ -175,14 +173,8 @@ std::unique_ptr<LineCollection> OGRSourceOperator::getLineCollection(const Query
 				
 				if(type == wkbLineString)
 				{
-					OGRLineString *ls = (OGRLineString *)geom;					
-					for(int k = 0; k < ls->getNumPoints(); k++)
-					{
-						OGRPoint p;
-						ls->getPoint(k, &p);
-						lines->addCoordinate(p.getX(), p.getY());
-					}
-					lines->finishLine();
+					OGRLineString *ls = (OGRLineString *)geom;
+					readLineStringToLineCollection(ls, lines);									
 					lines->finishFeature();
 				}
 				else if(type == wkbMultiLineString)
@@ -191,23 +183,22 @@ std::unique_ptr<LineCollection> OGRSourceOperator::getLineCollection(const Query
 					for(int l = 0; l < mls->getNumGeometries(); l++)
 					{						
 						OGRLineString *ls = (OGRLineString *)mls->getGeometryRef(l);
-						for(int k = 0; k < ls->getNumPoints(); k++){
-							OGRPoint p;
-							ls->getPoint(k, &p);
-							lines->addCoordinate(p.getX(), p.getY());
-						}
-						lines->finishLine();
+						readLineStringToLineCollection(ls, lines);						
 					}
 					lines->finishFeature();
 				}
-				else 
+				else
+				{
+					OGRFeature::DestroyFeature(feature);
 					throw OperatorException("OGR Source: Dataset is not a Line Collection");
+				}
 			}
 		}
 		OGRFeature::DestroyFeature(feature);
 	}
 
 	GDALClose(dataset);
+	lines->validate();
 	return lines;
 }
 
@@ -223,23 +214,72 @@ std::unique_ptr<PolygonCollection> OGRSourceOperator::getPolygonCollection(const
 		{
 			OGRGeometry *geom = feature->GetGeomFieldRef(i);
 			if(geom != NULL)
-			{			
+			{							
 				int type = wkbFlatten(geom->getGeometryType());			
 				if(type == wkbPolygon)
 				{
+					OGRPolygon *polygon = (OGRPolygon *)geom;
+					const OGRLinearRing *extRing = polygon->getExteriorRing();
+					readRingToPolygonCollection(extRing, polygons);					
+
+					for(int k = 0; k < polygon->getNumInteriorRings(); k++)
+					{
+						const OGRLinearRing *intRing = polygon->getInteriorRing(k);
+						readRingToPolygonCollection(intRing, polygons);
+					}
+					polygons->finishPolygon();
+					polygons->finishFeature();
 
 				}				
 				else if(type == wkbMultiPolygon)
 				{
-					
+					OGRMultiPolygon *multiPolygon = (OGRMultiPolygon *)geom;
+
+					for(int l = 0; l < multiPolygon->getNumGeometries(); l++)
+					{
+						OGRPolygon *polygon = (OGRPolygon *)multiPolygon->getGeometryRef(l);
+
+						const OGRLinearRing *extRing = polygon->getExteriorRing();
+						readRingToPolygonCollection(extRing, polygons);					
+
+						for(int k = 0; k < polygon->getNumInteriorRings(); k++)
+						{
+							const OGRLinearRing *intRing = polygon->getInteriorRing(k);
+							readRingToPolygonCollection(intRing, polygons);
+						}
+						polygons->finishPolygon();
+					}
+					polygons->finishFeature();
 				} 
 				else
+				{
+					OGRFeature::DestroyFeature(feature);
 					throw OperatorException("OGR Source: Dataset is not a Polygon Collection");
+				}
 			}
 		}
 		OGRFeature::DestroyFeature(feature);
 	}
 
 	GDALClose(dataset);
+	polygons->validate();
 	return polygons;
+}
+
+void OGRSourceOperator::readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection){
+	for(int l = 0; l < line->getNumPoints(); l++){
+		OGRPoint p;
+		line->getPoint(l, &p);
+		collection->addCoordinate(p.getX(), p.getY());
+	}
+	collection->finishLine();
+}
+
+void OGRSourceOperator::readRingToPolygonCollection(const OGRLinearRing *ring, std::unique_ptr<PolygonCollection> &collection){
+	for(int l = 0; l < ring->getNumPoints(); l++){
+		OGRPoint p;
+		ring->getPoint(l, &p);
+		collection->addCoordinate(p.getX(), p.getY());
+	}
+	collection->finishRing();
 }

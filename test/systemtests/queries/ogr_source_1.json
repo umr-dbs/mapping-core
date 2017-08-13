@@ -1,0 +1,21 @@
+{
+    "name": "Blup",
+	"query_result": "lines",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1205280000
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },    
+    "query": {        
+        "params": {       		
+            "sourcename": "RiversLake"
+        },
+        "type": "ogr_source"
+    }    
+}
