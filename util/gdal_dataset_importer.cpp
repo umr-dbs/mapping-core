@@ -30,7 +30,10 @@ void DatasetImporter::importDataset(std::string dataset_name,
 									std::string interval_value, 
 									std::string citation, 
 									std::string license, 
-									std::string uri){
+									std::string uri,
+							  		std::string measurement,
+							  		std::string unit,
+							  		std::string interpolation){
 		
 	size_t placeholderPos =	dataset_filename_with_placeholder.find(placeholder);
 
@@ -80,7 +83,7 @@ void DatasetImporter::importDataset(std::string dataset_name,
 	GDALDataset *dataset = openGDALDataset(dataset_file_path + "/" + fileToOpen);
 	
 	datasetJson["coords"]		= readCoords(dataset);
-	datasetJson["channels"]		= readChannels(dataset);
+	datasetJson["channels"]		= readChannels(dataset, measurement, unit, interpolation);
 
 	Json::Value provenanceJson(Json::ValueType::objectValue);
 	provenanceJson["citation"] 	= citation;
@@ -177,9 +180,16 @@ std::string DatasetImporter::getEpsg(GDALDataset *dataset){
 }
 
 
-Json::Value DatasetImporter::readChannels(GDALDataset *dataset){
+Json::Value DatasetImporter::readChannels(GDALDataset *dataset, std::string measurement, std::string unit, std::string interpolation){
 	Json::Value channelsJson(Json::ValueType::arrayValue);
 	
+	if(measurement == "")
+		measurement = "unknown";
+	if(unit == "")
+		unit = "unknown";
+	if(interpolation == "")
+		interpolation = "unknown";
+
 	int channelCount = dataset->GetRasterCount();
 
 	for(int i = 1 ; i <= channelCount; i++){
@@ -190,8 +200,9 @@ Json::Value DatasetImporter::readChannels(GDALDataset *dataset){
 		int success;
 		Json::Value unitJson;
 		
-		unitJson["interpolation"] 	= "unknown";
-		unitJson["measurement"] 	= raster->GetUnitType(); //"unknown";
+		unitJson["interpolation"] 	= interpolation;
+		unitJson["measurement"] 	= measurement;
+		unitJson["unit"] 			= unit;
 		
 		GDALDataType dataType 		= raster->GetRasterDataType();
 		channelJson["datatype"] 	= dataTypeToString(dataType);

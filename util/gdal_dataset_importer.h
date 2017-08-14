@@ -17,14 +17,17 @@ public:
 							  std::string interval_value, 
 							  std::string citation, 
 							  std::string license, 
-							  std::string uri);
+							  std::string uri,
+							  std::string measurement,
+							  std::string unit,
+							  std::string interpolation);
 
 
 private:
 	static const std::string placeholder;
 	static GDALDataset* openGDALDataset(std::string file_name);
 	static Json::Value readCoords(GDALDataset *dataset);
-	static Json::Value readChannels(GDALDataset *dataset);
+	static Json::Value readChannels(GDALDataset *dataset, std::string measurement, std::string unit, std::string interpolation);
 	static std::string dataTypeToString(GDALDataType type);
 	static std::string getEpsg(GDALDataset *dataset);
 

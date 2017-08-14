@@ -69,7 +69,7 @@ static void usage() {
 		printf("%s showprovenance <queryname>\n", program_name);
 		printf("%s enumeratesources [verbose]\n", program_name);
 		printf("%s userdb ...\n", program_name);
-		printf("%s importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> <provenance_citation> <provenance_license> <provenence_uri>\n", program_name);
+		printf("%s importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> [--unit <measurement> <unit> <interpolation>] [--citation|--c <provenance_citation>] [--license|--l <provenance_license>] [--uri|--u <provenence_uri>]\n", program_name);
 		exit(5);
 }
 
@@ -665,14 +665,34 @@ static int userdb(int argc, char *argv[]) {
 }
 
 static int importdataset(int argc, char *argv[]){
-
-	if(argc != 12){
+	
+	if(argc < 9 || argc > 19){
 		usage();
 	}
 
-	//importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> 
-	//	<time_start> <time_unit> <interval_value> <provenance_citation> <provenance_license> <provenence_uri>
+	// program name:  	1
+	// importdataset: 	1
+	// std parameter: 	7
+	// -------------------
+	// subtotal			9
+
+	// opt:
+	// provenance:		3 + 3	
+	// unit				3 + 1
+	// ------------------------
+	// total			19
 	
+	//importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> 
+	// 				[--unit <measurement> <unit> <interpolation>] 
+	//				[--citation|--c <provenance_citation>] [--license|--l <provenance_license>] [--uri|--u <provenence_uri>]
+	
+	//check if any of the standard parameters is actually a optional thing, so an actual value is missing	
+	for(int i = 2; i < 9; i++){
+		if(argv[i][0] == '-'){
+			usage();			
+		}
+	}
+
 	std::string dataset_name		= argv[2];
 	std::string dataset_filename 	= argv[3];
 	std::string dataset_file_path 	= argv[4];
@@ -680,11 +700,66 @@ static int importdataset(int argc, char *argv[]){
 	std::string time_start 			= argv[6];
 	std::string time_unit 			= argv[7];
 	std::string interval_value		= argv[8];
-	std::string citation 			= argv[9];
-	std::string license 			= argv[10];
-	std::string uri 				= argv[11];
 
-	DatasetImporter::importDataset(dataset_name, dataset_filename, dataset_file_path, time_format, time_start, time_unit, interval_value, citation, license, uri);
+	std::string citation;
+	std::string license;
+	std::string uri;
+
+	std::string unit;
+	std::string measurement;
+	std::string interpolation;
+
+	int i = 9;
+	while(i < argc)
+	{
+		std::string arg(argv[i]);
+
+		if((arg == "--c" || arg == "--citation") && i+1 < argc){
+			std::string param(argv[i + 1]);	
+			if(param[0] == '-'){
+				usage();
+			} else {
+				i += 2;
+				citation = param;
+			}						
+		} else if((arg == "--l" || arg == "--license") && i+1 < argc){			
+			std::string param(argv[i + 1]);	
+			if(param[0] == '-'){
+				usage();
+			} else {
+				i += 2;
+				license = param;
+			}						
+		} else if((arg == "--uri" || arg == "--u") && i+1 < argc){
+			std::string param(argv[i + 1]);	
+			if(param[0] == '-'){
+				usage();
+			} else {
+				i += 2;
+				uri = param;
+			}						
+		} else if(arg == "--unit" && i + 3 < argc)
+		{	
+			std::string param1(argv[i+1]);
+			std::string param2(argv[i+2]);
+			std::string param3(argv[i+3]);
+
+			if(param1[0] == '-' || param2[0] == '-' || param3[0] == '-')
+				usage();
+
+			measurement 	= argv[i+1];
+			unit 			= argv[i+2];
+			interpolation 	= argv[i+3];
+
+			i += 4;
+		} else {
+			usage();
+		}
+
+
+	}
+
+	DatasetImporter::importDataset(dataset_name, dataset_filename, dataset_file_path, time_format, time_start, time_unit, interval_value, citation, license, uri, measurement, unit, interpolation);
 	return 1;
 }
 
