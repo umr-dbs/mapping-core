@@ -11,6 +11,7 @@
 #include "util/configuration.h"
 #include <json/json.h>
 #include <sstream>
+#include <iostream>
 
 
 /*
@@ -33,10 +34,16 @@ class OGRSourceOperator : public GenericOperator {
 	private:		
 		std::string filename;
 		GDALDataset *dataset;
+		std::string *attributeNames;
+
 
 		OGRLayer* loadLayer(const QueryRectangle &rect);
 		void readRingToPolygonCollection(const OGRLinearRing *ring, std::unique_ptr<PolygonCollection> &collection);
 		void readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection);
+		void createAttributeArrays(OGRFeatureDefn *attributeDefn, AttributeArrays &collection);
+		void readAttributesIntoCollection(AttributeArrays &attributeArrays, OGRFeatureDefn *attributeDefn, OGRFeature *feature, int featureIndex);
+
+		void close();
 		
 };
 
@@ -87,10 +94,12 @@ OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect){
 	dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
 
 	if(dataset == NULL){
+		close();
 		throw OperatorException("Can not load dataset");
 	}
 
 	if(dataset->GetLayerCount() < 1){
+		close();
 		throw OperatorException("No layers in OGR Dataset");
 	}
 
@@ -107,12 +116,16 @@ OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect){
 std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const QueryRectangle &rect, const QueryTools &tools) {
 	auto points = make_unique<PointCollection>(rect);
 	OGRLayer *layer = loadLayer(rect);
+	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
+	createAttributeArrays(attributeDefn, points->feature_attributes);
 	OGRFeature* feature;
+
+	int featureCount = 0;
 
 	while( (feature = layer->GetNextFeature()) != NULL )
 	{
 		int fields = feature->GetGeomFieldCount();
-		
+
 		for(int i = 0; i < fields; i++){
 
 			OGRGeometry *geom = feature->GetGeomFieldRef(i);
@@ -124,7 +137,7 @@ std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const Que
 				{	
 					OGRPoint *point = (OGRPoint *)geom;				
 					points->addCoordinate(point->getX(), point->getY());
-					points->finishFeature();					
+					points->finishFeature();
 				}				
 				else if(type == wkbMultiPoint)
 				{
@@ -139,16 +152,18 @@ std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const Que
 				else 
 				{
 					OGRFeature::DestroyFeature(feature);
+					close();
 					throw OperatorException("OGR Source: Dataset is not a Point Collection");				
 				}
 			}
 		}
 
+		readAttributesIntoCollection(points->feature_attributes, attributeDefn, feature, featureCount);		
+		featureCount++;
 		OGRFeature::DestroyFeature(feature);
 
 	}
-
-	GDALClose(dataset);
+	close();
 	points->validate();
 	return points;
 	//return points->filterBySpatioTemporalReferenceIntersection(rect);	//could be double filtering because of layer->SetSpatialFilterRect
@@ -157,7 +172,10 @@ std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const Que
 std::unique_ptr<LineCollection> OGRSourceOperator::getLineCollection(const QueryRectangle &rect, const QueryTools &tools) {
 	auto lines = make_unique<LineCollection>(rect);
 	OGRLayer *layer = loadLayer(rect);
+	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
+	createAttributeArrays(attributeDefn, lines->feature_attributes);
 	OGRFeature* feature;
+	int featureCount = 0;
 
 	while( (feature = layer->GetNextFeature()) != NULL )
 	{
@@ -190,22 +208,28 @@ std::unique_ptr<LineCollection> OGRSourceOperator::getLineCollection(const Query
 				else
 				{
 					OGRFeature::DestroyFeature(feature);
+					close();
 					throw OperatorException("OGR Source: Dataset is not a Line Collection");
 				}
 			}
 		}
+		readAttributesIntoCollection(lines->feature_attributes, attributeDefn, feature, featureCount);		
+		featureCount++;
 		OGRFeature::DestroyFeature(feature);
 	}
-
-	GDALClose(dataset);
+	close();
 	lines->validate();
 	return lines;
 }
 
-std::unique_ptr<PolygonCollection> OGRSourceOperator::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools) {
+std::unique_ptr<PolygonCollection> OGRSourceOperator::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools) 
+{
 	auto polygons = make_unique<PolygonCollection>(rect);
 	OGRLayer *layer = loadLayer(rect);
+	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
+	createAttributeArrays(attributeDefn, polygons->feature_attributes);
 	OGRFeature* feature;
+	int featureCount = 0;
 
 	while( (feature = layer->GetNextFeature()) != NULL )
 	{
@@ -254,20 +278,24 @@ std::unique_ptr<PolygonCollection> OGRSourceOperator::getPolygonCollection(const
 				else
 				{
 					OGRFeature::DestroyFeature(feature);
+					close();
 					throw OperatorException("OGR Source: Dataset is not a Polygon Collection");
 				}
 			}
 		}
+		readAttributesIntoCollection(polygons->feature_attributes, attributeDefn, feature, featureCount);		
+		featureCount++;
 		OGRFeature::DestroyFeature(feature);
 	}
-
-	GDALClose(dataset);
+	close();
 	polygons->validate();
 	return polygons;
 }
 
-void OGRSourceOperator::readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection){
-	for(int l = 0; l < line->getNumPoints(); l++){
+void OGRSourceOperator::readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection)
+{
+	for(int l = 0; l < line->getNumPoints(); l++)
+	{
 		OGRPoint p;
 		line->getPoint(l, &p);
 		collection->addCoordinate(p.getX(), p.getY());
@@ -275,11 +303,67 @@ void OGRSourceOperator::readLineStringToLineCollection(const OGRLineString *line
 	collection->finishLine();
 }
 
-void OGRSourceOperator::readRingToPolygonCollection(const OGRLinearRing *ring, std::unique_ptr<PolygonCollection> &collection){
-	for(int l = 0; l < ring->getNumPoints(); l++){
+void OGRSourceOperator::readRingToPolygonCollection(const OGRLinearRing *ring, std::unique_ptr<PolygonCollection> &collection)
+{
+	for(int l = 0; l < ring->getNumPoints(); l++)
+	{
 		OGRPoint p;
 		ring->getPoint(l, &p);
 		collection->addCoordinate(p.getX(), p.getY());
 	}
 	collection->finishRing();
+}
+
+void OGRSourceOperator::createAttributeArrays(OGRFeatureDefn *attributeDefn, AttributeArrays &attributeArrays)
+{
+	int attributeCount = attributeDefn->GetFieldCount();
+
+	attributeNames = new std::string[attributeCount];
+
+	for(int i = 0; i < attributeCount; i++)
+	{
+		OGRFieldDefn *fieldDefn = attributeDefn->GetFieldDefn(i);
+		std::string name(fieldDefn->GetNameRef());		
+		if(name == ""){
+			close();
+			throw OperatorException("OGR Source: an attribute has no name.");
+		}
+
+		attributeNames[i] = name;
+
+		std::cout << "Attribute " << i << ": " << name;
+		OGRFieldType type  = fieldDefn->GetType();
+		std::cout << ". Type: " << type << std::endl;
+
+		if(type == OFTInteger || type == OFTInteger64 || type == OFTReal)
+			attributeArrays.addNumericAttribute(name, Unit::unknown());
+		else
+			attributeArrays.addTextualAttribute(name, Unit::unknown());
+		
+	}
+
+}
+
+void OGRSourceOperator::readAttributesIntoCollection(AttributeArrays &attributeArrays, OGRFeatureDefn *attributeDefn, OGRFeature *feature, int featureIndex)
+{
+	for(int i = 0; i < attributeDefn->GetFieldCount(); i++){
+		OGRFieldDefn *fieldDefn = attributeDefn->GetFieldDefn(i);
+
+		OGRFieldType type  = fieldDefn->GetType();
+	
+		if(type == OFTInteger)
+			attributeArrays.numeric(attributeNames[i]).set(featureIndex, feature->GetFieldAsInteger(i));
+		else if(type == OFTInteger64)
+			attributeArrays.numeric(attributeNames[i]).set(featureIndex, feature->GetFieldAsInteger64(i));
+		else if(type == OFTReal)
+			attributeArrays.numeric(attributeNames[i]).set(featureIndex, feature->GetFieldAsDouble(i));
+		else
+			attributeArrays.textual(attributeNames[i]).set(featureIndex, feature->GetFieldAsString(i));	
+	}
+
+}
+
+void OGRSourceOperator::close(){
+	delete[] attributeNames;
+	GDALClose(dataset);
 }
