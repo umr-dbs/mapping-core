@@ -686,7 +686,7 @@ static int importdataset(int argc, char *argv[]){
 	// 				[--unit <measurement> <unit> <interpolation>] 
 	//				[--citation|--c <provenance_citation>] [--license|--l <provenance_license>] [--uri|--u <provenence_uri>]
 	
-	//check if any of the standard parameters is actually a optional thing, so an actual value is missing	
+	//check if any of the standard parameters is actually a optional parameter, so an actual value is missing	
 	for(int i = 2; i < 9; i++){
 		if(argv[i][0] == '-'){
 			usage();			
@@ -716,7 +716,7 @@ static int importdataset(int argc, char *argv[]){
 
 		if((arg == "--c" || arg == "--citation") && i+1 < argc){
 			std::string param(argv[i + 1]);	
-			if(param[0] == '-'){
+			if(param[0] == '-'){	//if parameter value is missing, meaning next argument starts with -
 				usage();
 			} else {
 				i += 2;
@@ -755,11 +755,22 @@ static int importdataset(int argc, char *argv[]){
 		} else {
 			usage();
 		}
-
-
 	}
 
-	DatasetImporter::importDataset(dataset_name, dataset_filename, dataset_file_path, time_format, time_start, time_unit, interval_value, citation, license, uri, measurement, unit, interpolation);
+	DatasetImporter::importDataset(	dataset_name, 
+									dataset_filename, 
+									dataset_file_path, 
+									time_format, 
+									time_start, 
+									time_unit, 
+									interval_value, 
+									citation, 
+									license, 
+									uri, 
+									measurement, 
+									unit, 
+									interpolation);
+
 	return 1;
 }
 

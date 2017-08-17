@@ -33,7 +33,8 @@ void DatasetImporter::importDataset(std::string dataset_name,
 									std::string uri,
 							  		std::string measurement,
 							  		std::string unit,
-							  		std::string interpolation){
+							  		std::string interpolation)
+{
 		
 	size_t placeholderPos =	dataset_filename_with_placeholder.find(placeholder);
 
@@ -42,10 +43,6 @@ void DatasetImporter::importDataset(std::string dataset_name,
 	if(placeholderPos == std::string::npos){
 		throw ImporterException("GDAL DatasetImporter: Date placeholder " + placeholder + " not found in dataset filename " + dataset_filename_with_placeholder);
 	}
-
-
-
-	std::cout << "Interval value: " << interval_value << std::endl;
 
 	TimeUnit tu;
 	int interval = std::stoi(interval_value);
@@ -57,9 +54,9 @@ void DatasetImporter::importDataset(std::string dataset_name,
 	}
 
 	//actually this would not be necessary anymore for the way the time is snapped
-	if(tu != TimeUnit::Year && (GDALTimesnap::maxValueForTimeUnit(tu) % interval) != 0){
-		throw ImporterException("GDAL DatasetImporter: max unit of time unit has to be multiple of interval value, eg for Month (12): 4 is okay, 5 not ");
-	}
+	//if(tu != TimeUnit::Year && (GDALTimesnap::maxValueForTimeUnit(tu) % interval) != 0){
+	//	throw ImporterException("GDAL DatasetImporter: max unit of time unit has to be multiple of interval value, eg for Month (12): 4 is okay, 5 not ");
+	//}
 
 	//parse time_start with time_format to check if its valid, else parse throws an exception
 	auto timeParser = TimeParser::createCustom(time_format); 
@@ -91,8 +88,7 @@ void DatasetImporter::importDataset(std::string dataset_name,
 	provenanceJson["uri"] 		= uri;
 	datasetJson["provenance"] 	= provenanceJson;
 
-	GDALClose(dataset);
-	
+	GDALClose(dataset);	
 
 	//save json to datasetpath with datasetname
 	Json::StyledWriter writer;	
