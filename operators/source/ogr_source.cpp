@@ -12,8 +12,9 @@
 #include <json/json.h>
 #include <sstream>
 #include <iostream>
-
-
+#include <functional>
+#include <algorithm>
+#include <memory>
 /*
 	params:
 		- filename
@@ -42,7 +43,7 @@ class OGRSourceOperator : public GenericOperator {
 		void readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection);
 		void createAttributeArrays(OGRFeatureDefn *attributeDefn, AttributeArrays &collection);
 		void readAttributesIntoCollection(AttributeArrays &attributeArrays, OGRFeatureDefn *attributeDefn, OGRFeature *feature, int featureIndex);
-
+		void readAnyCollection(OGRLayer *layer, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature);
 		void close();
 		
 };
@@ -115,11 +116,8 @@ OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect){
 	return layer;
 }
 
-std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const QueryRectangle &rect, const QueryTools &tools) {
-	auto points = make_unique<PointCollection>(rect);
-	OGRLayer *layer = loadLayer(rect);
-	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
-	createAttributeArrays(attributeDefn, points->feature_attributes);
+void OGRSourceOperator::readAnyCollection(OGRLayer *layer, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature)
+{
 	OGRFeature* feature;
 
 	int featureCount = 0;
@@ -127,49 +125,65 @@ std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const Que
 	while( (feature = layer->GetNextFeature()) != NULL )
 	{
 		//each feature has potentially multiple geometries
-		int fields = feature->GetGeomFieldCount();
-
-		for(int i = 0; i < fields; i++){
-
-			OGRGeometry *geom = feature->GetGeomFieldRef(i);
-			if(geom != NULL){
-				
-				int type = wkbFlatten(geom->getGeometryType());							
-
-				if(type == wkbPoint)
-				{	
-					OGRPoint *point = (OGRPoint *)geom;				
-					points->addCoordinate(point->getX(), point->getY());
-					points->finishFeature();
-				}				
-				else if(type == wkbMultiPoint)
-				{
-					OGRMultiPoint *mp = (OGRMultiPoint *)geom;
-					int num = mp->getNumGeometries();
-					for(int k = 0; k < num; k++){
-						OGRPoint *point = (OGRPoint *)mp->getGeometryRef(k);
-						points->addCoordinate(point->getX(), point->getY());
-						points->finishFeature();
-					}
-				}
-				else 
-				{
-					OGRFeature::DestroyFeature(feature);
-					close();
-					throw OperatorException("OGR Source: Dataset is not a Point Collection");				
-				}
-				readAttributesIntoCollection(points->feature_attributes, attributeDefn, feature, featureCount);		
-			}
+		if(feature->GetGeomFieldCount() > 1){
+			throw OperatorException("OGR Source: OGRFeature has more than one Geometry. For now we don't support this.");
 		}
-
+		
+		OGRGeometry *geom = feature->GetGeomFieldRef(0);
+		if(geom != NULL)
+			addFeature(geom, feature, featureCount);
+		else 
+			throw OperatorException("OGR Source: OGRGeometry is NULL.");
+	
 		featureCount++;
 		OGRFeature::DestroyFeature(feature);
-
 	}
 	close();
+
+}
+
+std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const QueryRectangle &rect, const QueryTools &tools)
+{
+	auto points = make_unique<PointCollection>(rect);
+	OGRLayer *layer = loadLayer(rect);
+	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
+	createAttributeArrays(attributeDefn, points->feature_attributes);
+
+	auto addFeature = [&](OGRGeometry *geom, OGRFeature *feature, int featureCount) -> bool 
+	{
+		int type = wkbFlatten(geom->getGeometryType());							
+
+		if(type == wkbPoint)
+		{	
+			OGRPoint *point = (OGRPoint *)geom;				
+			points->addCoordinate(point->getX(), point->getY());
+			points->finishFeature();
+		}				
+		else if(type == wkbMultiPoint)
+		{
+			OGRMultiPoint *mp = (OGRMultiPoint *)geom;
+			int num = mp->getNumGeometries();
+			for(int k = 0; k < num; k++){
+				OGRPoint *point = (OGRPoint *)mp->getGeometryRef(k);
+				points->addCoordinate(point->getX(), point->getY());
+				points->finishFeature();
+			}
+		}
+		else 
+		{
+			OGRFeature::DestroyFeature(feature);
+			close();
+			throw OperatorException("OGR Source: Dataset is not a Point Collection");							
+		}
+		readAttributesIntoCollection(points->feature_attributes, attributeDefn, feature, featureCount);
+		return true;
+	};
+
+	readAnyCollection(layer, addFeature);
+
+
 	points->validate();
 	return points;
-	//return points->filterBySpatioTemporalReferenceIntersection(rect);	//could be double filtering because of layer->SetSpatialFilterRect
 }
 
 std::unique_ptr<LineCollection> OGRSourceOperator::getLineCollection(const QueryRectangle &rect, const QueryTools &tools) {
@@ -177,49 +191,39 @@ std::unique_ptr<LineCollection> OGRSourceOperator::getLineCollection(const Query
 	OGRLayer *layer = loadLayer(rect);
 	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
 	createAttributeArrays(attributeDefn, lines->feature_attributes);
-	OGRFeature* feature;
-	int featureCount = 0;
-
-	while( (feature = layer->GetNextFeature()) != NULL )
+	
+	auto addFeature = [&](OGRGeometry *geom, OGRFeature *feature, int featureCount) -> bool 
 	{
-		int fields = feature->GetGeomFieldCount();		
-		for(int i = 0; i < fields; i++)
+		int type = wkbFlatten(geom->getGeometryType());
+		
+		if(type == wkbLineString)
 		{
-
-			OGRGeometry *geom = feature->GetGeomFieldRef(i);
-			if(geom != NULL)
-			{			
-				int type = wkbFlatten(geom->getGeometryType());
-				
-				if(type == wkbLineString)
-				{
-					OGRLineString *ls = (OGRLineString *)geom;
-					readLineStringToLineCollection(ls, lines);									
-					lines->finishFeature();
-				}
-				else if(type == wkbMultiLineString)
-				{
-					OGRMultiLineString *mls = (OGRMultiLineString *)geom;					
-					for(int l = 0; l < mls->getNumGeometries(); l++)
-					{						
-						OGRLineString *ls = (OGRLineString *)mls->getGeometryRef(l);
-						readLineStringToLineCollection(ls, lines);						
-					}
-					lines->finishFeature();
-				}
-				else
-				{
-					OGRFeature::DestroyFeature(feature);
-					close();
-					throw OperatorException("OGR Source: Dataset is not a Line Collection");
-				}
-				readAttributesIntoCollection(lines->feature_attributes, attributeDefn, feature, featureCount);		
-			}
+			OGRLineString *ls = (OGRLineString *)geom;
+			readLineStringToLineCollection(ls, lines);									
+			lines->finishFeature();
 		}
-		featureCount++;
-		OGRFeature::DestroyFeature(feature);
-	}
-	close();
+		else if(type == wkbMultiLineString)
+		{
+			OGRMultiLineString *mls = (OGRMultiLineString *)geom;					
+			for(int l = 0; l < mls->getNumGeometries(); l++)
+			{						
+				OGRLineString *ls = (OGRLineString *)mls->getGeometryRef(l);
+				readLineStringToLineCollection(ls, lines);						
+			}
+			lines->finishFeature();
+		}
+		else
+		{
+			OGRFeature::DestroyFeature(feature);
+			close();
+			throw OperatorException("OGR Source: Dataset is not a Line Collection");
+		}
+		readAttributesIntoCollection(lines->feature_attributes, attributeDefn, feature, featureCount);
+		return true;		
+	};	
+		
+	readAnyCollection(layer, addFeature);
+
 	lines->validate();
 	return lines;
 }
@@ -230,66 +234,57 @@ std::unique_ptr<PolygonCollection> OGRSourceOperator::getPolygonCollection(const
 	OGRLayer *layer = loadLayer(rect);
 	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
 	createAttributeArrays(attributeDefn, polygons->feature_attributes);
-	OGRFeature* feature;
-	int featureCount = 0;
-
-	while( (feature = layer->GetNextFeature()) != NULL )
+	
+	auto addFeature = [&](OGRGeometry *geom, OGRFeature *feature, int featureCount) -> bool 
 	{
-		int fields = feature->GetGeomFieldCount();		
-		for(int i = 0; i < fields; i++)
+		int type = wkbFlatten(geom->getGeometryType());			
+		if(type == wkbPolygon)
 		{
-			OGRGeometry *geom = feature->GetGeomFieldRef(i);
-			if(geom != NULL)
-			{							
-				int type = wkbFlatten(geom->getGeometryType());			
-				if(type == wkbPolygon)
-				{
-					OGRPolygon *polygon = (OGRPolygon *)geom;
-					const OGRLinearRing *extRing = polygon->getExteriorRing();
-					readRingToPolygonCollection(extRing, polygons);					
+			OGRPolygon *polygon = (OGRPolygon *)geom;
+			const OGRLinearRing *extRing = polygon->getExteriorRing();
+			readRingToPolygonCollection(extRing, polygons);					
 
-					for(int k = 0; k < polygon->getNumInteriorRings(); k++)
-					{
-						const OGRLinearRing *intRing = polygon->getInteriorRing(k);
-						readRingToPolygonCollection(intRing, polygons);
-					}
-					polygons->finishPolygon();
-					polygons->finishFeature();
-
-				}				
-				else if(type == wkbMultiPolygon)
-				{
-					OGRMultiPolygon *multiPolygon = (OGRMultiPolygon *)geom;
-
-					for(int l = 0; l < multiPolygon->getNumGeometries(); l++)
-					{
-						OGRPolygon *polygon = (OGRPolygon *)multiPolygon->getGeometryRef(l);
-
-						const OGRLinearRing *extRing = polygon->getExteriorRing();
-						readRingToPolygonCollection(extRing, polygons);					
-
-						for(int k = 0; k < polygon->getNumInteriorRings(); k++)
-						{
-							const OGRLinearRing *intRing = polygon->getInteriorRing(k);
-							readRingToPolygonCollection(intRing, polygons);
-						}
-						polygons->finishPolygon();
-					}
-					polygons->finishFeature();
-				} 
-				else
-				{
-					OGRFeature::DestroyFeature(feature);
-					close();
-					throw OperatorException("OGR Source: Dataset is not a Polygon Collection");
-				}
-				readAttributesIntoCollection(polygons->feature_attributes, attributeDefn, feature, featureCount);		
+			for(int k = 0; k < polygon->getNumInteriorRings(); k++)
+			{
+				const OGRLinearRing *intRing = polygon->getInteriorRing(k);
+				readRingToPolygonCollection(intRing, polygons);
 			}
+			polygons->finishPolygon();
+			polygons->finishFeature();
+
+		}				
+		else if(type == wkbMultiPolygon)
+		{
+			OGRMultiPolygon *multiPolygon = (OGRMultiPolygon *)geom;
+
+			for(int l = 0; l < multiPolygon->getNumGeometries(); l++)
+			{
+				OGRPolygon *polygon = (OGRPolygon *)multiPolygon->getGeometryRef(l);
+
+				const OGRLinearRing *extRing = polygon->getExteriorRing();
+				readRingToPolygonCollection(extRing, polygons);					
+
+				for(int k = 0; k < polygon->getNumInteriorRings(); k++)
+				{
+					const OGRLinearRing *intRing = polygon->getInteriorRing(k);
+					readRingToPolygonCollection(intRing, polygons);
+				}
+				polygons->finishPolygon();
+			}
+			polygons->finishFeature();
+		} 
+		else
+		{
+			OGRFeature::DestroyFeature(feature);
+			close();
+			throw OperatorException("OGR Source: Dataset is not a Polygon Collection");
 		}
-		featureCount++;
-		OGRFeature::DestroyFeature(feature);
-	}
-	close();
+		readAttributesIntoCollection(polygons->feature_attributes, attributeDefn, feature, featureCount);		
+		return true;
+	};
+
+	readAnyCollection(layer, addFeature);		
+	
 	polygons->validate();
 	return polygons;
 }
