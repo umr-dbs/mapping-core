@@ -18,6 +18,7 @@
 #include <functional>
 #include <algorithm>
 #include <memory>
+#include <vector>
 
 enum class AttributeType
 {
@@ -115,6 +116,9 @@ class OGRSourceOperator : public GenericOperator {
 		std::unordered_map<std::string, AttributeType> wantedAttributes;
 		std::string time1Name;
 		std::string time2Name;
+		int time1Index;
+		int time2Index;
+		double timeDuration;
 		std::unique_ptr<TimeParser> time1Parser;
 		std::unique_ptr<TimeParser> time2Parser;
 		ErrorHandling errorHandling;
@@ -126,8 +130,10 @@ class OGRSourceOperator : public GenericOperator {
 		void readRingToPolygonCollection(const OGRLinearRing *ring, std::unique_ptr<PolygonCollection> &collection);
 		void readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection);
 		void createAttributeArrays(OGRFeatureDefn *attributeDefn, AttributeArrays &collection);
-		bool readAttributesIntoCollection(AttributeArrays &attributeArrays, OGRFeatureDefn *attributeDefn, OGRFeature *feature, int featureIndex);
-		void readAnyCollection(SimpleFeatureCollection *featureCollection, OGRLayer *layer, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature);
+		bool readAttributesIntoCollection(AttributeArrays &attributeArrays, OGRFeatureDefn *attributeDefn, OGRFeature *feature, int featureIndex);		
+		void initTimeReading(OGRFeatureDefn *attributeDefn);
+		bool readTimeIntoCollection(const QueryRectangle &rect, OGRFeature *feature, std::vector<TimeInterval> &time);		
+		void readAnyCollection(const QueryRectangle &rect, SimpleFeatureCollection *featureCollection, OGRLayer *layer, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature);
 		bool hasSuffix(const std::string &str, const std::string &suffix);		
 		void close();
 };
@@ -154,6 +160,35 @@ OGRSourceOperator::OGRSourceOperator(int sourcecounts[], GenericOperator *source
     	wantedAttributes[name.asString()] = AttributeType::NUMERIC;
 
     timeSpecification = TimeSpecificationConverter.from_json(params, "time");
+
+    timeDuration = 0.0;
+	if (timeSpecification == TimeSpecification::START) {
+		if(!params.isMember("duration"))
+			throw ArgumentException("CSVSource: TimeSpecification::Start chosen, but no duration given.");
+
+		auto duration = params.get("duration", Json::Value());
+		if(duration.isString() && duration.asString() == "inf")
+			timeDuration = -1.0;
+		else if (duration.isNumeric())
+			timeDuration = duration.asDouble();
+		else
+			throw ArgumentException("CSVSource: invalid duration given.");
+	}
+
+    if(timeSpecification != TimeSpecification::NONE){
+		time1Name = columns.get("time1", "time1").asString();
+
+		const Json::Value& time1Format = params.get("time1_format", Json::Value::null);
+		time1Parser = TimeParser::createFromJson(time1Format);
+	}
+
+	if(timeSpecification == TimeSpecification::START_DURATION || timeSpecification == TimeSpecification::START_END){
+		//TODO: check that time2 can be used as interval (e.g. format::seconds)
+		time2Name = columns.get("time2", "time2").asString();
+
+		const Json::Value& time2Format = params.get("time2_format", Json::Value::null);
+		time2Parser = TimeParser::createFromJson(time2Format);
+	}
     
 }
 
@@ -164,7 +199,8 @@ OGRSourceOperator::~OGRSourceOperator()
 
 REGISTER_OPERATOR(OGRSourceOperator, "ogr_source");
 
-void OGRSourceOperator::writeSemanticParameters(std::ostringstream& stream) {
+void OGRSourceOperator::writeSemanticParameters(std::ostringstream& stream)
+{
 	/*Json::Value params = csvSourceUtil->getParameters();
 
 	params["filename"] = filename;
@@ -243,11 +279,11 @@ OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect)
 	return layer;
 }
 
-void OGRSourceOperator::readAnyCollection(SimpleFeatureCollection *collection, OGRLayer *layer, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature)
+void OGRSourceOperator::readAnyCollection(const QueryRectangle &rect, SimpleFeatureCollection *collection, OGRLayer *layer, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature)
 {
 	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
 	createAttributeArrays(attributeDefn, collection->feature_attributes);
-
+	initTimeReading(attributeDefn);
 	OGRFeature* feature;
 
 	int featureCount = 0;
@@ -267,6 +303,11 @@ void OGRSourceOperator::readAnyCollection(SimpleFeatureCollection *collection, O
 
 		//returns false if attribute could not be written and errorhandling is SKIP: the inserted feature has to be removed
 		if(success && !readAttributesIntoCollection(collection->feature_attributes, attributeDefn, feature, featureCount)){
+			success = false;
+			collection->removeLastFeature();
+		}
+
+		if(success && !readTimeIntoCollection(rect, feature, collection->time)){
 			success = false;
 			collection->removeLastFeature();
 		}
@@ -331,7 +372,7 @@ std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const Que
 		return true;	
 	};
 
-	readAnyCollection(points.get(), layer, addFeature);
+	readAnyCollection(rect, points.get(), layer, addFeature);
 	points->validate();
 	return points;
 }
@@ -367,7 +408,7 @@ std::unique_ptr<LineCollection> OGRSourceOperator::getLineCollection(const Query
 		return true;			
 	};	
 		
-	readAnyCollection(lines.get(), layer, addFeature);
+	readAnyCollection(rect, lines.get(), layer, addFeature);
 
 	lines->validate();
 	return lines;
@@ -422,7 +463,7 @@ std::unique_ptr<PolygonCollection> OGRSourceOperator::getPolygonCollection(const
 		return true;
 	};
 
-	readAnyCollection(polygons.get(), layer, addFeature);		
+	readAnyCollection(rect, polygons.get(), layer, addFeature);		
 	
 	polygons->validate();
 	return polygons;
@@ -477,7 +518,6 @@ void OGRSourceOperator::createAttributeArrays(OGRFeatureDefn *attributeDefn, Att
 		} else
 			attributeNames[i] = "";
 	}
-
 }
 
 // write attribute values for the given attribute defitinition using the attributeNames
@@ -523,9 +563,7 @@ bool OGRSourceOperator::readAttributesIntoCollection(AttributeArrays &attributeA
 							throw OperatorException("OGR Source: Attribute \"" + attributeNames[i] + "\" requested as numeric can not be parsed to double.");
 							break;
 						case ErrorHandling::SKIP:
-							//TODO: Remove the last feature inserted to FeatureCollection
-							return false;
-							break;
+							return false;							
 						case ErrorHandling::KEEP:
 							attributeArrays.numeric(attributeNames[i]).set(featureIndex, 0.0);
 							break;
@@ -534,6 +572,94 @@ bool OGRSourceOperator::readAttributesIntoCollection(AttributeArrays &attributeA
 			}	
 		}
 	}
+	return true;
+}
+
+void OGRSourceOperator::initTimeReading(OGRFeatureDefn *attributeDefn)
+{
+	if(timeSpecification == TimeSpecification::NONE)
+		return;
+
+	time1Index = -1;
+	time2Index = -1;
+
+	for(int i = 0; i < attributeDefn->GetFieldCount(); i++)
+	{
+		OGRFieldDefn *fieldDefn = attributeDefn->GetFieldDefn(i);
+		std::string name(fieldDefn->GetNameRef());
+		if(name == time1Name)
+			time1Index = i;
+		else if(name == time2Name)
+			time2Index = i;
+	}
+
+	if(time1Index == -1)
+		throw OperatorException("OGR Source: time1 attribute not found.");
+	
+	if(timeSpecification == TimeSpecification::START_DURATION || timeSpecification == TimeSpecification::START_END)
+	{
+		if(time2Index == -1)
+			throw OperatorException("OGR Source: time1 attribute not found.");
+	}
+}
+
+bool OGRSourceOperator::readTimeIntoCollection(const QueryRectangle &rect, OGRFeature *feature, std::vector<TimeInterval> &time)
+{
+	if(timeSpecification == TimeSpecification::NONE)
+		return true;	
+
+	double t1, t2;
+	bool error = false;
+	if (timeSpecification == TimeSpecification::START) {
+		try {
+			t1 = time1Parser->parse(feature->GetFieldAsString(time1Index));
+			if(timeDuration >= 0.0)
+				t2 = t1 + timeDuration;
+			else
+				t2 = rect.end_of_time();
+		} catch (const TimeParseException& e){
+			t1 = rect.beginning_of_time();
+			t2 = rect.end_of_time();
+			error = true;
+		}
+	}
+	else if (timeSpecification == TimeSpecification::START_END) {
+		try {
+			t1 = time1Parser->parse(feature->GetFieldAsString(time1Index));
+		} catch (const TimeParseException& e){
+			t1 = rect.beginning_of_time();
+			error = true;
+		}
+		try {
+			t2 = time2Parser->parse(feature->GetFieldAsString(time2Index));
+		} catch (const TimeParseException& e){
+			t2 = rect.end_of_time();
+			error = true;
+		}
+	}
+	else if (timeSpecification == TimeSpecification::START_DURATION) {
+		try {
+			t1 = time1Parser->parse(feature->GetFieldAsString(time1Index));
+			t2 = t1 + time2Parser->parse(feature->GetFieldAsString(time2Index));
+		} catch (const TimeParseException& e){
+			t1 = rect.beginning_of_time();
+			t2 = rect.end_of_time();
+			error = true;
+		}
+	}
+
+	if(error) {
+		switch(errorHandling) {
+			case ErrorHandling::ABORT:
+				throw OperatorException("OGR Source: Could not parse time.");
+			case ErrorHandling::SKIP:
+				return false;
+			case ErrorHandling::KEEP:
+				break;
+		}
+	}	
+	
+	time.push_back(TimeInterval(t1, t2));	
 	return true;
 }
 
