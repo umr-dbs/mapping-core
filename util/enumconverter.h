@@ -22,7 +22,7 @@ class EnumConverter {
 		EnumConverter(const std::vector<std::pair<T, std::string>> &map, std::string default_value) : map(map),
 			default_value(std::move(default_value)) {};
 
-		const std::string &to_string(T t) {
+		const std::string &to_string(T t) const {
 			for (auto &tuple : map) {
 				if (tuple.first == t)
 					return tuple.second;
