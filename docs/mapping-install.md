@@ -32,7 +32,7 @@ clinfo
 **TODO**
 
 
-### Ubuntu 16 LTS
+### Ubuntu 16 LTS / Ubuntu 17.04
 
 #### Open CL
 
@@ -47,6 +47,11 @@ tar -C intel-opencl -Jxf intel-opencl-r3.0-BUILD_ID.x86_64.tar.xz
 tar -C intel-opencl -Jxf intel-opencl-devel-r3.0-BUILD_ID.x86_64.tar.xz
 tar -C intel-opencl -Jxf intel-opencl-cpu-r3.0-BUILD_ID.x86_64.tar.xz
 sudo cp -R intel-opencl/* /
+sudo ldconfig
+
+sudo apt install clinfo
+sudo apt install opencl-headers
+clinfo
 ```
 
 
