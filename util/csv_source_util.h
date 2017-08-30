@@ -60,7 +60,7 @@ const std::vector< std::pair<ErrorHandling, std::string> > ErrorHandlingMap {
 };
 
 
-static EnumConverter<ErrorHandling>ErrorHandlingConverter(ErrorHandlingMap);
+static EnumConverter<ErrorHandling>ErrorHandlingConverter(ErrorHandlingMap, "abort");
 
 
 /**
