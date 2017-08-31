@@ -17,10 +17,10 @@ option(USE_OPENCL "Use OpenCL in MAPPING" ON)
 
 # Executables
 add_executable(mapping_cgi cgi.cpp)
-target_include_directories(mapping_cgi PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(mapping_manager mapping_manager.cpp)
-target_include_directories(mapping_manager PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_executable(mapping_unittests EXCLUDE_FROM_ALL test/unittests/init.cpp)
 
 # Custom Macro for Internal Library Linking
 macro(target_link_libraries_internal TARGET)
@@ -103,6 +103,7 @@ add_library(core_lib
 target_include_directories(core_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi core_lib)
 target_link_libraries_internal(mapping_manager core_lib)
+target_link_libraries_internal(mapping_unittests core_lib)
 
 if (USE_OPENCL)
     target_sources(core_lib
@@ -141,9 +142,9 @@ add_library(services_lib
         pointvisualization/CircleClusteringQuadTree.cpp
         services/featurecollectiondb.cpp
         )
-target_include_directories(services_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(services_lib core_lib)
 target_link_libraries_internal(mapping_cgi services_lib)
+target_link_libraries_internal(mapping_unittests services_lib)
 
 add_library(operators_lib
         operators/source/csv_source.cpp
@@ -177,10 +178,10 @@ add_library(operators_lib
         datatypes/plots/png.cpp
         operators/source/featurecollectiondb_source.cpp
         )
-target_include_directories(operators_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(operators_lib core_lib)
 target_link_libraries_internal(mapping_cgi operators_lib)
 target_link_libraries_internal(mapping_manager operators_lib)
+target_link_libraries_internal(mapping_unittests operators_lib)
 
 add_library(extern_lib ext/jsoncpp/jsoncpp.cpp)
 target_include_directories(extern_lib PUBLIC ext/jsoncpp)
@@ -246,8 +247,60 @@ endif (USE_OPENCL)
 ## CGI
 find_package(Fcgi REQUIRED)
 target_link_libraries(mapping_cgi ${Fcgi_LIBRARIES})
+target_link_libraries(mapping_unittests ${Fcgi_LIBRARIES})
 target_include_directories(mapping_cgi PRIVATE ${Fcgi_INCLUDE_DIRS})
 
 find_package(Fcgi++ REQUIRED)
 target_link_libraries(mapping_cgi ${Fcgi++_LIBRARIES})
+target_link_libraries(mapping_unittests ${Fcgi++_LIBRARIES})
 target_include_directories(mapping_cgi PRIVATE ${Fcgi++_INCLUDE_DIRS})
+
+# Testing
+include(CTest)
+enable_testing()
+
+## Unit Tests
+include(cmake/DownloadProject.cmake)
+download_project(PROJ       googletest
+        GIT_REPOSITORY      https://github.com/google/googletest.git
+        GIT_TAG             release-1.8.0
+        UPDATE_DISCONNECTED 1
+        )
+
+# Prevent GoogleTest from overriding our compiler/linker options
+# when building with Visual Studio
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
+
+target_link_libraries(mapping_unittests gtest)
+
+target_sources(mapping_unittests
+        PRIVATE
+            test/unittests/csvparser.cpp
+            test/unittests/httpparsing.cpp
+            test/unittests/init.cpp
+            test/unittests/parameters.cpp
+            test/unittests/stref.cpp
+            test/unittests/temporal
+            test/unittests/units.cpp
+            test/unittests/uriloader.cpp
+            test/unittests/userdb.cpp
+            test/unittests/featurecollectiondb/postgres.cpp
+#            test/unittests/ipc/countdownserver.cpp
+#            test/unittests/ipc/echoserver.cpp
+#            test/unittests/ipc/echoserver_mt.cpp
+            test/unittests/ipc/serialization.cpp
+            test/unittests/plots/plots.cpp
+            test/unittests/pointvisualization/pointvisualization.cpp
+            test/unittests/simplefeaturecollections/lines.cpp
+            test/unittests/simplefeaturecollections/points.cpp
+            test/unittests/simplefeaturecollections/polygons.cpp
+#            test/unittests/simplefeaturecollections/util.h
+            test/unittests/temporal/timeparser.cpp
+            test/unittests/temporal/timeshift.cpp
+            test/unittests/util/formula.cpp
+            test/unittests/util/sha1.cpp
+        )
+
+add_test(NAME all_tests COMMAND mapping_unittests --gtest_color=yes --gtest_output="xml:test/unittest_latest.xml")
