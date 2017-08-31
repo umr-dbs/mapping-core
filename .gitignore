@@ -23,6 +23,10 @@ local_setup
 test_client
 test/systemtests/parse_logs
 
+# CMake
+cmake-build-debug
+cmake-build-release
+
 # machine specific configuration
 Makefile.local
 
