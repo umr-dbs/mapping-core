@@ -183,6 +183,39 @@ target_link_libraries_internal(mapping_cgi operators_lib)
 target_link_libraries_internal(mapping_manager operators_lib)
 target_link_libraries_internal(mapping_unittests operators_lib)
 
+if (USE_OPENCL)
+    # Generate OpenCL headers
+    # TODO: make this generic for OS?
+    foreach(cl_file IN ITEMS
+            operators/processing/combined/points2raster_frequency.cl
+            operators/processing/combined/points2raster_value.cl
+            operators/processing/combined/raster_value_extraction.cl
+            operators/processing/features/difference.cl
+            operators/processing/meteosat/co2correction.cl
+            operators/processing/meteosat/pansharpening_degenerate.cl
+            operators/processing/meteosat/pansharpening_interpolate.cl
+            operators/processing/meteosat/pansharpening_regression.cl
+            operators/processing/meteosat/radiance.cl
+            operators/processing/meteosat/reflectance.cl
+            operators/processing/meteosat/solarangle.cl
+            operators/processing/meteosat/temperature.cl
+            operators/processing/raster/classification_kernels.cl
+            operators/processing/raster/matrixkernel.cl
+            )
+        add_custom_command(
+                TARGET operators_lib
+                PRE_BUILD
+                # remove existing header file
+                COMMAND rm ${cl_file}.h
+                # create hexadecimal representation, surround it with an array declaration and a size variable
+                COMMAND xxd -i ${cl_file} | sed 's/unsigned /static const /g' > ${cl_file}.h
+                # create a static string of the previously created array and length
+                COMMAND echo ${cl_file} | sed -e 's/\\.cl$$//' -e 's:/:_:g' -e 's/\\\(^.*$$\\\)/static const std::string \\1\(\\1_cl, \\1_cl_len\)\;/' >> ${cl_file}.h
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        )
+    endforeach(cl_file)
+endif (USE_OPENCL)
+
 add_library(extern_lib ext/jsoncpp/jsoncpp.cpp)
 target_include_directories(extern_lib PUBLIC ext/jsoncpp)
 target_link_libraries_internal(core_lib extern_lib)
