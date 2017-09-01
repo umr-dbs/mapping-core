@@ -1,0 +1,7 @@
+# - Config file for the mapping-core package
+# It defines the following variables
+#  MAPPING_CORE_INCLUDE_DIRS - include directories for FooBar
+
+# Compute paths
+get_filename_component(MAPPING_CORE_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+set(MAPPING_CORE_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
