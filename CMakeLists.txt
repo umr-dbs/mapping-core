@@ -77,6 +77,7 @@ add_library(mapping_core_base_lib
         util/log.cpp
         util/timeparser.cpp
         util/sizeutil.cpp
+        util/stringsplit.h
         util/uriloader.cpp
         operators/operator.cpp
         operators/provenance.cpp
