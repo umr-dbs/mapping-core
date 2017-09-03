@@ -225,13 +225,9 @@ OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect)
 {		
 	GDALAllRegister();
 
-	const char * const *oo = NULL;	
 	bool isCsv = hasSuffix(filename, ".csv");
 
-	// does not work!
-	// GDALOpenEx expects a const char * const *. hardcoding the values on array creation 
-	// works as expected but putting the column_x/y values in it does not work
-	// also putting not concatenated const char * does not work
+	// if its a csv file we have to add open options to tell gdal what the geometry columns are.
 	if(isCsv){
 		auto columns = parameter.get("columns", Json::Value(Json::ValueType::objectValue));
 		std::string column_x = columns.get("x", "x").asString();
@@ -239,39 +235,20 @@ OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect)
 		if(columns.isMember("y"))
 		{	
 			std::string column_y 	= columns.get("y", "y").asString();
-
-			std::string optX 		= "X_POSSIBLE_NAMES=" + column_x;
-			char * optXc 		= new char[optX.length() + 1];
-			strcpy(optXc, optX.c_str());			
-
+			std::string optX 		= "X_POSSIBLE_NAMES=" + column_x;			
 			std::string optY 		= "Y_POSSIBLE_NAMES=" + column_y;
-			char * optYc 			= new char[optY.length() + 1];			
-			strcpy(optYc, optY.c_str());
-
-			std::string optCol 		= "KEEP_GEOM_COLUMNS=NO";
-			char * optColc 	= new char[optCol.length() + 1];
-			strcpy(optColc, optCol.c_str());
-
-			const char * * strs = new const char * [4];
-			strs[0] = optXc;
-			strs[1] = optYc;
-			strs[2] = optColc;			
-			strs[3] = NULL;
-			
-			oo = strs;
-			std::cout << oo[0] << ", " << oo[1] << ", " << oo[2] << std::endl;
-			dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, oo, NULL);
+			const char * const strs[] = { optX.c_str(), optY.c_str(), NULL};									
+			dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, strs, NULL);			
 		} 
 		else
 		{
-			std::string opt = "GEOM_POSSIBLE_NAMES=" + column_x;			
-			const char * const strs[] = { opt.c_str(), "KEEP_GEOM_COLUMNS=NO", NULL };	// does not work
-			oo = strs;			
-			dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, oo, NULL);
+			std::string opt = "GEOM_POSSIBLE_NAMES=" + column_x;				
+			const char * const strs[] = { opt.c_str(), NULL };
+			dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, strs, NULL);
 		}		
 	} 
 	else
-		dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, oo, NULL);
+		dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
 
 	
 
