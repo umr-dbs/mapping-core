@@ -327,14 +327,17 @@ void OGRSourceOperator::readAnyCollection(const QueryRectangle &rect, SimpleFeat
 					//we can not know if writing has actually started or if a type missmatch happened.
 					break;
 				case ErrorHandling::KEEP:
-					//there isn't really anything that can be done for KEEP
+					//TODO: ???? Insert 0-Feature?
 					break;
 			}
-		}
-			
+		}			
 		OGRFeature::DestroyFeature(feature);	
-
 	}
+
+	// if it is wanted to insert default timestamps for TimeSpec.::NONE uncomment this.
+	// for now we decided not to add them.
+	/*if(timeSpecification == TimeSpecification::NONE)
+		collection->addDefaultTimestamps();*/
 
 	close();
 }
@@ -509,9 +512,9 @@ void OGRSourceOperator::createAttributeArrays(OGRFeatureDefn *attributeDefn, Att
 			attributeNames[i] = name;
 			//create numeric or textual attribute with the name in FeatureCollection
 			if(wantedType == AttributeType::TEXTUAL)
-				attributeArrays.addTextualAttribute(name, Unit::unknown());
+				attributeArrays.addTextualAttribute(name, Unit::unknown()); //TODO: units
 			else if(wantedType == AttributeType::NUMERIC)
-				attributeArrays.addNumericAttribute(name, Unit::unknown());
+				attributeArrays.addNumericAttribute(name, Unit::unknown()); //TODO: units
 		} else
 			attributeNames[i] = "";
 	}
