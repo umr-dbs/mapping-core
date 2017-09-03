@@ -14,7 +14,8 @@
     },    
     "query": {        
         "params": {       		
-            "filename": "test/systemtests/data/ogr_files/land/ne_10m_land.shp"
+            "filename": "test/systemtests/data/ogr_files/nps_boundary/nps_boundary.gml",
+            "on_error" : "abort"
         },
         "type": "ogr_source"
     }    

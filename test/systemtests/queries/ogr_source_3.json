@@ -1,6 +1,6 @@
 {
     "name": "Blup",
-	"query_result": "polygons",
+	"query_result": "points",
     "temporal_reference": {
         "type": "UNIX",
         "start": 1205280000
@@ -14,7 +14,7 @@
     },    
     "query": {        
         "params": {       		
-            "filename": "test/systemtests/data/ogr_files/land/ne_10m_land.shp"
+            "filename": "test/systemtests/data/ogr_files/populated/ne_10m_populated_places.shp"
         },
         "type": "ogr_source"
     }    

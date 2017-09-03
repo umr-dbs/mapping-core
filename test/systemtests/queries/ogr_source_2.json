@@ -1,6 +1,6 @@
 {
     "name": "Blup",
-	"query_result": "polygons",
+	"query_result": "lines",
     "temporal_reference": {
         "type": "UNIX",
         "start": 1205280000
@@ -14,7 +14,7 @@
     },    
     "query": {        
         "params": {       		
-            "filename": "test/systemtests/data/ogr_files/land/ne_10m_land.shp"
+            "filename": "test/systemtests/data/ogr_files/coastline/ne_10m_coastline.shp"
         },
         "type": "ogr_source"
     }    
