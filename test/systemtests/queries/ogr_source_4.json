@@ -16,9 +16,11 @@
         "params": {       		
             "filename": "test/systemtests/data/places_dump/places_dump_DE_100k.csv",
             "on_error" : "abort",
+            "time" : "none",
             "columns" : {
                 "x" : "X",
-                "y" : "Y"
+                "y" : "Y",
+                "textual" : ["Name", "PLZ"]
             }
         },
         "type": "ogr_source"

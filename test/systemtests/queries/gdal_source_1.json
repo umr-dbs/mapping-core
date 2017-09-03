@@ -14,8 +14,8 @@
     },
     "resolution": {
     	"type": "pixels",
-        "x": 3600,
-        "y": 1800
+        "x": 1800,
+        "y": 900
     },
     "query_mode": "exact",
     "query": {        
