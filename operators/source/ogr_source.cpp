@@ -239,35 +239,54 @@ OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect)
 		if(columns.isMember("y"))
 		{	
 			std::string column_y 	= columns.get("y", "y").asString();
-			std::string optX 		= "X_POSSIBLE_NAMES=X" + column_x;
-			std::string optY 		= "Y_POSSIBLE_NAMES=Y" + column_y;
-			std::string optCol 		= "KEEP_GEOM_COLUMNS=NO";
 			
-			//const char * const str[] = { optX.c_str(), optY.c_str(), optCol.c_str() };	//does not work
-			const char * const strs[] = { "X_POSSIBLE_NAMES=X", "Y_POSSIBLE_NAMES=Y", "KEEP_GEOM_COLUMNS=NO" }; //hardcoded does work
+			std::string optX 		= "X_POSSIBLE_NAMES=X"; // + column_x + "\0";
+			char * optXc 		= new char[optX.length() + 1];
+			strcpy(optXc, optX.c_str());			
+			
+			std::string optY 		= "Y_POSSIBLE_NAMES=Y"; // + column_y + "\0";
+			char * optYc 		= new char[optY.length() + 1];			
+			strcpy(optYc, optY.c_str());
+
+			std::string optCol 		= "KEEP_GEOM_COLUMNS=NO\0";
+			char * optColc 	= new char[optY.length() + 1];
+			strcpy(optColc, optCol.c_str());			
+
+			const char * * strs = new const char * [3];// = { optXc, optYc, optColc };	//does not work
+			strs[0] = optXc;
+			strs[1] = optYc;
+			strs[2] = optColc;			
+			
+			//const char * const strs[] = { "X_POSSIBLE_NAMES=X", "Y_POSSIBLE_NAMES=Y", "KEEP_GEOM_COLUMNS=NO" }; //hardcoded does work
 			oo = strs;
+			std::cout << oo[0] << ", " << oo[1] << ", " << oo[2] << std::endl;
+			dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, oo, NULL);
 		} 
-		else 	
+		else
 		{
 			std::string opt = "GEOM_POSSIBLE_NAMES=" + column_x;			
 			const char * const strs[] = { opt.c_str(), "KEEP_GEOM_COLUMNS=NO", NULL };	// does not work
 			oo = strs;			
+			dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, oo, NULL);
 		}		
-	}
+	} 
+	else
+		dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, oo, NULL);
 
-	dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, oo, NULL);
+	
 
 	if(dataset == NULL){
 		close();
-		throw OperatorException("Can not load dataset");
+		throw OperatorException("OGR Source: Can not load dataset");
 	}
 
 	if(dataset->GetLayerCount() < 1){
 		close();
-		throw OperatorException("No layers in OGR Dataset");
+		throw OperatorException("OGR Source: No layers in OGR Dataset");
 	}
 
 	OGRLayer *layer;
+
 	// for now only take layer 0 in consideration
 	layer = dataset->GetLayer(0);
 
@@ -337,6 +356,7 @@ void OGRSourceOperator::readAnyCollection(const QueryRectangle &rect, SimpleFeat
 		OGRFeature::DestroyFeature(feature);	
 
 	}
+
 	close();
 }
 
@@ -366,13 +386,14 @@ std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const Que
 				points->finishFeature();
 			}			
 		}
-		else 
+		else
 			return false;
 
 		return true;	
 	};
 
 	readAnyCollection(rect, points.get(), layer, addFeature);
+	points->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
 	points->validate();
 	return points;
 }
@@ -409,7 +430,7 @@ std::unique_ptr<LineCollection> OGRSourceOperator::getLineCollection(const Query
 	};	
 		
 	readAnyCollection(rect, lines.get(), layer, addFeature);
-
+	lines->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
 	lines->validate();
 	return lines;
 }
@@ -464,7 +485,7 @@ std::unique_ptr<PolygonCollection> OGRSourceOperator::getPolygonCollection(const
 	};
 
 	readAnyCollection(rect, polygons.get(), layer, addFeature);		
-	
+	polygons->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
 	polygons->validate();
 	return polygons;
 }
@@ -522,7 +543,7 @@ void OGRSourceOperator::createAttributeArrays(OGRFeatureDefn *attributeDefn, Att
 
 // write attribute values for the given attribute defitinition using the attributeNames
 // returns false if an error occured and ErrorHandling is set to skip so that 
-// the last written feature has to be removed again
+// the last written feature has to be removed again in the calling function
 bool OGRSourceOperator::readAttributesIntoCollection(AttributeArrays &attributeArrays, OGRFeatureDefn *attributeDefn, OGRFeature *feature, int featureIndex)
 {
 	for(int i = 0; i < attributeDefn->GetFieldCount(); i++)
