@@ -239,25 +239,25 @@ OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect)
 		if(columns.isMember("y"))
 		{	
 			std::string column_y 	= columns.get("y", "y").asString();
-			
-			std::string optX 		= "X_POSSIBLE_NAMES=X"; // + column_x + "\0";
+
+			std::string optX 		= "X_POSSIBLE_NAMES=" + column_x;
 			char * optXc 		= new char[optX.length() + 1];
 			strcpy(optXc, optX.c_str());			
-			
-			std::string optY 		= "Y_POSSIBLE_NAMES=Y"; // + column_y + "\0";
-			char * optYc 		= new char[optY.length() + 1];			
+
+			std::string optY 		= "Y_POSSIBLE_NAMES=" + column_y;
+			char * optYc 			= new char[optY.length() + 1];			
 			strcpy(optYc, optY.c_str());
 
-			std::string optCol 		= "KEEP_GEOM_COLUMNS=NO\0";
-			char * optColc 	= new char[optY.length() + 1];
-			strcpy(optColc, optCol.c_str());			
+			std::string optCol 		= "KEEP_GEOM_COLUMNS=NO";
+			char * optColc 	= new char[optCol.length() + 1];
+			strcpy(optColc, optCol.c_str());
 
-			const char * * strs = new const char * [3];// = { optXc, optYc, optColc };	//does not work
+			const char * * strs = new const char * [4];
 			strs[0] = optXc;
 			strs[1] = optYc;
 			strs[2] = optColc;			
+			strs[3] = NULL;
 			
-			//const char * const strs[] = { "X_POSSIBLE_NAMES=X", "Y_POSSIBLE_NAMES=Y", "KEEP_GEOM_COLUMNS=NO" }; //hardcoded does work
 			oo = strs;
 			std::cout << oo[0] << ", " << oo[1] << ", " << oo[2] << std::endl;
 			dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, oo, NULL);
@@ -319,8 +319,7 @@ void OGRSourceOperator::readAnyCollection(const QueryRectangle &rect, SimpleFeat
 		bool success = false;
 
 		if(geom != NULL)
-		{
-			//
+		{			
 			if(!readTimeIntoCollection(rect, feature, collection->time)){		
 				//error returned, either ErrorHandling::SKIP or the time stamps of feature were filtered -> so continue to next feature	
 				continue;
