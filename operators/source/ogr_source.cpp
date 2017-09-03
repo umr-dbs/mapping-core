@@ -317,16 +317,19 @@ void OGRSourceOperator::readAnyCollection(const QueryRectangle &rect, SimpleFeat
 		
 		OGRGeometry *geom = feature->GetGeomFieldRef(0);
 		bool success = false;
-		if(geom != NULL)		
-			success = addFeature(geom, feature, featureCount);
+
+		if(geom != NULL)
+		{
+			//
+			if(!readTimeIntoCollection(rect, feature, collection->time)){		
+				//error returned, either ErrorHandling::SKIP or the time stamps of feature were filtered -> so continue to next feature	
+				continue;
+			} else
+				success = addFeature(geom, feature, featureCount);
+		}			
 
 		//returns false if attribute could not be written and errorhandling is SKIP: the inserted feature has to be removed
 		if(success && !readAttributesIntoCollection(collection->feature_attributes, attributeDefn, feature, featureCount)){
-			success = false;
-			collection->removeLastFeature();
-		}
-
-		if(success && !readTimeIntoCollection(rect, feature, collection->time)){
 			success = false;
 			collection->removeLastFeature();
 		}
@@ -344,7 +347,7 @@ void OGRSourceOperator::readAnyCollection(const QueryRectangle &rect, SimpleFeat
 						throw OperatorException("OGR Source: Dataset contains not expected FeatureType (Points,Lines,Polygons)");
 					break;
 				case ErrorHandling::SKIP:
-					//removing the last written feature is handled in addFeature because here 
+					//removing the last written feature is handled in addFeature or after the error occurred because here 
 					//we can not know if writing has actually started or if a type missmatch happened.
 					break;
 				case ErrorHandling::KEEP:
@@ -393,7 +396,6 @@ std::unique_ptr<PointCollection> OGRSourceOperator::getPointCollection(const Que
 	};
 
 	readAnyCollection(rect, points.get(), layer, addFeature);
-	points->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
 	points->validate();
 	return points;
 }
@@ -430,7 +432,6 @@ std::unique_ptr<LineCollection> OGRSourceOperator::getLineCollection(const Query
 	};	
 		
 	readAnyCollection(rect, lines.get(), layer, addFeature);
-	lines->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
 	lines->validate();
 	return lines;
 }
@@ -485,7 +486,6 @@ std::unique_ptr<PolygonCollection> OGRSourceOperator::getPolygonCollection(const
 	};
 
 	readAnyCollection(rect, polygons.get(), layer, addFeature);		
-	polygons->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
 	polygons->validate();
 	return polygons;
 }
@@ -678,8 +678,12 @@ bool OGRSourceOperator::readTimeIntoCollection(const QueryRectangle &rect, OGRFe
 			case ErrorHandling::KEEP:
 				break;
 		}
-	}	
+	}
 	
+	//check if features time stamps have overlap with query rectangle times
+	if(t1 < rect.t1 && t2 < rect.t1 || t1 > rect.t1 && t2 > rect.t2)
+		return false;
+
 	time.push_back(TimeInterval(t1, t2));	
 	return true;
 }
