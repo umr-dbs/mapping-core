@@ -76,6 +76,7 @@ add_library(mapping_core_base_lib
         util/timemodification.cpp
         util/log.cpp
         util/timeparser.cpp
+        util/server_nonblocking.cpp
         util/sizeutil.cpp
         util/stringsplit.h
         util/uriloader.cpp
