@@ -4,7 +4,7 @@ project(mapping_core
 )
 
 # CMake Settings
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.5)
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 ## Debug
@@ -270,7 +270,8 @@ find_package(Threads REQUIRED)
 target_link_libraries(mapping_core_base_lib Threads::Threads)
 
 find_package(BZip2 REQUIRED)
-target_link_libraries(mapping_core_base_lib BZip2::BZip2)
+# target_link_libraries(mapping_core_base_lib BZip2::BZip2) # works only with CMAKE 3.7
+target_link_libraries(mapping_core_base_lib ${BZIP2_LIBRARIES})
 target_include_directories(mapping_core_base_lib PRIVATE ${BZIP2_INCLUDE_DIR})
 
 find_package(JPEGTURBO REQUIRED)
@@ -317,7 +318,8 @@ target_include_directories(mapping_core_base_lib PRIVATE ${LibArchive_INCLUDE_DI
 ## OpenCl
 if (USE_OPENCL)
     find_package(OpenCL REQUIRED)
-    target_link_libraries(mapping_core_base_lib OpenCL::OpenCL)
+    # target_link_libraries(mapping_core_base_lib OpenCL::OpenCL) # works only with CMAKE 3.7
+    target_link_libraries(mapping_core_base_lib ${OpenCL_LIBRARIES})
     target_include_directories(mapping_core_base_lib PRIVATE ${OPENCL_INCLUDE_DIRS})
 endif (USE_OPENCL)
 
