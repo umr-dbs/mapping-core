@@ -227,7 +227,6 @@ endif (USE_OPENCL)
 add_library(mapping_core_unittests_lib
         test/unittests/csvparser.cpp
         test/unittests/httpparsing.cpp
-        test/unittests/init.cpp
         test/unittests/parameters.cpp
         test/unittests/stref.cpp
         test/unittests/temporal
@@ -344,7 +343,7 @@ download_project(PROJ       googletest
 # when building with Visual Studio
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
-target_link_libraries(mapping_unittests gtest)
+target_link_libraries(mapping_core_unittests_lib gtest)
 
 
 # Testing
