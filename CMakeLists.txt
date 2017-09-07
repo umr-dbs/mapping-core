@@ -210,24 +210,24 @@ if (USE_OPENCL)
             operators/processing/raster/classification_kernels.cl
             operators/processing/raster/matrixkernel.cl
             )
-        add_custom_command(
-                TARGET mapping_core_operators_lib
-                PRE_BUILD
+        string(REGEX REPLACE "/|\\." "_" cl_file_symbol ${cl_file})
+        add_custom_target(
+                cl_header_${cl_file_symbol}
                 # remove existing header file
-                COMMAND rm ${cl_file}.h
+                COMMAND rm -f ${cl_file}.h
                 # create hexadecimal representation, surround it with an array declaration and a size variable
                 COMMAND xxd -i ${cl_file} | sed 's/unsigned /static const /g' > ${cl_file}.h
                 # create a static string of the previously created array and length
                 COMMAND echo ${cl_file} | sed -e 's/\\.cl$$//' -e 's:/:_:g' -e 's/\\\(^.*$$\\\)/static const std::string \\1\(\\1_cl, \\1_cl_len\)\;/' >> ${cl_file}.h
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
+        add_dependencies(mapping_core_operators_lib cl_header_${cl_file_symbol})
     endforeach(cl_file)
 endif (USE_OPENCL)
 
 add_library(mapping_core_unittests_lib
         test/unittests/csvparser.cpp
         test/unittests/httpparsing.cpp
-        test/unittests/init.cpp
         test/unittests/parameters.cpp
         test/unittests/stref.cpp
         test/unittests/temporal
