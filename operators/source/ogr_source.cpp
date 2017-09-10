@@ -7,27 +7,29 @@
 #include "util/ogr_source_util.h"
 #include <json/json.h>
 
-/*
-  * Parameters:
+/* Operator for opening OGR/GDAL supported vector data files as FeatureCollections.
+ * Main implementation of feature reading can be found in util/ogr_source_util.h/cpp.
+ *
+ * Query Parameters:
  * - filename: path to the input file
  * - time: the type of the time column(s)
  *   - "none": no time information is mapped
  *   - "start": only start information is mapped. duration has to specified in the duration attribute
  *   - "start+end": start and end information is mapped
  *   - "start+duration": start and duration information is mapped
- * -  duration: the duration of the time validity for all features in the file
- * - time1_format: a json object mapping a column to the start time
+ * -  duration: the duration of the time validity for all features in the file [if time == "duration"]
+ * - time1_format: a json object mapping a column to the start time [if time != "none"]
  *   - format: define the format of the column
  *     - "custom": define a custom format in the attribute "custom_format"
  *     - "seconds": time column is numeric and contains seconds as UNIX timestamp
  *     - "dmyhm": %d-%B-%Y  %H:%M
  *     - "iso": time column contains string with ISO8601
- * - time2_format: a json object mapping a columns to the end time (cf. time1_format)
+ * - time2_format: a json object mapping a columns to the end time (cf. time1_format) [if time == "start+end" || "start+duration"]
  * - columns: a json object mapping the columns to data, time, space. Columns that are not listed are skipped when parsin.
- *   - x: if CSV the name of the column containing the x coordinate (or the wkt string)
- *   - y: if CSV the name of the column containing the y coordinate
- *   - time1: the name of the first time column
- *   - time2: the name of the second time column
+ *   - x: the name of the column containing the x coordinate (or the wkt string) [if CSV file]
+ *   - y: the name of the column containing the y coordinate [if CSV file with y column]
+ *   - time1: the name of the first time column [if time != "none"]
+ *   - time2: the name of the second time column [if time == "start+end" || "start+duration"]
  *   - numeric: an array of column names containing numeric values
  *   - textual: an array of column names containing alpha-numeric values
  * - on_error: specify the type of error handling
@@ -58,6 +60,7 @@ class OGRSourceOperator : public GenericOperator {
 		GDALDataset *dataset;	
 		Provenance provenance;		
 		std::string filename;
+		Json::Value columns;
 
 		OGRLayer* loadLayer(const QueryRectangle &rect);		
 		bool hasSuffix(const std::string &str, const std::string &suffix);		
@@ -68,6 +71,7 @@ OGRSourceOperator::OGRSourceOperator(int sourcecounts[], GenericOperator *source
 	assumeSources(0);
 	filename = params.get("filename", "").asString();
 	ogrUtil = make_unique<OGRSourceUtil>(params);
+	columns = params.get("columns", Json::Value(Json::ValueType::objectValue));
 	Json::Value provenanceInfo = params["provenance"];
 	if (provenanceInfo.isObject()) {
 		provenance = Provenance(provenanceInfo.get("citation", "").asString(),
@@ -111,15 +115,15 @@ void OGRSourceOperator::getProvenance(ProvenanceCollection &pc)
 	pc.add(provenance);
 }
 
+// loads the OGR Layer for the filename. for .csv files open options are read from query parametrs
 OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect)
 {		
 	GDALAllRegister();
 
-	bool isCsv = hasSuffix(filename, ".csv");
+	bool isCsv = hasSuffix(filename, ".csv") || hasSuffix(filename, ".tsv");
 
 	// if its a csv file we have to add open options to tell gdal what the geometry columns are.
-	if(isCsv){
-		auto columns = ogrUtil->getColumnsJson();
+	if(isCsv){		
 		std::string column_x = columns.get("x", "x").asString();
 		
 		if(columns.isMember("y"))
@@ -140,8 +144,6 @@ OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect)
 	else
 		dataset = (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
 
-	
-
 	if(dataset == NULL){
 		close();
 		throw OperatorException("OGR Source: Can not load dataset");
@@ -157,9 +159,15 @@ OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect)
 	// for now only take layer 0 in consideration
 	layer = dataset->GetLayer(0);
 
+	if(layer == NULL){
+		close();
+		throw OperatorException("OGR Source: Layer could not be read from dataset.");
+	}
+
+	// filters all Features not intersecting with the query rectangle.
 	layer->SetSpatialFilterRect(rect.x1, rect.y1, rect.x2, rect.y2);
 
-	//just in case call suggested by OGR Tutorial
+	// a call suggested by OGR Tutorial as "just in case" (to start reading from first feature)
 	layer->ResetReading();
 
 	return layer;

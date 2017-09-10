@@ -13,11 +13,13 @@
 #include <json/json.h>
 
 
-OGRSourceUtil::OGRSourceUtil(Json::Value &params)
-{	
+OGRSourceUtil::OGRSourceUtil(Json::Value &params) : params(params)
+{		
+	//read the different parameters
+
 	errorHandling = ErrorHandlingConverter.from_json(params, "on_error");	
 
-	columns = params.get("columns", Json::Value(Json::ValueType::objectValue));
+	Json::Value columns = params.get("columns", Json::Value(Json::ValueType::objectValue));
 	auto textual = columns.get("textual", Json::Value(Json::ValueType::arrayValue));
     for (auto &name : textual)
     	wantedAttributes[name.asString()] = AttributeType::TEXTUAL;
@@ -26,12 +28,15 @@ OGRSourceUtil::OGRSourceUtil(Json::Value &params)
     for (auto &name : numeric)
     	wantedAttributes[name.asString()] = AttributeType::NUMERIC;
 
+	if(!params.isMember("time"))
+			throw ArgumentException("OGRSourceUtil: No time column specified.");
+    
     timeSpecification = TimeSpecificationConverter.from_json(params, "time");
 
     timeDuration = 0.0;
 	if (timeSpecification == TimeSpecification::START) {
 		if(!params.isMember("duration"))
-			throw ArgumentException("CSVSource: TimeSpecification::Start chosen, but no duration given.");
+			throw ArgumentException("OGRSourceUtil: TimeSpecification::Start chosen, but no duration given.");
 
 		auto duration = params.get("duration", Json::Value());
 		if(duration.isString() && duration.asString() == "inf")
@@ -39,7 +44,7 @@ OGRSourceUtil::OGRSourceUtil(Json::Value &params)
 		else if (duration.isNumeric())
 			timeDuration = duration.asDouble();
 		else
-			throw ArgumentException("CSVSource: invalid duration given.");
+			throw ArgumentException("OGRSourceUtil: invalid duration given.");
 	}
 
     if(timeSpecification != TimeSpecification::NONE){
@@ -60,7 +65,12 @@ OGRSourceUtil::OGRSourceUtil(Json::Value &params)
 
 OGRSourceUtil::~OGRSourceUtil(){ }
 
+Json::Value OGRSourceUtil::getParameters(){
+	return params;
+}
 
+// Wrapper to read the different collection types. The passed function addFeature handles the specifics of the reading that differ for the different collection types.
+// Handles the attribute and time reading for all collection types.
 void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, SimpleFeatureCollection *collection, OGRLayer *layer, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature)
 {
 	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
@@ -70,6 +80,7 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, SimpleFeatureC
 
 	int featureCount = 0;
 
+	// iterate all features of the OGRLayer
 	while( (feature = layer->GetNextFeature()) != NULL )
 	{
 		//each feature has potentially multiple geometries
@@ -107,8 +118,8 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, SimpleFeatureC
 						throw OperatorException("OGR Source: Dataset contains not expected FeatureType (Points,Lines,Polygons)");
 					break;
 				case ErrorHandling::SKIP:
-					//removing the last written feature is handled in addFeature or after the error occurred because here 
-					//we can not know if writing has actually started or if a type missmatch happened.
+					// removing the last written feature is handled after the error occurred because here 
+					// we can not know if writing has actually started or if a type missmatch happened before writing.
 					break;
 				case ErrorHandling::KEEP:
 					//TODO: ???? Insert 0-Feature?
@@ -122,7 +133,6 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, SimpleFeatureC
 	// for now we decided not to add them.
 	/*if(timeSpecification == TimeSpecification::NONE)
 		collection->addDefaultTimestamps();*/
-
 }
 
 
@@ -130,8 +140,6 @@ std::unique_ptr<PointCollection> OGRSourceUtil::getPointCollection(const QueryRe
 {
 	auto points = make_unique<PointCollection>(rect);
 	
-	//OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
-
 	auto addFeature = [&](OGRGeometry *geom, OGRFeature *feature, int featureCount) -> bool 
 	{
 		int type = wkbFlatten(geom->getGeometryType());							
@@ -251,6 +259,7 @@ std::unique_ptr<PolygonCollection> OGRSourceUtil::getPolygonCollection(const Que
 	return polygons;
 }
 
+// reads all points from a OGRLineString into a LineCollection and finish the added feature
 void OGRSourceUtil::readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection)
 {
 	for(int l = 0; l < line->getNumPoints(); l++)
@@ -262,6 +271,7 @@ void OGRSourceUtil::readLineStringToLineCollection(const OGRLineString *line, st
 	collection->finishLine();
 }
 
+// reads all points from a OGRLinearRing (Ring of a polygon) into a PolygonCollection and finish the added feature
 void OGRSourceUtil::readRingToPolygonCollection(const OGRLinearRing *ring, std::unique_ptr<PolygonCollection> &collection)
 {
 	for(int l = 0; l < ring->getNumPoints(); l++)
@@ -274,13 +284,15 @@ void OGRSourceUtil::readRingToPolygonCollection(const OGRLinearRing *ring, std::
 }
 
 
-//create the AttributeArrays for the FeatureCollection based on Attribute Fields in OGRLayer
-//create string array with names for writing the attributes easier
+// create the AttributeArrays for the FeatureCollection based on Attribute Fields in OGRLayer. 
+// only if the user asked for the attribute in the query parameters.
+// create a string vector with the attribute names for writing the attributes for each feature easier
 void OGRSourceUtil::createAttributeArrays(OGRFeatureDefn *attributeDefn, AttributeArrays &attributeArrays)
 {
 	int attributeCount = attributeDefn->GetFieldCount();
 	std::unordered_set<std::string> existingAttributes;
 
+	//iterate all attributes / field definitions
 	for(int i = 0; i < attributeCount; i++)
 	{
 		OGRFieldDefn *fieldDefn = attributeDefn->GetFieldDefn(i);
@@ -299,7 +311,7 @@ void OGRSourceUtil::createAttributeArrays(OGRFeatureDefn *attributeDefn, Attribu
 			else if(wantedType == AttributeType::NUMERIC)
 				attributeArrays.addNumericAttribute(name, Unit::unknown()); //TODO: units
 		} else
-			attributeNames.push_back("");
+			attributeNames.push_back("");	//if attribute is not wanted add an empty string into the attributeNames vector.
 	}
 
 	// check if all requested attributes exist in FeatureDefn
@@ -310,6 +322,7 @@ void OGRSourceUtil::createAttributeArrays(OGRFeatureDefn *attributeDefn, Attribu
 	}
 }
 
+
 // write attribute values for the given attribute defitinition using the attributeNames
 // returns false if an error occured and ErrorHandling is set to skip so that 
 // the last written feature has to be removed again in the calling function
@@ -317,21 +330,22 @@ bool OGRSourceUtil::readAttributesIntoCollection(AttributeArrays &attributeArray
 {
 	for(int i = 0; i < attributeDefn->GetFieldCount(); i++)
 	{
-		//if attribute was not wanted the place in the array has an empty string
+		//if attribute was not wanted the place in the std::vector has an empty string
 		if(attributeNames[i] == "")
 			continue;
 
 		OGRFieldDefn *fieldDefn  = attributeDefn->GetFieldDefn(i);
 		AttributeType wantedType = wantedAttributes[attributeNames[i]];
 		OGRFieldType type  		 = fieldDefn->GetType();
-	
+		
+		//attribute is read as numeric or textual depending on what the user asked for.
 		if(wantedType == AttributeType::TEXTUAL)
 		{		
-			//kann es zu einem Fehler kommen?
+			//simply get the string representation of the attribute			
 			attributeArrays.textual(attributeNames[i]).set(featureIndex, feature->GetFieldAsString(i));	
 		}
 		else if(wantedType == AttributeType::NUMERIC)
-		{
+		{			
 			if(type == OFTInteger)
 				attributeArrays.numeric(attributeNames[i]).set(featureIndex, feature->GetFieldAsInteger(i));
 			else if(type == OFTInteger64)
@@ -340,6 +354,7 @@ bool OGRSourceUtil::readAttributesIntoCollection(AttributeArrays &attributeArray
 				attributeArrays.numeric(attributeNames[i]).set(featureIndex, feature->GetFieldAsDouble(i));
 			else 
 			{
+				//the attribute type did not match any of the given number types. try to parse the string representation to a double
 				try 
 				{
 					double parsed = std::stod(feature->GetFieldAsString(i));					
@@ -365,6 +380,7 @@ bool OGRSourceUtil::readAttributesIntoCollection(AttributeArrays &attributeArray
 	return true;
 }
 
+// initializes the column index for the time columns
 void OGRSourceUtil::initTimeReading(OGRFeatureDefn *attributeDefn)
 {
 	if(timeSpecification == TimeSpecification::NONE)
@@ -393,6 +409,7 @@ void OGRSourceUtil::initTimeReading(OGRFeatureDefn *attributeDefn)
 	}
 }
 
+// reads the time values for the given feature from the time columns/attributes.
 bool OGRSourceUtil::readTimeIntoCollection(const QueryRectangle &rect, OGRFeature *feature, std::vector<TimeInterval> &time)
 {
 	if(timeSpecification == TimeSpecification::NONE)
@@ -455,9 +472,4 @@ bool OGRSourceUtil::readTimeIntoCollection(const QueryRectangle &rect, OGRFeatur
 
 	time.push_back(TimeInterval(t1, t2));	
 	return true;
-}
-
-Json::Value OGRSourceUtil::getColumnsJson()
-{
-	return columns;
 }

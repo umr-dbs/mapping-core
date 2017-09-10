@@ -14,8 +14,10 @@
 #include <unordered_map>
 
 
-/**
- * Define a few enums (including string representations) for parameter parsing
+
+ /*
+ * Additionally defines a few enums (including string representations) for parameter parsing. 
+ * These are copied from CSV Source because that functionality is supposed to be replaced by this operator.
  */
 
 enum class TimeSpecification {
@@ -55,6 +57,12 @@ enum class AttributeType
 
 static EnumConverter<ErrorHandling>ErrorHandlingConverter(ErrorHandlingMap);
 
+
+/**
+ * Class for reading OGR feature collections and creating SimpleFeatureCollections.
+ *
+ */
+
 class OGRSourceUtil 
 {
 public:
@@ -63,10 +71,10 @@ public:
 	std::unique_ptr<PointCollection> getPointCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer);
 	std::unique_ptr<LineCollection> getLineCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer);
 	std::unique_ptr<PolygonCollection> getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer);
-	Json::Value getColumnsJson();
+	Json::Value getParameters();
 
 private:
-	Json::Value columns;
+	Json::Value params;
 	std::vector<std::string> attributeNames;
 	std::unordered_map<std::string, AttributeType> wantedAttributes;
 	std::string time1Name;
