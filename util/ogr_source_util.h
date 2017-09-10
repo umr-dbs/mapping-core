@@ -67,7 +67,7 @@ public:
 
 private:
 	Json::Value columns;
-	std::string *attributeNames;
+	std::vector<std::string> attributeNames;
 	std::unordered_map<std::string, AttributeType> wantedAttributes;
 	std::string time1Name;
 	std::string time2Name;

@@ -58,10 +58,7 @@ OGRSourceUtil::OGRSourceUtil(Json::Value &params)
 	}
 }
 
-OGRSourceUtil::~OGRSourceUtil(){
-	delete[] attributeNames;
-	attributeNames = NULL;	
-}
+OGRSourceUtil::~OGRSourceUtil(){ }
 
 
 void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, SimpleFeatureCollection *collection, OGRLayer *layer, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature)
@@ -282,7 +279,6 @@ void OGRSourceUtil::readRingToPolygonCollection(const OGRLinearRing *ring, std::
 void OGRSourceUtil::createAttributeArrays(OGRFeatureDefn *attributeDefn, AttributeArrays &attributeArrays)
 {
 	int attributeCount = attributeDefn->GetFieldCount();
-	attributeNames = new std::string[attributeCount];
 	std::unordered_set<std::string> existingAttributes;
 
 	for(int i = 0; i < attributeCount; i++)
@@ -296,14 +292,14 @@ void OGRSourceUtil::createAttributeArrays(OGRFeatureDefn *attributeDefn, Attribu
 		if(wantedAttributes.find(name) != wantedAttributes.end())
 		{			
 			AttributeType wantedType = wantedAttributes[name];
-			attributeNames[i] = name;
+			attributeNames.push_back(name);
 			//create numeric or textual attribute with the name in FeatureCollection
 			if(wantedType == AttributeType::TEXTUAL)
 				attributeArrays.addTextualAttribute(name, Unit::unknown()); //TODO: units
 			else if(wantedType == AttributeType::NUMERIC)
 				attributeArrays.addNumericAttribute(name, Unit::unknown()); //TODO: units
 		} else
-			attributeNames[i] = "";
+			attributeNames.push_back("");
 	}
 
 	// check if all requested attributes exist in FeatureDefn
