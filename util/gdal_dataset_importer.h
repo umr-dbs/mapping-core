@@ -6,6 +6,9 @@
 #include "datatypes/raster/raster_priv.h"
 #include "util/gdal.h"
 
+/*
+ * Class for creating a Json based dataset file used for the GDALSource Operator.
+ */
 class GDALDatasetImporter {
 public:
 	static void importDataset(std::string dataset_name, 

@@ -95,6 +95,7 @@ void OGRSourceOperator::close(){
 
 void OGRSourceOperator::writeSemanticParameters(std::ostringstream& stream)
 {
+	// what to write here? the code beneath is copied from CSVSource
 	/*Json::Value params = csvSourceUtil->getParameters();
 
 	params["filename"] = filename;

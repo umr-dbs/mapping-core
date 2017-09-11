@@ -10,6 +10,9 @@
 #include "util/exceptions.h"
 #include "util/timeparser.h"
 
+/**
+ * enum representing the unit of a date that is snapped to
+ */
 enum class TimeUnit {
     Year 	= 0,
     Month 	= 1,
@@ -19,11 +22,12 @@ enum class TimeUnit {
     Second  = 5
 };
 
+/*
+ * Class encapsulating the time snapping functionality used for GDALSource.
+ * Given a wanted time and the time snap values of the dataset it snaps the wanted time down to a time of an existing file.
+ */
 class GDALTimesnap {
-	public:
-		static TimeUnit createTimeUnit(std::string value);
-		static const std::map<std::string, TimeUnit> string_to_TimeUnit;
-
+	private:
 		static tm snapToInterval(TimeUnit unit, int unitValue, tm startTime, tm wantedTime);
 		static void handleOverflow(tm &snapped, TimeUnit intervalUnit);
 		static tm tmDifference(tm &first, tm &second);
@@ -38,9 +42,12 @@ class GDALTimesnap {
 		static int maxValueForTimeUnit(TimeUnit part);	
 		static void printTime(tm &time);
 		static int daysOfMonth(int year, int month);
-
+	public:
 		static Json::Value getDatasetJson(std::string wantedDatasetName, std::string datasetPath);
 		static std::string getDatasetFilename(Json::Value datasetJson, double wantedTimeUnix);
+		
+		static TimeUnit createTimeUnit(std::string value);
+		static const std::map<std::string, TimeUnit> string_to_TimeUnit;
 };
 
 #endif

@@ -664,12 +664,14 @@ static int userdb(int argc, char *argv[]) {
 	}
 }
 
+// Imports a gdal dataset for use by source operator GDALSource
 static int import_gdal_dataset(int argc, char *argv[]){
 	
 	if(argc < 9 || argc > 19){
 		usage();
 	}
 
+	// Indexes:
 	// program name:  		1
 	// importgdaldataset: 	1
 	// std parameter: 		7
@@ -709,6 +711,7 @@ static int import_gdal_dataset(int argc, char *argv[]){
 	std::string measurement;
 	std::string interpolation;
 
+	//read the optional parameters
 	int i = 9;
 	while(i < argc)
 	{

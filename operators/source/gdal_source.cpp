@@ -19,22 +19,23 @@
 #include <dirent.h>
 
 /**
- * Operator that gets raster data from file via gdal
- *
+ * Operator that loads raster data via gdal. Loads them from imported GDAL dataset, import via GDAL dataset importer.
+ * Parameters:
+ * 		sourcename: the name of the imported gdal dataset.
+ *		channel:	which channel is to be loaded (channels are 1 based)
  */
 class RasterGDALSourceOperator : public GenericOperator {
 	public:
 		RasterGDALSourceOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params);
 		virtual ~RasterGDALSourceOperator();
-
 		virtual void getProvenance(ProvenanceCollection &pc);
 		virtual std::unique_ptr<GenericRaster> getRaster(const QueryRectangle &rect, const QueryTools &tools);
+
 	protected:
 		void writeSemanticParameters(std::ostringstream &stream);
+
 	private:
-
 		std::string datasetPath;
-
 		std::string sourcename;
 		int channel;
 
@@ -90,6 +91,7 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 	stream << " \"channel\": " << channel << "}";
 }
 
+// load the json definition of the dataset, then get the file to be loaded from GDALTimesnap. Finally load the raster.
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
 	Json::Value datasetJson = GDALTimesnap::getDatasetJson(sourcename, datasetPath);	
 	std::string file_path 	= GDALTimesnap::getDatasetFilename(datasetJson, rect.t1);	
@@ -98,6 +100,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRe
 	return raster->flip(false, true);
 }
 
+// loads the raster and read the wanted raster data section into a GenericRaster
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset *dataset, int rasteridx, double origin_x, double origin_y, double scale_x, double scale_y, epsg_t default_epsg, bool clip, double clip_x1, double clip_y1, double clip_x2, double clip_y2, const QueryRectangle& qrect) {
 	GDALRasterBand  *poBand;
 	int             nBlockXSize, nBlockYSize;
@@ -108,8 +111,6 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 
 	poBand = dataset->GetRasterBand( rasteridx );
 	poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );	
-
-	std::cout << "Overviews: " << poBand->GetOverviewCount() << std::endl;
 
 	GDALDataType type = poBand->GetRasterDataType();
 
@@ -133,6 +134,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	int nXSize = poBand->GetXSize();
 	int nYSize = poBand->GetYSize();
 
+	//calculate query rectangle in pixels of the source raster
 	int pixel_x1 = 0;
 	int pixel_y1 = 0;
 	int pixel_width = nXSize;
@@ -179,17 +181,20 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 
 	// Read Pixel data
 	auto res = poBand->RasterIO( GF_Read,
-		pixel_x1, pixel_y1, pixel_width, pixel_height, // rectangle in the source raster
-		buffer, raster->width, raster->height, // position and size of the destination buffer
+		pixel_x1, pixel_y1, pixel_width, pixel_height,  // rectangle in the source raster
+		buffer, raster->width, raster->height, 			// position and size of the destination buffer
 		type, 0, 0, NULL);
 
-	if (res != CE_None)
+	if (res != CE_None){
+		GDALClose(dataset);
 		throw OperatorException("GDAL Source: RasterIO failed");
+	}
 
 	//GDALRasterBand is not to be freed, is owned by GDALDataset that will be closed later
 	return raster;
 }
 
+//load the GDALDataset from disk
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string filename, int rasterid, epsg_t epsg, bool clip, const QueryRectangle &qrect) {
 	
 	GDAL::init();
@@ -199,16 +204,14 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string
 	if (dataset == NULL)
 		throw OperatorException(concat("GDAL Source: Could not open dataset ", filename));
 
+	//read GeoTransform to get origin and scale
 	double adfGeoTransform[6];
-
-	// http://www.gdal.org/classGDALDataset.html#af9593cc241e7d140f5f3c4798a43a668
 	if( dataset->GetGeoTransform( adfGeoTransform ) != CE_None ) {
 		GDALClose(dataset);
 		throw OperatorException("GDAL Source: No GeoTransform information in raster");
 	}
 
 	int rastercount = dataset->GetRasterCount();
-
 	if (rasterid < 1 || rasterid > rastercount) {
 		GDALClose(dataset);
 		throw OperatorException("GDAL Source: rasterid not found");

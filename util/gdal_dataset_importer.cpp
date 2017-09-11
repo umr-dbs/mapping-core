@@ -20,7 +20,7 @@ GDALDataset* GDALDatasetImporter::openGDALDataset(std::string file_name){
 	return dataset;
 }
 
-
+//write all the values to Json and save it to disk
 void GDALDatasetImporter::importDataset(std::string dataset_name, 
 									std::string dataset_filename_with_placeholder, 
 									std::string dataset_file_path, 
@@ -52,11 +52,6 @@ void GDALDatasetImporter::importDataset(std::string dataset_name,
 	} else {
 		tu = GDALTimesnap::createTimeUnit(time_unit);
 	}
-
-	//actually this would not be necessary anymore for the way the time is snapped
-	//if(tu != TimeUnit::Year && (GDALTimesnap::maxValueForTimeUnit(tu) % interval) != 0){
-	//	throw ImporterException("GDAL GDALDatasetImporter: max unit of time unit has to be multiple of interval value, eg for Month (12): 4 is okay, 5 not ");
-	//}
 
 	//parse time_start with time_format to check if its valid, else parse throws an exception
 	auto timeParser = TimeParser::createCustom(time_format); 
@@ -90,7 +85,7 @@ void GDALDatasetImporter::importDataset(std::string dataset_name,
 
 	GDALClose(dataset);	
 
-	//save json to datasetpath with datasetname
+	//save json to disk
 	Json::StyledWriter writer;	
 	std::ofstream file;
 	file.open(datasetJsonPath + dataset_name + ".json");
@@ -99,6 +94,7 @@ void GDALDatasetImporter::importDataset(std::string dataset_name,
 
 }
 
+//read epsg, size, scale, origin from actual GDALDatset
 Json::Value GDALDatasetImporter::readCoords(GDALDataset *dataset){
 	Json::Value coordsJson(Json::ValueType::objectValue);
 
@@ -175,7 +171,7 @@ std::string GDALDatasetImporter::getEpsg(GDALDataset *dataset){
 	return "unknown";
 }
 
-
+//read channel values from GDALDataset, some from given parameters
 Json::Value GDALDatasetImporter::readChannels(GDALDataset *dataset, std::string measurement, std::string unit, std::string interpolation){
 	Json::Value channelsJson(Json::ValueType::arrayValue);
 	
@@ -226,6 +222,7 @@ Json::Value GDALDatasetImporter::readChannels(GDALDataset *dataset, std::string 
 	return channelsJson;
 }
 
+//GDALDataType to string
 std::string GDALDatasetImporter::dataTypeToString(GDALDataType type){
 	switch(type){
 		case GDT_Byte:
