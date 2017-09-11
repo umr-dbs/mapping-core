@@ -6,7 +6,7 @@
 #include "datatypes/raster/raster_priv.h"
 #include "util/gdal.h"
 
-class DatasetImporter {
+class GDALDatasetImporter {
 public:
 	static void importDataset(std::string dataset_name, 
 							  std::string dataset_filename_with_placeholder, 
