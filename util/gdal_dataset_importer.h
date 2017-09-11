@@ -8,6 +8,7 @@
 
 /*
  * Class for creating a Json based dataset file used for the GDALSource Operator.
+ * A dataset points to multiple raster files with the same name, differing only in a time string.
  */
 class GDALDatasetImporter {
 public:
