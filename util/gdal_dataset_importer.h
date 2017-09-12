@@ -7,8 +7,15 @@
 #include "util/gdal.h"
 
 /*
- * Class for creating a Json based dataset file used for the GDALSource Operator.
- * A dataset points to multiple raster files with the same name, differing only in a time string.
+ * Class for creating a Json dataset file used for the GDALSource Operator.
+ * A dataset contains information about multiple raster files with different temporal validity.
+ * It is defined by a start time and an interval value and unit. Foreach interval step a single 
+ * raster file exists in the datasets directory.
+ * The raster files are in the same directory and all have the "same" name containing a different time string
+ * of the same format.
+ * The GDALSource Operator will snap the queried time down to the time of an existing file.
+ * time_unit: Year, Month, Day, Hour, Minute, Second
+ * The GDALDataset Json files are all stored in the same directory defined in the mapping.conf with gdalsource.datasetpath.
  */
 class GDALDatasetImporter {
 public:
