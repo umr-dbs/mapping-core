@@ -92,13 +92,15 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, SimpleFeatureC
 		bool success = false;
 
 		if(geom != NULL)
-		{			
-			if(!readTimeIntoCollection(rect, feature, collection->time)){		
-				//error returned, either ErrorHandling::SKIP or the time stamps of feature were filtered -> so continue to next feature	
-				continue;
-			} else
-				success = addFeature(geom, feature, featureCount);
-		}			
+		{						
+			success = addFeature(geom, feature, featureCount);
+		}	
+
+		if(success && !readTimeIntoCollection(rect, feature, collection->time)){		
+			//error returned, either ErrorHandling::SKIP or the time stamps of feature were filtered -> so continue to next feature	
+			success = false;
+			collection->removeLastFeature();
+		}		
 
 		//returns false if attribute could not be written and errorhandling is SKIP: the inserted feature has to be removed
 		if(success && !readAttributesIntoCollection(collection->feature_attributes, attributeDefn, feature, featureCount)){
