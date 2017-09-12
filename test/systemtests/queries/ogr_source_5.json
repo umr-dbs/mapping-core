@@ -23,7 +23,7 @@
                 "custom_format" : "%Y-%m-%d %H:%M:%S%z"
             },
             "columns" : {
-                "x" : "abc",
+                "x" : "wkt",
                 "time1" : "time_start",
                 "textual" : ["name"],
                 "numeric" : ["population"]
