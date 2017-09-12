@@ -25,7 +25,7 @@
  *     - "dmyhm": %d-%B-%Y  %H:%M
  *     - "iso": time column contains string with ISO8601
  * - time2_format: a json object mapping a columns to the end time (cf. time1_format) [if time == "start+end" || "start+duration"]
- * - columns: a json object mapping the columns to data, time, space. Columns that are not listed are skipped when parsin.
+ * - columns: a json object mapping the columns to data, time, space. Columns that are not listed are skipped when parsing.
  *   - x: the name of the column containing the x coordinate (or the wkt string) [if CSV file]
  *   - y: the name of the column containing the y coordinate [if CSV file with y column]
  *   - time1: the name of the first time column [if time != "none"]
@@ -95,7 +95,7 @@ void OGRSourceOperator::close(){
 
 void OGRSourceOperator::writeSemanticParameters(std::ostringstream& stream)
 {
-	// what to write here? the code beneath is copied from CSVSource
+	//TODO what to write here? the code beneath is copied from CSVSource
 	/*Json::Value params = csvSourceUtil->getParameters();
 
 	params["filename"] = filename;
@@ -116,7 +116,7 @@ void OGRSourceOperator::getProvenance(ProvenanceCollection &pc)
 	pc.add(provenance);
 }
 
-// loads the OGR Layer for the filename. for .csv files open options are read from query parametrs
+// loads the OGR Layer for the filename. for .csv files open options are read from query parameters
 OGRLayer* OGRSourceOperator::loadLayer(const QueryRectangle &rect)
 {		
 	GDALAllRegister();

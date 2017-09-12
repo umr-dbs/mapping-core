@@ -119,7 +119,7 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, SimpleFeatureC
 					break;
 				case ErrorHandling::SKIP:
 					// removing the last written feature is handled after the error occurred because here 
-					// we can not know if writing has actually started or if a type missmatch happened before writing.
+					// we can not know if writing has actually started or if a type mismatch happened before writing.
 					break;
 				case ErrorHandling::KEEP:
 					//TODO: ???? Insert 0-Feature?
@@ -323,8 +323,8 @@ void OGRSourceUtil::createAttributeArrays(OGRFeatureDefn *attributeDefn, Attribu
 }
 
 
-// write attribute values for the given attribute defitinition using the attributeNames
-// returns false if an error occured and ErrorHandling is set to skip so that 
+// write attribute values for the given attribute definition using the attributeNames
+// returns false if an error occurred and ErrorHandling is set to skip so that 
 // the last written feature has to be removed again in the calling function
 bool OGRSourceUtil::readAttributesIntoCollection(AttributeArrays &attributeArrays, OGRFeatureDefn *attributeDefn, OGRFeature *feature, int featureIndex)
 {

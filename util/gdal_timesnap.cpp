@@ -29,7 +29,7 @@ tm GDALTimesnap::snapToInterval(TimeUnit snapUnit, int intervalValue, tm startTi
 	if(snapUnit == TimeUnit::Hour || snapUnit == TimeUnit::Minute || snapUnit == TimeUnit::Second){
 		handleOverflow(snapped, snapUnit);
 	} else {		
-		time_t snappedToTimeT = mktime(&snapped) - timezone;	// because mktime depends on the timezone the timezone field of time.h has to be substracted
+		time_t snappedToTimeT = mktime(&snapped) - timezone;	// because mktime depends on the timezone the timezone field of time.h has to be subtracted
 		gmtime_r(&snappedToTimeT, &snapped);		
 	}
 		
@@ -57,9 +57,9 @@ void GDALTimesnap::handleOverflow(tm &snapped, TimeUnit snapUnit){
 	}	
 }
 
-// takes two tm structs and gives back tm struct with the differnce values. first - second.
+// takes two tm structs and gives back tm struct with the difference values. first - second.
 tm GDALTimesnap::tmDifference(tm &first, tm &second){
-	// igonres tm_wday and tm_yday and tm_isdst, because they are not needed
+	// ignores tm_wday and tm_yday and tm_isdst, because they are not needed
 	tm diff = {};
 	diff.tm_year 	= first.tm_year - second.tm_year;
 	diff.tm_mon 	= first.tm_mon - second.tm_mon;	
@@ -192,7 +192,7 @@ void GDALTimesnap::printTime(tm &time){
 	std::cout << "Y: " << time.tm_year << ", M: " << time.tm_mon << ", D: " << time.tm_mday << ", H: " << time.tm_hour << ", M: " << time.tm_min << ", S: " << time.tm_sec << std::endl;
 }
 
-// Takes the acutal month and year numbers, not how they would be in tm struct.
+// Takes the actual month and year numbers, not how they would be in tm struct.
 int GDALTimesnap::daysOfMonth(int year, int month){
 	if(month == 4 || month == 6 || month == 9 || month == 11)
 		return 30;
@@ -287,7 +287,7 @@ std::string GDALTimesnap::getDatasetFilename(Json::Value datasetJson, double wan
 		if(currDayValue == GDALTimesnap::daysOfMonth(yearValue + 1900, monthValue + 1))
 		{			
 			GDALTimesnap::setTimeUnitValueInTm(startTimeTm, TimeUnit::Day, currDayValue + 1);
-			time_t overflow = mktime(&startTimeTm) - timezone;	// because mktime depends on the timezone the timezone field of time.h has to be substracted
+			time_t overflow = mktime(&startTimeTm) - timezone;	// because mktime depends on the timezone the timezone field of time.h has to be subtracted
 			gmtime_r(&overflow, &startTimeTm);			
 		}
 	}	

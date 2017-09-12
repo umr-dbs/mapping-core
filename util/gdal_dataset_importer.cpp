@@ -57,7 +57,7 @@ void GDALDatasetImporter::importDataset(std::string dataset_name,
 	auto timeParser = TimeParser::createCustom(time_format); 
 	timeParser->parse(time_start);
 
-	//create json 
+	//create Json 
 	Json::Value timeIntervalJson(Json::ValueType::objectValue);
 	timeIntervalJson["unit"] 	= time_unit;
 	timeIntervalJson["value"] 	= interval;
@@ -85,7 +85,7 @@ void GDALDatasetImporter::importDataset(std::string dataset_name,
 
 	GDALClose(dataset);	
 
-	//save json to disk
+	//save Json to disk
 	Json::StyledWriter writer;	
 	std::ofstream file;
 	file.open(datasetJsonPath + dataset_name + ".json");
