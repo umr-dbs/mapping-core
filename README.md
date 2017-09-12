@@ -32,4 +32,16 @@ make
    * `-DUSE_OPENCL=<ON/OFF>`
  * Module
    * `-DMAPPING_MODULE_PATH=<path>`
-   * `-DMAPPING_MODULEs=<module1,module2,...>`
+   * `-DMAPPING_MODULES=<module1,module2,...>`
+
+
+### Example
+```
+cmake \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DUSE_OPENCL=ON \
+  -DMAPPING_MODULES="mapping-gfbio;mapping-r" \ 
+  .
+  
+make -j20
+```

@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.5)
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 ## Debug
-set(CMAKE_VERBOSE_MAKEFILE on)
+set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 # C++ Standard
 set(CMAKE_CXX_STANDARD 11)
@@ -55,6 +55,8 @@ add_library(mapping_core_base_lib
         datatypes/colorizer.cpp
         datatypes/plot.cpp
         datatypes/plots/histogram.cpp
+        datatypes/plots/text.cpp
+        datatypes/plots/png.cpp
         rasterdb/rasterdb.cpp
         rasterdb/backend.cpp
         rasterdb/backend_local.cpp
@@ -182,8 +184,6 @@ add_library(mapping_core_operators_lib
         util/sunpos.cpp
         operators/plots/histogram.cpp
         operators/plots/feature_attributes_plot.cpp
-        datatypes/plots/text.cpp
-        datatypes/plots/png.cpp
         operators/source/featurecollectiondb_source.cpp
         )
 target_link_libraries_internal(mapping_core_operators_lib mapping_core_base_lib)
@@ -193,6 +193,8 @@ target_link_libraries_internal(mapping_unittests mapping_core_operators_lib)
 
 if (USE_OPENCL)
     # Generate OpenCL headers
+    add_custom_target(mapping_cl_header_generator)
+    add_dependencies(mapping_core_operators_lib mapping_cl_header_generator)
     # TODO: make this generic for OS?
     foreach(cl_file IN ITEMS
             operators/processing/combined/points2raster_frequency.cl
@@ -210,9 +212,8 @@ if (USE_OPENCL)
             operators/processing/raster/classification_kernels.cl
             operators/processing/raster/matrixkernel.cl
             )
-        string(REGEX REPLACE "/|\\." "_" cl_file_symbol ${cl_file})
-        add_custom_target(
-                cl_header_${cl_file_symbol}
+        add_custom_command(TARGET mapping_cl_header_generator
+                POST_BUILD
                 # remove existing header file
                 COMMAND rm -f ${cl_file}.h
                 # create hexadecimal representation, surround it with an array declaration and a size variable
@@ -220,8 +221,7 @@ if (USE_OPENCL)
                 # create a static string of the previously created array and length
                 COMMAND echo ${cl_file} | sed -e 's/\\.cl$$//' -e 's:/:_:g' -e 's/\\\(^.*$$\\\)/static const std::string \\1\(\\1_cl, \\1_cl_len\)\;/' >> ${cl_file}.h
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        )
-        add_dependencies(mapping_core_operators_lib cl_header_${cl_file_symbol})
+                )
     endforeach(cl_file)
 endif (USE_OPENCL)
 
@@ -360,15 +360,30 @@ foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
     message(STATUS "Loading Module `${mapping_module}`")
     add_subdirectory(${MAPPING_MODULE_PATH}/${mapping_module} ${CMAKE_BINARY_DIR}/${mapping_module})
 endforeach (mapping_module)
+## Base
+foreach (mapping_core_addition IN ITEMS ${MAPPING_ADD_TO_BASE_OBJECTS})
+    message(STATUS "Adding ${mapping_core_addition} to base.")
+    target_sources(mapping_core_base_lib PRIVATE $<TARGET_OBJECTS:${mapping_core_addition}>)
+endforeach(mapping_core_addition)
 foreach (mapping_core_addition IN ITEMS ${MAPPING_ADD_TO_BASE_LIBRARIES})
     message(STATUS "Adding ${mapping_core_addition} to base.")
-    target_link_libraries_internal(mapping_core_base_lib ${mapping_core_addition})
+    target_link_libraries(mapping_core_operators_lib ${mapping_core_addition})
 endforeach(mapping_core_addition)
+## Operators
+foreach (mapping_operators_addition IN ITEMS ${MAPPING_ADD_TO_OPERATORS_OBJECTS})
+    message(STATUS "Adding ${mapping_operators_addition} to operators.")
+    target_sources(mapping_core_operators_lib PRIVATE $<TARGET_OBJECTS:${mapping_operators_addition}>)
+endforeach(mapping_operators_addition)
 foreach (mapping_operators_addition IN ITEMS ${MAPPING_ADD_TO_OPERATORS_LIBRARIES})
     message(STATUS "Adding ${mapping_operators_addition} to operators.")
-    target_link_libraries_internal(mapping_core_operators_lib ${mapping_operators_addition})
+    target_link_libraries(mapping_core_operators_lib ${mapping_operators_addition})
 endforeach(mapping_operators_addition)
+## Services
+foreach (mapping_services_addition IN ITEMS ${MAPPING_ADD_TO_SERVICES_OBJECTS})
+    message(STATUS "Adding ${mapping_services_addition} to services.")
+    target_sources(mapping_core_services_lib PRIVATE $<TARGET_OBJECTS:${mapping_services_addition}>)
+endforeach(mapping_services_addition)
 foreach (mapping_services_addition IN ITEMS ${MAPPING_ADD_TO_SERVICES_LIBRARIES})
     message(STATUS "Adding ${mapping_services_addition} to services.")
-    target_link_libraries_internal(mapping_core_services_lib ${mapping_services_addition})
+    target_link_libraries(mapping_core_services_lib ${mapping_services_addition})
 endforeach(mapping_services_addition)
