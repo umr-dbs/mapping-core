@@ -187,7 +187,7 @@ void CSVSourceUtil::readAnyCollection(SimpleFeatureCollection *collection, std::
 		}
 	}
 
-	if (pos_x == no_pos || (geometry_specification == GeometrySpecification::XY && pos_y == no_pos))
+	if (default_x == "" && (pos_x == no_pos || (geometry_specification == GeometrySpecification::XY && pos_y == no_pos)))
 		throw OperatorException("CSVPointSource: the given columns containing the geometry could not be found.");
 
 	if((time1Parser != nullptr && pos_time1 == no_pos) || (time2Parser != nullptr && pos_time2 == no_pos))
@@ -219,8 +219,9 @@ void CSVSourceUtil::readAnyCollection(SimpleFeatureCollection *collection, std::
 
 		// Step 1: extract the geometry
 		// Note: faulty geometries lead to an error; empty geometries are simply skipped
-		const std::string &x_str = (pos_x == no_pos ? empty_string : tuple[pos_x]);
-		const std::string &y_str = (pos_y == no_pos ? empty_string : tuple[pos_y]);
+		const std::string &x_str = (pos_x == no_pos ? default_x : tuple[pos_x]);
+		const std::string &y_str = (pos_y == no_pos ? default_y : tuple[pos_y]);
+
 		bool added = false;
 		try {
 			added = addFeature(x_str, y_str);
