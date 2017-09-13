@@ -53,17 +53,17 @@ TemporalAggregationOperator::TemporalAggregationOperator(int sourcecounts[],
 		GenericOperator(sourcecounts, sources) {
 	assumeSources(1);
 	if (!params.isMember("duration")) {
-		throw new OperatorException(
+		throw OperatorException(
 				"TemporalAggregationOperator: Parameter duration is missing");
 	}
 	duration = params.get("duration", 0).asDouble();
 
 	if (!params.isMember("aggregation")) {
-		throw new OperatorException(
+		throw OperatorException(
 				"TemporalAggregationOperator: Parameter aggregation is missing");
 	}
 	aggregationType = AggregationTypeConverter.from_string(
-			params.get("aggregation", 0).asString());
+			params.get("aggregation", "").asString());
 }
 
 TemporalAggregationOperator::~TemporalAggregationOperator() {

@@ -17,9 +17,9 @@ template<typename T> void Raster2D<T>::toJPEG(const char *filename, const Colori
 	// The Colorizers have changed.
 #if 0
 	if (!RasterTypeInfo<T>::isinteger)
-		throw new MetadataException("toJPEG cannot write float rasters");
+		throw MetadataException("toJPEG cannot write float rasters");
 	if (lcrs.dimensions != 2)
-		throw new MetadataException("toJPEG can only handle rasters with 2 dimensions");
+		throw MetadataException("toJPEG can only handle rasters with 2 dimensions");
 
 	this->setRepresentation(GenericRaster::Representation::CPU);
 

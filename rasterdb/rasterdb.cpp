@@ -608,7 +608,7 @@ std::shared_ptr<RasterDB> RasterDB::open(const char *sourcename, bool writeable)
 		auto shared_ptr = weak_ptr.lock();
 		if (shared_ptr) {
 			if (writeable && !shared_ptr->isWriteable())
-				throw new SourceException("Cannot re-open source as read/write (TODO?)");
+				throw SourceException("Cannot re-open source as read/write (TODO?)");
 			return shared_ptr;
 		}
 		RasterDB_map.erase(name);
@@ -618,7 +618,7 @@ std::shared_ptr<RasterDB> RasterDB::open(const char *sourcename, bool writeable)
 	RasterDB_map[name] = std::weak_ptr<RasterDB>(shared_ptr);
 
 	if (writeable && !shared_ptr->isWriteable())
-		throw new SourceException("Cannot re-open source as read/write (TODO?)");
+		throw SourceException("Cannot re-open source as read/write (TODO?)");
 	return shared_ptr;
 }
 
