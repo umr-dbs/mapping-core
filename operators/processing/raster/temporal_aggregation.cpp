@@ -83,8 +83,7 @@ void TemporalAggregationOperator::writeSemanticParameters(
 
 template<typename T>
 struct Accumulate {
-	static void execute(Raster2D<T> *raster, DataDescription &dd,
-			Raster2D<double> *accumulator, AggregationType aggregationType) {
+	static void execute(Raster2D<T> *raster, Raster2D<double> *accumulator, AggregationType aggregationType) {
 		raster->setRepresentation(GenericRaster::Representation::CPU);
 		// accumulate
 		for (int x = 0; x < raster->width; ++x) {
@@ -93,7 +92,7 @@ struct Accumulate {
 				double accValue = accumulator->get(x, y);
 				double newValue;
 
-				if (dd.is_no_data(rasterValue) || std::isnan(accValue)) {
+				if (raster->dd.is_no_data(rasterValue) || std::isnan(accValue)) {
 					newValue = NAN;
 				} else {
 
@@ -118,12 +117,10 @@ struct Accumulate {
 
 template<typename T>
 struct Output {
-	static std::unique_ptr<GenericRaster> execute(Raster2D<T> *raster,
-			DataDescription &dd, Raster2D<double> *accumulator,
+	static std::unique_ptr<GenericRaster> execute(Raster2D<T> *raster, Raster2D<double> *accumulator,
 			AggregationType aggregationType, size_t n) {
-		auto output = make_unique<Raster2D<T>>(raster->dd, raster->stref,
-				raster->width, raster->height);
-
+		auto output = make_unique<Raster2D<T>>(raster->dd, accumulator->stref,
+											   accumulator->width, accumulator->height);
 
 		for (int x = 0; x < raster->width; ++x) {
 			for (int y = 0; y < raster->height; ++y) {
@@ -131,11 +128,11 @@ struct Output {
 				T outputValue;
 
 				if (std::isnan(accValue)) {
-					if (!dd.has_no_data) {
+					if (!raster->dd.has_no_data) {
 						throw OperatorException(
 								"Temporal_Aggregation: No data value in data without no data value");
 					} else {
-						outputValue = dd.no_data;
+						outputValue = raster->dd.no_data;
 					}
 				} else {
 					switch (aggregationType) {
@@ -168,22 +165,9 @@ std::unique_ptr<Raster2D<double>> TemporalAggregationOperator::createAccumulator
 			raster.stref, raster.width, raster.height);
 
 	// initialize accumulator
-	double initValue;
-	switch (aggregationType) {
-	case AggregationType::MIN:
-		initValue = std::numeric_limits<double>::max();
-		break;
-	case AggregationType::MAX:
-		initValue = std::numeric_limits<double>::min();
-		break;
-	case AggregationType::AVG:
-		initValue = 0;
-		break;
-	}
-
 	for (int x = 0; x < accumulator->width; ++x) {
 		for (int y = 0; y < accumulator->height; ++y) {
-			accumulator->set(x, y, initValue);
+			accumulator->set(x, y, raster.getAsDouble(x, y));
 		}
 	}
 
@@ -199,28 +183,25 @@ std::unique_ptr<GenericRaster> TemporalAggregationOperator::getRaster(
 	auto accumulator = createAccumulator(*input);
 
 	size_t n = 0;
-	GenericRaster* raster = input.get();
 	QueryRectangle nextRect = rect;
+	nextRect.t1 = input->stref.t2;
+	nextRect.t2 = nextRect.t1 + nextRect.epsilon();
+
 	// TODO: what to do with rasters that are partially contained in timespan?
+    // TODO: gaps in rasters temporal validity
 	while (nextRect.t1 < rect.t1 + duration) {
-		std::unique_ptr<GenericRaster> rasterFromSource;
-		if (nextRect.t1 > rect.t1) {
-			rasterFromSource = getRasterFromSource(0, nextRect, tools,
+		std::unique_ptr<GenericRaster> rasterFromSource = getRasterFromSource(0, nextRect, tools,
 					RasterQM::EXACT);
-			raster = rasterFromSource.get();
-		}
 
 		// accumulate
-		callUnaryOperatorFunc<Accumulate>(raster, rasterFromSource->dd,
-				accumulator.get(), aggregationType);
+		callUnaryOperatorFunc<Accumulate>(rasterFromSource.get(), accumulator.get(), aggregationType);
 
-		nextRect.t1 = raster->stref.t2;
+		nextRect.t1 = rasterFromSource->stref.t2;
 		nextRect.t2 = nextRect.t1 + nextRect.epsilon();
 		n += 1;
 	}
 
-	auto output = callUnaryOperatorFunc<Output>(input.get(), input->dd,
-			accumulator.get(), aggregationType, n);
+	auto output = callUnaryOperatorFunc<Output>(input.get(), accumulator.get(), aggregationType, n);
 
 	return output;
 }
