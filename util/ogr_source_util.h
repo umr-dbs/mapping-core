@@ -57,7 +57,6 @@ enum class AttributeType
 
 static EnumConverter<ErrorHandling>ErrorHandlingConverter(ErrorHandlingMap);
 
-
 /**
  * Class for reading OGR feature collections and creating SimpleFeatureCollections.
  *
@@ -74,6 +73,7 @@ public:
 	Json::Value getParameters();
 
 private:
+	bool hasDefault;
 	Json::Value params;
 	std::vector<std::string> attributeNames;
 	std::unordered_map<std::string, AttributeType> wantedAttributes;

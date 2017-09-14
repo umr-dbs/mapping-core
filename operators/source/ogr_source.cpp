@@ -32,6 +32,7 @@
  *   - time2: the name of the second time column [if time == "start+end" || "start+duration"]
  *   - numeric: an array of column names containing numeric values
  *   - textual: an array of column names containing alpha-numeric values
+ * - default: wkt defintion of the default point/line/polygon as a string [optional]
  * - on_error: specify the type of error handling
  *   - "skip"
  *   - "abort"

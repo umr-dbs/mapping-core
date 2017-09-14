@@ -12,7 +12,6 @@
 #include <unordered_set>
 #include <json/json.h>
 
-
 OGRSourceUtil::OGRSourceUtil(Json::Value &params) : params(params)
 {		
 	//read the different parameters
@@ -61,6 +60,8 @@ OGRSourceUtil::OGRSourceUtil(Json::Value &params) : params(params)
 		const Json::Value& time2Format = params.get("time2_format", Json::Value::null);
 		time2Parser = TimeParser::createFromJson(time2Format);
 	}
+
+	hasDefault = params.isMember("default");	
 }
 
 OGRSourceUtil::~OGRSourceUtil(){ }
@@ -71,12 +72,29 @@ Json::Value OGRSourceUtil::getParameters(){
 
 // Wrapper to read the different collection types. The passed function addFeature handles the specifics of the reading that differ for the different collection types.
 // Handles the attribute and time reading for all collection types.
-void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, SimpleFeatureCollection *collection, OGRLayer *layer, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature)
+void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, 
+									  SimpleFeatureCollection *collection, 
+									  OGRLayer *layer, 
+									  std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature)
 {
 	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
 	createAttributeArrays(attributeDefn, collection->feature_attributes);
 	initTimeReading(attributeDefn);
 	OGRFeature* feature;
+
+	//createFromWkt allocates a geometry and writes its pointer into a local pointer, therefore the third parameter is a OGRGeometry **.
+	//afterwards it is moved into a unique_ptr
+   	OGRGeometry *defaultGeomPtr;
+   	if(hasDefault){
+		std::string wkt = params.get("default", "").asString();		   		
+	   	char* wktChar = (char*) wkt.c_str();
+	   	OGRSpatialReference ref(NULL);
+	   	OGRErr err = OGRGeometryFactory::createFromWkt(&wktChar, &ref, &defaultGeomPtr);	   	
+	   	if(err != OGRERR_NONE)
+	   		throw OperatorException("OGR Source: default wkt-string could not be parsed.");
+   	} 
+   	std::unique_ptr<OGRGeometry> defGeom(defaultGeomPtr);
+   	defaultGeomPtr = NULL;
 
 	int featureCount = 0;
 
@@ -84,8 +102,8 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, SimpleFeatureC
 	while( (feature = layer->GetNextFeature()) != NULL )
 	{
 		//each feature has potentially multiple geometries
-		if(feature->GetGeomFieldCount() > 1){			
-			throw OperatorException("OGR Source: at least one OGRFeature has more than one Geometry. For now we don't support this.");
+		if(feature->GetGeomFieldCount() > 1){
+			throw OperatorException("OGR Source: at least one OGRFeature has more than one Geometry. For now we don't support this.");		
 		}
 		
 		OGRGeometry *geom = feature->GetGeomFieldRef(0);
@@ -94,7 +112,11 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, SimpleFeatureC
 		if(geom != NULL)
 		{						
 			success = addFeature(geom, feature, featureCount);
-		}	
+		} 
+		else if(hasDefault)
+		{
+			success = addFeature(defGeom.get(), feature, featureCount);
+		}
 
 		if(success && !readTimeIntoCollection(rect, feature, collection->time)){		
 			//error returned, either ErrorHandling::SKIP or the time stamps of feature were filtered -> so continue to next feature	
@@ -113,9 +135,9 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, SimpleFeatureC
 		else
 		{
 			switch(errorHandling){
-				case ErrorHandling::ABORT:
+				case ErrorHandling::ABORT:					
 					if(geom == NULL)
-						throw OperatorException("OGR Source: Invalid dataset, at least one OGRGeometry was NULL.");
+						throw OperatorException("OGR Source: Invalid dataset, at least one OGRGeometry was NULL and no default values exist.");
 					else
 						throw OperatorException("OGR Source: Dataset contains not expected FeatureType (Points,Lines,Polygons)");
 					break;
@@ -202,7 +224,7 @@ std::unique_ptr<LineCollection> OGRSourceUtil::getLineCollection(const QueryRect
 
 		return true;			
 	};	
-		
+	
 	readAnyCollection(rect, lines.get(), layer, addFeature);
 	lines->validate();
 	return lines;
@@ -255,8 +277,8 @@ std::unique_ptr<PolygonCollection> OGRSourceUtil::getPolygonCollection(const Que
 	
 		return true;
 	};
-
-	readAnyCollection(rect, polygons.get(), layer, addFeature);		
+	
+	readAnyCollection(rect, polygons.get(), layer, addFeature);
 	polygons->validate();
 	return polygons;
 }
