@@ -90,7 +90,7 @@ void ClassificationOperator::writeSemanticParameters(std::ostringstream& stream)
 
 #ifndef MAPPING_OPERATOR_STUBS
 #ifdef MAPPING_NO_OPENCL
-std::unique_ptr<GenericRaster> ClassificationOperator::getRaster(const QueryRectangle &rect, QueryProfiler &profiler) {
+std::unique_ptr<GenericRaster> ClassificationOperator::getRaster(const QueryRectangle &rect, const QueryTools &profiler) {
 	throw OperatorException("ClassificationOperator: cannot be executed without OpenCL support");
 }
 #else

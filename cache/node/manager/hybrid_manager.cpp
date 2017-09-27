@@ -153,7 +153,7 @@ std::unique_ptr<T> HybridCacheWrapper<T>::process_puzzle(
 HybridCacheManager::HybridCacheManager(const std::string &strategy,
 		size_t raster_cache_size, size_t point_cache_size,
 		size_t line_cache_size, size_t polygon_cache_size,
-		size_t plot_cache_size) :
+		size_t plot_cache_size, size_t provenance_cache_size) :
 		NodeCacheManager(strategy,
 				make_unique<HybridCacheWrapper<GenericRaster>>(*this,
 						raster_cache_size, CacheType::RASTER),
@@ -164,7 +164,9 @@ HybridCacheManager::HybridCacheManager(const std::string &strategy,
 				make_unique<HybridCacheWrapper<PolygonCollection>>(*this,
 						polygon_cache_size, CacheType::POLYGON),
 				make_unique<HybridCacheWrapper<GenericPlot>>(*this,
-						plot_cache_size, CacheType::PLOT)) {
+						plot_cache_size, CacheType::PLOT),
+				make_unique<HybridCacheWrapper<ProvenanceCollection>>(*this,
+						provenance_cache_size, CacheType::UNKNOWN)) {
 }
 
 template class HybridCacheWrapper<GenericRaster> ;
@@ -172,3 +174,4 @@ template class HybridCacheWrapper<PointCollection> ;
 template class HybridCacheWrapper<LineCollection> ;
 template class HybridCacheWrapper<PolygonCollection> ;
 template class HybridCacheWrapper<GenericPlot> ;
+template class HybridCacheWrapper<ProvenanceCollection> ;

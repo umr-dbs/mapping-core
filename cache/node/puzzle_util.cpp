@@ -15,6 +15,7 @@
 #include "datatypes/linecollection.h"
 #include "datatypes/polygoncollection.h"
 #include "datatypes/plot.h"
+#include "operators/provenance.h"
 
 #include "util/make_unique.h"
 #include "util/log.h"
@@ -216,6 +217,13 @@ SpatioTemporalReference PuzzleUtil::enlarge_puzzle(const QueryRectangle& query,
 	return SpatioTemporalReference(query, query);
 }
 
+template<>
+SpatioTemporalReference PuzzleUtil::enlarge_puzzle(const QueryRectangle& query,
+		const std::vector<std::shared_ptr<const ProvenanceCollection> >& items) {
+	(void) items;
+	return SpatioTemporalReference(query, query);
+}
+
 //
 // Compute
 //
@@ -258,6 +266,12 @@ std::unique_ptr<GenericPlot> PuzzleUtil::compute(GenericOperator& op,
 	return op.getCachedPlot(query, QueryTools(qp));
 }
 
+template<>
+std::unique_ptr<ProvenanceCollection> PuzzleUtil::compute(GenericOperator& op,
+		const QueryRectangle& query, QueryProfiler& qp) {
+	return op.getCachedFullProvenance(query, QueryTools(qp));
+}
+
 //
 // Puzzle
 //
@@ -295,6 +309,15 @@ std::unique_ptr<GenericPlot> PuzzleUtil::puzzle(
 	(void) bbox;
 	(void) items;
 	throw OperatorException("Puzzling not supported for plots");
+}
+
+template<>
+std::unique_ptr<ProvenanceCollection> PuzzleUtil::puzzle(
+		const SpatioTemporalReference& bbox,
+		const std::vector<std::shared_ptr<const ProvenanceCollection> >& items) {
+	(void) bbox;
+	(void) items;
+	throw OperatorException("Puzzling not supported for provenance");
 }
 
 template<>
@@ -521,6 +544,13 @@ std::unique_ptr<GenericPlot> RemoteRetriever<GenericPlot>::read_item(
 	return GenericPlot::deserialize(buffer);
 }
 
+template<>
+std::unique_ptr<ProvenanceCollection> RemoteRetriever<ProvenanceCollection>::read_item(
+		BinaryReadBuffer& buffer) const {
+	// TODO
+	return nullptr;
+}
+
 //
 // INSTANTIATE ALL
 //
@@ -530,16 +560,18 @@ template std::unique_ptr<PointCollection> PuzzleUtil::process<PointCollection>(G
 template std::unique_ptr<LineCollection> PuzzleUtil::process<LineCollection>(GenericOperator&, const QueryRectangle&, const std::vector<Cube<3>>&, const std::vector<std::shared_ptr<const LineCollection>>&, QueryProfiler&);
 template std::unique_ptr<PolygonCollection> PuzzleUtil::process<PolygonCollection>(GenericOperator&, const QueryRectangle&, const std::vector<Cube<3>>&, const std::vector<std::shared_ptr<const PolygonCollection>>&, QueryProfiler&);
 template std::unique_ptr<GenericPlot> PuzzleUtil::process<GenericPlot>(GenericOperator&, const QueryRectangle&, const std::vector<Cube<3>>&, const std::vector<std::shared_ptr<const GenericPlot>>&, QueryProfiler&);
+template std::unique_ptr<ProvenanceCollection> PuzzleUtil::process<ProvenanceCollection>(GenericOperator&, const QueryRectangle&, const std::vector<Cube<3>>&, const std::vector<std::shared_ptr<const ProvenanceCollection>>&, QueryProfiler&);
 
 template class LocalRetriever<GenericRaster> ;
 template class LocalRetriever<GenericPlot> ;
 template class LocalRetriever<PointCollection> ;
 template class LocalRetriever<LineCollection> ;
 template class LocalRetriever<PolygonCollection> ;
+template class LocalRetriever<ProvenanceCollection> ;
 
 template class RemoteRetriever<GenericRaster> ;
 template class RemoteRetriever<GenericPlot> ;
 template class RemoteRetriever<PointCollection> ;
 template class RemoteRetriever<LineCollection> ;
 template class RemoteRetriever<PolygonCollection> ;
-
+template class RemoteRetriever<ProvenanceCollection> ;

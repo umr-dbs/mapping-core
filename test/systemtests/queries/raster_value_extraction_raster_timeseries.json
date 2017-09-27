@@ -50,7 +50,7 @@
                 {
                     "params" : 
 					{
-						"filename" : "test/systemtests/data/osm_large_cities/osm_large_cities.csv",
+						"filename" : "file://test/systemtests/data/osm_large_cities/osm_large_cities.csv",
 						"separator" : ";",
 						"geometry": "wkt",
 						"time": "start",

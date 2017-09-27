@@ -1,0 +1,48 @@
+{
+	"name": "Textual Point Filter Exact",
+	"query_result": "points",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 0
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },	
+	"query" :
+	{
+		"params" : 
+		{
+			"name" : "Name",
+			"engine" : "exact",
+			"searchString": "Bischofshe"
+		},
+		"sources" : 
+		{
+			"points" : 
+			[
+				
+				{
+					"params" : 
+					{
+						"filename" : "file://test/systemtests/data/places_dump/places_dump_DE_100k.csv",
+						"geometry": "xy",
+						"time": "none",
+						"columns": {
+							"x": "X",
+							"y": "Y",
+							"numeric": ["PLZ"],
+							"textual": ["Name"]
+						}
+					},
+					"type" : "csv_source"
+				}
+			]
+		},
+		"type" : "textual_attribute_filter"
+	},
+	"query_expected_hash" : "ab0b1628f473296750f972727399acee3bfde89f"
+}

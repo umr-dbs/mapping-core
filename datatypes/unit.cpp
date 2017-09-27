@@ -16,7 +16,7 @@ const std::vector< std::pair<Unit::Interpolation, std::string> > InterpolationSp
 	std::make_pair(Unit::Interpolation::Continuous, "continuous")
 };
 
-EnumConverter<Unit::Interpolation> InterpolationConverter(InterpolationSpecificationMap);
+EnumConverter<Unit::Interpolation> InterpolationConverter(InterpolationSpecificationMap, "unknown");
 
 
 static void str_to_lower(std::string &str) {

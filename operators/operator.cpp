@@ -182,6 +182,11 @@ std::unique_ptr<PointCollection> GenericOperator::getCachedPointCollection(const
 	std::unique_ptr<PointCollection> result;
 	try {
 		result = cache.query( *this, rect, parent_profiler );
+		if (rect.t1 > result->stref.t1 || rect.t2 < result->stref.t2
+				|| rect.x1 > result->stref.x1 || rect.x2 < result->stref.x2
+				|| rect.y1 > result->stref.y1 || rect.y2 < result->stref.y2) {
+			result->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
+		}
 	} catch ( NoSuchElementException &nse ) {
 		QueryProfilerStoppingGuard stop_guard(parent_profiler);
 		QueryProfiler exec_profiler;
@@ -212,6 +217,11 @@ std::unique_ptr<LineCollection> GenericOperator::getCachedLineCollection(const Q
 	std::unique_ptr<LineCollection> result;
 	try {
 		result = cache.query( *this, rect, parent_profiler );
+		if (rect.t1 > result->stref.t1 || rect.t2 < result->stref.t2
+				|| rect.x1 > result->stref.x1 || rect.x2 < result->stref.x2
+				|| rect.y1 > result->stref.y1 || rect.y2 < result->stref.y2) {
+			result->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
+		}
 	} catch ( NoSuchElementException &nse ) {
 		QueryProfilerStoppingGuard stop_guard(parent_profiler);
 		QueryProfiler exec_profiler;
@@ -242,6 +252,11 @@ std::unique_ptr<PolygonCollection> GenericOperator::getCachedPolygonCollection(c
 	std::unique_ptr<PolygonCollection> result;
 	try {
 		result = cache.query( *this, rect, parent_profiler );
+		if (rect.t1 > result->stref.t1 || rect.t2 < result->stref.t2
+				|| rect.x1 > result->stref.x1 || rect.x2 < result->stref.x2
+				|| rect.y1 > result->stref.y1 || rect.y2 < result->stref.y2) {
+			result->filterBySpatioTemporalReferenceIntersectionInPlace(rect);
+		}
 	} catch ( NoSuchElementException &nse ) {
 		QueryProfilerStoppingGuard stop_guard(parent_profiler);
 		QueryProfiler exec_profiler;
@@ -300,6 +315,32 @@ std::unique_ptr<ProvenanceCollection> GenericOperator::getFullProvenance() {
 	auto provenance = make_unique<ProvenanceCollection>();
 	getRecursiveProvenance(*provenance);
 	return provenance;
+}
+
+std::unique_ptr<ProvenanceCollection> GenericOperator::getCachedFullProvenance(const QueryRectangle &rect, const QueryTools &tools) {
+	QueryProfiler &parent_profiler = tools.profiler;
+	QueryProfilerSimpleGuard parent_guard(parent_profiler);
+
+	// TODO: think about the semantics of provenance!
+	QueryRectangle fullRect(SpatialReference::extent(rect.epsg), TemporalReference(rect.timetype), QueryResolution::none());
+
+	auto &cache = CacheManager::get_instance().get_provenance_cache();
+	std::unique_ptr<ProvenanceCollection> result;
+	try {
+		result = cache.query( *this, fullRect, parent_profiler );
+	} catch ( NoSuchElementException &nse ) {
+		QueryProfilerStoppingGuard stop_guard(parent_profiler);
+		QueryProfiler exec_profiler;
+		{
+			QueryProfilerRunningGuard guard(parent_profiler, exec_profiler);
+			TIME_EXEC("Operator.getPlot");
+			result = getFullProvenance();
+		}
+		d_profile(depth, type, "provenance", exec_profiler);
+		if ( cache.put(semantic_id,result, fullRect, exec_profiler) )
+			parent_profiler.cached(exec_profiler);
+	}
+	return result;
 }
 
 

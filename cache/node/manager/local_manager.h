@@ -39,7 +39,7 @@ class LocalCacheManager : public NodeCacheManager {
 public:
 	LocalCacheManager( const std::string &strategy, const std::string &replacement,
 			size_t raster_cache_size, size_t point_cache_size, size_t line_cache_size,
-			size_t polygon_cache_size, size_t plot_cache_size );
+			size_t polygon_cache_size, size_t plot_cache_size, size_t provenance_cache_size );
 };
 
 

@@ -32,7 +32,7 @@ clinfo
 **TODO**
 
 
-### Ubuntu 16 LTS
+### Ubuntu 16 LTS / Ubuntu 17.04
 
 #### Open CL
 
@@ -47,6 +47,11 @@ tar -C intel-opencl -Jxf intel-opencl-r3.0-BUILD_ID.x86_64.tar.xz
 tar -C intel-opencl -Jxf intel-opencl-devel-r3.0-BUILD_ID.x86_64.tar.xz
 tar -C intel-opencl -Jxf intel-opencl-cpu-r3.0-BUILD_ID.x86_64.tar.xz
 sudo cp -R intel-opencl/* /
+sudo ldconfig
+
+sudo apt install clinfo
+sudo apt install opencl-headers
+clinfo
 ```
 
 
@@ -99,102 +104,37 @@ ssh-keygen -t rsa
 
 Checkout Mapping
 ```
-git clone ssh://phabricator-vcs@dbs.mathematik.uni-marburg.de:91/diffusion/VAT/geo.git
-cd geo/mapping
+git clone ssh://phabricator-vcs@dbs-projects.mathematik.uni-marburg.de:91/diffusion/MAPPINGCORE/mapping-core.git
+cd mapping-core
 vim Makefile.local
 ```
 
 Add the following lines to add the necessary modules:
 ```
+MODULES_PATH=..
 MODULES_LIST+=mapping-gfbio mapping-distributed mapping-r
 ```
+This requires the modules to be checked out into the same folder as mapping-core.
+
 
 Build the project:
 ```
 make -j8
 ```
 
-## Configure MAPPING
+#Tests
+
+## Unit tests
+Run via `make unittest`
+
+## Systemtests
+Run via `make systemtest`
+
+Configure llvm-symbolizer path in Makefile.local it or create link at /usr/lib/llvm-symbolizer
+
+e.g.
 ```
-vim mapping.conf
-```
-
-Put in the following content. Modify this if necessary.
-
-### Standalone
-**TODO**
-
-#### Index Node
-**TODO**
-
-#### Cluster Node
-```
-log.level=INFO
-
-################################
-#
-# CGI/NODE CONFIG
-#
-################################
-
-global.debug=0
-global.opencl.forcecpu=1
-
-operators.r.socket=/tmp/rserver_socket2
-operators.r.host=127.0.0.1
-operators.r.port=12349
-
-rserver.port=12349
-rserver.loglevel=debug
-rserver.packages=raster,caret,randomForest
-
-rasterdb.tileserver.port=12345
-rasterdb.backend=local
-rasterdb.local.location=/home/rastersources/
-
-################################
-#
-# NODE CONFIG
-#
-################################
-
-nodeserver.port=12348
-nodeserver.threads=16
-nodeserver.cache.manager=remote
-nodeserver.cache.raster.size=524288000
-nodeserver.cache.points.size=524288000
-nodeserver.cache.lines.size=524288000
-nodeserver.cache.polygons.size=524288000
-nodeserver.cache.plots.size=524288000
-nodeserver.cache.strategy=uncached
-
-################################
-#
-# INDEX CONFIG
-#
-################################
-
-indexserver.port=12346
-indexserver.host=***REMOVED***
-
-###############################
-#
-# Operator Config
-#
-###############################
-
-operators.gfbiosource.dbcredentials=user = 'USER' host = 'HOST' password = 'PASSWORD' dbname = 'DBNAME'
-gfbio.abcd.datapath=/path/to/gfbio/data
-
+LLVM_SYMBOLIZER=/usr/lib/llvm-3.8/bin/llvm-symbolizer
 ```
 
-### Get Data
-**TODO**
-
-### Firewall
-Open up your firewall for the remote ports.
-
-### Start Node
-```
-./cache_node
-```
+ 

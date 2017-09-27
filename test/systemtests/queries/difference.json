@@ -33,7 +33,7 @@
                         "points": [
                             {
                                 "params": {
-                                    "filename": "test/systemtests/data/places_dump/places_dump_DE_100k.csv",
+                                    "filename": "file://test/systemtests/data/places_dump/places_dump_DE_100k.csv",
                                     "geometry": "xy",
 									"time": "none",
 									"columns": {
@@ -59,7 +59,7 @@
                         "points": [
                             {
                                 "params": {
-                                    "filename": "test/systemtests/data/places_dump/places_dump_DE_100k.csv",
+                                    "filename": "file://test/systemtests/data/places_dump/places_dump_DE_100k.csv",
                                     "geometry": "xy",
 									"time": "none",
 									"columns": {

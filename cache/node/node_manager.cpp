@@ -151,6 +151,12 @@ CacheCube NodeCacheWrapper<GenericPlot>::get_bounds(const GenericPlot& item,
 	return CacheCube(rect);
 }
 
+template<>
+CacheCube NodeCacheWrapper<ProvenanceCollection>::get_bounds(const ProvenanceCollection& item,
+		const QueryRectangle& rect) const {
+	return CacheCube(rect);
+}
+
 ////////////////////////////////////////////////////////////
 //
 // NodeCacheManager
@@ -164,12 +170,14 @@ NodeCacheManager::NodeCacheManager( const std::string &strategy,
 	std::unique_ptr<NodeCacheWrapper<PointCollection>> point_wrapper,
 	std::unique_ptr<NodeCacheWrapper<LineCollection>> line_wrapper,
 	std::unique_ptr<NodeCacheWrapper<PolygonCollection>> polygon_wrapper,
-	std::unique_ptr<NodeCacheWrapper<GenericPlot>> plot_wrapper ) :
+	std::unique_ptr<NodeCacheWrapper<GenericPlot>> plot_wrapper,
+	std::unique_ptr<NodeCacheWrapper<ProvenanceCollection>> provenance_wrapper) :
 	raster_wrapper( std::move(raster_wrapper) ),
 	point_wrapper( std::move(point_wrapper) ),
 	line_wrapper( std::move(line_wrapper) ),
 	polygon_wrapper( std::move(polygon_wrapper) ),
 	plot_wrapper( std::move(plot_wrapper) ),
+	provenance_wrapper( std::move(provenance_wrapper) ),
 	strategy( CachingStrategy::by_name(strategy)),
 	my_port(0) {
 }
@@ -194,6 +202,10 @@ NodeCacheWrapper<GenericPlot>& NodeCacheManager::get_plot_cache() {
 	return *plot_wrapper;
 }
 
+NodeCacheWrapper<ProvenanceCollection>& NodeCacheManager::get_provenance_cache() {
+	return *provenance_wrapper;
+}
+
 
 
 std::unique_ptr<NodeCacheManager> NodeCacheManager::from_config( const NodeConfig &config ) {
@@ -203,11 +215,11 @@ std::unique_ptr<NodeCacheManager> NodeCacheManager::from_config( const NodeConfi
 
 
 	if ( mgrlc == "remote" )
-		return make_unique<RemoteCacheManager>(config.caching_strategy, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size);
+		return make_unique<RemoteCacheManager>(config.caching_strategy, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size, config.provenance_size);
 	else if ( mgrlc == "local" )
-		return make_unique<LocalCacheManager>(config.caching_strategy, config.local_replacement, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size);
+		return make_unique<LocalCacheManager>(config.caching_strategy, config.local_replacement, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size, config.provenance_size);
 	else if ( mgrlc == "hybrid" )
-		return make_unique<HybridCacheManager>(config.caching_strategy, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size);
+		return make_unique<HybridCacheManager>(config.caching_strategy, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size, config.provenance_size);
 	else
 		throw ArgumentException(concat("Unknown manager impl: ", config.mgr_impl));
 }
@@ -268,6 +280,7 @@ template class NodeCacheWrapper<PointCollection>;
 template class NodeCacheWrapper<LineCollection>;
 template class NodeCacheWrapper<PolygonCollection>;
 template class NodeCacheWrapper<GenericPlot> ;
+template class NodeCacheWrapper<ProvenanceCollection> ;
 
 bool WorkerContext::is_puzzling() const {
 	return puzzling > 0;

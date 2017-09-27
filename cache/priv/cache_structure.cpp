@@ -16,6 +16,7 @@
 #include "datatypes/linecollection.h"
 #include "datatypes/polygoncollection.h"
 #include "datatypes/plot.h"
+#include "operators/provenance.h"
 
 #include "util/log.h"
 #include "util/concat.h"
@@ -494,17 +495,20 @@ template class CacheQueryResult<NodeCacheEntry<PointCollection>>;
 template class CacheQueryResult<NodeCacheEntry<LineCollection>>;
 template class CacheQueryResult<NodeCacheEntry<PolygonCollection>>;
 template class CacheQueryResult<NodeCacheEntry<GenericPlot>>;
+template class CacheQueryResult<NodeCacheEntry<ProvenanceCollection>>;
 template class CacheStructure<uint64_t, NodeCacheEntry<GenericRaster>>;
 template class CacheStructure<uint64_t, NodeCacheEntry<PointCollection>>;
 template class CacheStructure<uint64_t, NodeCacheEntry<LineCollection>>;
 template class CacheStructure<uint64_t, NodeCacheEntry<PolygonCollection>>;
 template class CacheStructure<uint64_t, NodeCacheEntry<GenericPlot>>;
+template class CacheStructure<uint64_t, NodeCacheEntry<ProvenanceCollection>>;
 
 template class Cache<uint64_t, NodeCacheEntry<GenericRaster>>;
 template class Cache<uint64_t, NodeCacheEntry<PointCollection>>;
 template class Cache<uint64_t, NodeCacheEntry<LineCollection>>;
 template class Cache<uint64_t, NodeCacheEntry<PolygonCollection>>;
 template class Cache<uint64_t, NodeCacheEntry<GenericPlot>>;
+template class Cache<uint64_t, NodeCacheEntry<ProvenanceCollection>>;
 
 
 template class CacheQueryResult<IndexCacheEntry>;

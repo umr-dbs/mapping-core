@@ -98,6 +98,7 @@ public:
 	CacheWrapper<LineCollection>& get_line_cache();
 	CacheWrapper<PolygonCollection>& get_polygon_cache();
 	CacheWrapper<GenericPlot>& get_plot_cache();
+	CacheWrapper<ProvenanceCollection>& get_provenance_cache();
 	ProfilingData &get_costs();
 	void reset_costs();
 private:
