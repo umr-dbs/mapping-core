@@ -7,10 +7,10 @@
     },
     "spatial_reference": {
         "projection": "EPSG:4326",        
-        "x1": -60,
-        "x2": 20,
-        "y1": -10,
-        "y2": 30
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
     },
     "resolution": {
     	"type": "pixels",

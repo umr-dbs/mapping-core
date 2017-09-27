@@ -1,6 +1,6 @@
 {
     "name": "Blup",
-	"query_result": "lines",
+	"query_result": "points",
     "temporal_reference": {
         "type": "UNIX",
         "start": 1205280000
@@ -14,7 +14,14 @@
     },    
     "query": {        
         "params": {       		
-            "sourcename": "RiversLake"
+            "filename": "test/systemtests/data/places_dump/places_dump_DE_100k.csv",
+            "on_error" : "abort",
+            "time" : "none",
+            "columns" : {
+                "x" : "X",
+                "y" : "Y",
+                "textual" : ["Name", "PLZ"]
+            }
         },
         "type": "ogr_source"
     }    

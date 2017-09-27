@@ -6,9 +6,9 @@
 #include <iostream> 
 #include <fstream>
 
-const std::string DatasetImporter::placeholder = "%%%TIME_STRING%%%";
+const std::string GDALDatasetImporter::placeholder = "%%%TIME_STRING%%%";
 
-GDALDataset* DatasetImporter::openGDALDataset(std::string file_name){
+GDALDataset* GDALDatasetImporter::openGDALDataset(std::string file_name){
 
 	GDAL::init();
 
@@ -20,8 +20,8 @@ GDALDataset* DatasetImporter::openGDALDataset(std::string file_name){
 	return dataset;
 }
 
-
-void DatasetImporter::importDataset(std::string dataset_name, 
+//write all the values to Json and save it to disk
+void GDALDatasetImporter::importDataset(std::string dataset_name, 
 									std::string dataset_filename_with_placeholder, 
 									std::string dataset_file_path, 
 									std::string time_format, 
@@ -41,28 +41,23 @@ void DatasetImporter::importDataset(std::string dataset_name,
 	std::string datasetJsonPath = Configuration::get("gdalsource.datasetpath");
 
 	if(placeholderPos == std::string::npos){
-		throw ImporterException("GDAL DatasetImporter: Date placeholder " + placeholder + " not found in dataset filename " + dataset_filename_with_placeholder);
+		throw ImporterException("GDALDatasetImporter: Date placeholder " + placeholder + " not found in dataset filename " + dataset_filename_with_placeholder);
 	}
 
 	TimeUnit tu;
 	int interval = std::stoi(interval_value);
 
 	if(GDALTimesnap::string_to_TimeUnit.find(time_unit) == GDALTimesnap::string_to_TimeUnit.end()){		
-		throw ImporterException("GDAL DatasetImporter: " + time_unit + " is not a valid time unit (Year, Month, Day, Hour, Minute or Second)");
+		throw ImporterException("GDALDatasetImporter: " + time_unit + " is not a valid time unit (Year, Month, Day, Hour, Minute or Second)");
 	} else {
 		tu = GDALTimesnap::createTimeUnit(time_unit);
 	}
-
-	//actually this would not be necessary anymore for the way the time is snapped
-	//if(tu != TimeUnit::Year && (GDALTimesnap::maxValueForTimeUnit(tu) % interval) != 0){
-	//	throw ImporterException("GDAL DatasetImporter: max unit of time unit has to be multiple of interval value, eg for Month (12): 4 is okay, 5 not ");
-	//}
 
 	//parse time_start with time_format to check if its valid, else parse throws an exception
 	auto timeParser = TimeParser::createCustom(time_format); 
 	timeParser->parse(time_start);
 
-	//create json 
+	//create Json 
 	Json::Value timeIntervalJson(Json::ValueType::objectValue);
 	timeIntervalJson["unit"] 	= time_unit;
 	timeIntervalJson["value"] 	= interval;
@@ -90,7 +85,7 @@ void DatasetImporter::importDataset(std::string dataset_name,
 
 	GDALClose(dataset);	
 
-	//save json to datasetpath with datasetname
+	//save Json to disk
 	Json::StyledWriter writer;	
 	std::ofstream file;
 	file.open(datasetJsonPath + dataset_name + ".json");
@@ -99,7 +94,8 @@ void DatasetImporter::importDataset(std::string dataset_name,
 
 }
 
-Json::Value DatasetImporter::readCoords(GDALDataset *dataset){
+//read epsg, size, scale, origin from actual GDALDatset
+Json::Value GDALDatasetImporter::readCoords(GDALDataset *dataset){
 	Json::Value coordsJson(Json::ValueType::objectValue);
 
 	double adfGeoTransform[6];
@@ -131,7 +127,7 @@ Json::Value DatasetImporter::readCoords(GDALDataset *dataset){
 }
 
 //reads the epsg information from GetProjectionRef String of the GDALDataset
-std::string DatasetImporter::getEpsg(GDALDataset *dataset){
+std::string GDALDatasetImporter::getEpsg(GDALDataset *dataset){
 	std::string gdalInput = dataset->GetProjectionRef(); //this returns an internal char*
 
 	int index = 0;
@@ -175,8 +171,8 @@ std::string DatasetImporter::getEpsg(GDALDataset *dataset){
 	return "unknown";
 }
 
-
-Json::Value DatasetImporter::readChannels(GDALDataset *dataset, std::string measurement, std::string unit, std::string interpolation){
+//read channel values from GDALDataset, some from given parameters
+Json::Value GDALDatasetImporter::readChannels(GDALDataset *dataset, std::string measurement, std::string unit, std::string interpolation){
 	Json::Value channelsJson(Json::ValueType::arrayValue);
 	
 	if(measurement == "")
@@ -226,7 +222,8 @@ Json::Value DatasetImporter::readChannels(GDALDataset *dataset, std::string meas
 	return channelsJson;
 }
 
-std::string DatasetImporter::dataTypeToString(GDALDataType type){
+//GDALDataType to string
+std::string GDALDatasetImporter::dataTypeToString(GDALDataType type){
 	switch(type){
 		case GDT_Byte:
 			return "Byte";

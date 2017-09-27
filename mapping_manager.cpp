@@ -69,7 +69,7 @@ static void usage() {
 		printf("%s showprovenance <queryname>\n", program_name);
 		printf("%s enumeratesources [verbose]\n", program_name);
 		printf("%s userdb ...\n", program_name);
-		printf("%s importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> [--unit <measurement> <unit> <interpolation>] [--citation|--c <provenance_citation>] [--license|--l <provenance_license>] [--uri|--u <provenence_uri>]\n", program_name);
+		printf("%s importgdaldataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> [--unit <measurement> <unit> <interpolation>] [--citation|--c <provenance_citation>] [--license|--l <provenance_license>] [--uri|--u <provenence_uri>]\n", program_name);
 		exit(5);
 }
 
@@ -664,25 +664,27 @@ static int userdb(int argc, char *argv[]) {
 	}
 }
 
-static int importdataset(int argc, char *argv[]){
+// Imports a gdal dataset for use by source operator GDALSource
+static int import_gdal_dataset(int argc, char *argv[]){
 	
 	if(argc < 9 || argc > 19){
 		usage();
 	}
 
-	// program name:  	1
-	// importdataset: 	1
-	// std parameter: 	7
-	// -------------------
-	// subtotal			9
+	// Indexes:
+	// program name:  		1
+	// importgdaldataset: 	1
+	// std parameter: 		7
+	// ---------------------------
+	// subtotal				9
 
 	// opt:
-	// provenance:		3 + 3	
-	// unit				3 + 1
-	// ------------------------
-	// total			19
+	// provenance:			3 + 3	
+	// unit					3 + 1
+	// ---------------------------
+	// total				19
 	
-	//importdataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> 
+	//importgdaldataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> 
 	// 				[--unit <measurement> <unit> <interpolation>] 
 	//				[--citation|--c <provenance_citation>] [--license|--l <provenance_license>] [--uri|--u <provenence_uri>]
 	
@@ -709,6 +711,7 @@ static int importdataset(int argc, char *argv[]){
 	std::string measurement;
 	std::string interpolation;
 
+	//read the optional parameters
 	int i = 9;
 	while(i < argc)
 	{
@@ -757,7 +760,7 @@ static int importdataset(int argc, char *argv[]){
 		}
 	}
 
-	DatasetImporter::importDataset(	dataset_name, 
+	GDALDatasetImporter::importDataset(	dataset_name, 
 									dataset_filename, 
 									dataset_file_path, 
 									time_format, 
@@ -855,8 +858,8 @@ int main(int argc, char *argv[]) {
 		printf("maximum buffer size is %ud (%d MB)\n", mbs, mbs/1024/1024);
 	}
 #endif
-	else if(strcmp(command, "importdataset") == 0){
-		importdataset(argc, argv);
+	else if(strcmp(command, "importgdaldataset") == 0){
+		import_gdal_dataset(argc, argv);
 	}
 	else {
 		usage();
