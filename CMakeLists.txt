@@ -82,6 +82,7 @@ add_library(mapping_core_base_lib
         util/sizeutil.cpp
         util/stringsplit.h
         util/uriloader.cpp
+        util/gdal_dataset_importer.cpp
         operators/operator.cpp
         operators/provenance.cpp
         operators/queryrectangle.cpp
@@ -143,6 +144,7 @@ add_library(mapping_core_services_lib
         services/plot.cpp
         services/provenance.cpp
         services/artifact.cpp
+        services/gdalservice.cpp
         pointvisualization/BoundingBox.cpp
         pointvisualization/Circle.cpp
         pointvisualization/Coordinate.cpp
@@ -161,6 +163,10 @@ add_library(mapping_core_operators_lib
         operators/source/postgres_source.cpp
         operators/source/rasterdb_source.cpp
         operators/source/wkt_source.cpp
+        operators/source/gdal_source.cpp
+        operators/source/ogr_source.cpp
+        util/ogr_source_util.cpp
+        util/gdal_timesnap.cpp
         util/csv_source_util.cpp
         operators/processing/raster/matrixkernel.cpp
         operators/processing/raster/expression.cpp
