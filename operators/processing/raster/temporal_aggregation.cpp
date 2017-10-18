@@ -182,7 +182,7 @@ std::unique_ptr<GenericRaster> TemporalAggregationOperator::getRaster(
 	auto input = getRasterFromSource(0, rect, tools, RasterQM::EXACT);
 	auto accumulator = createAccumulator(*input);
 
-	size_t n = 0;
+	size_t n = 1;
 	QueryRectangle nextRect = rect;
 	nextRect.t1 = input->stref.t2;
 	nextRect.t2 = nextRect.t1 + nextRect.epsilon();
