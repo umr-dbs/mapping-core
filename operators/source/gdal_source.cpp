@@ -157,7 +157,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 		pixel_x2 = std::min(nXSize-1, pixel_x2);
 		pixel_y2 = std::min(nYSize-1, pixel_y2);
 
-		pixel_width = pixel_x2 - pixel_x1 + 1;
+        pixel_width = pixel_x2 - pixel_x1 + 1;// TODO: check
 		pixel_height = pixel_y2 - pixel_y1 + 1;
 	}
 
@@ -165,6 +165,11 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	double y1 = origin_y + scale_y * pixel_y1;
 	double x2 = x1 + scale_x * pixel_width;
 	double y2 = y1 + scale_y * pixel_height;
+
+	if (x1 > x2)
+		std::swap(x1, x2);
+	if (y1 > y2)
+		std::swap(y1, y2);
 
 	const TemporalReference &tref = (const TemporalReference &)qrect;
 
