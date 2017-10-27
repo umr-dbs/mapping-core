@@ -111,7 +111,7 @@ add_library(mapping_core_base_lib
         cache/node/node_config.cpp
         cache/node/manager/remote_manager.cpp
         cache/node/manager/hybrid_manager.cpp
-        )
+        util/gdal_source_datasets.cpp util/gdal_source_datasets.h)
 target_include_directories(mapping_core_base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi mapping_core_base_lib)
 target_link_libraries_internal(mapping_manager mapping_core_base_lib)
@@ -144,7 +144,6 @@ add_library(mapping_core_services_lib
         services/plot.cpp
         services/provenance.cpp
         services/artifact.cpp
-        services/gdalservice.cpp
         pointvisualization/BoundingBox.cpp
         pointvisualization/Circle.cpp
         pointvisualization/Coordinate.cpp
