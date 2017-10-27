@@ -62,7 +62,7 @@ RasterGDALSourceOperator::RasterGDALSourceOperator(int sourcecounts[], GenericOp
 	if (sourcename.length() == 0)
 		throw OperatorException("SourceOperator: missing sourcename");
 	channel = params.get("channel", 1).asInt();
-	datasetPath = Configuration::get("gdalsource.datasetpath");
+	datasetPath = Configuration::get("gdalsource.datasets.path");
 }
 
 RasterGDALSourceOperator::~RasterGDALSourceOperator(){
