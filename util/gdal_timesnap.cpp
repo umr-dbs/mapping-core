@@ -206,49 +206,6 @@ int GDALTimesnap::daysOfMonth(int year, int month){
 		return 31;
 }
 
-//Loads the json file of the wanted dataset from disk
-Json::Value GDALTimesnap::getDatasetJson(std::string wantedDatasetName, std::string datasetPath)
-{
-	//opens the standard path for datasets and returns the dataset with the name datasetName as Json::Value
-	struct dirent *entry;
-	DIR *dir = opendir(datasetPath.c_str());
-
-	if (dir == NULL) {
-        throw OperatorException("GDAL Source: directory for dataset json files does not exist.");
-    }
-
-    //iterate files in directory
-	while ((entry = readdir(dir)) != NULL) {
-        std::string filename = entry->d_name;
-        std::string withoutExtension = filename.substr(0, filename.length() - 5);	//extension of wanted file is .json, so 5 chars.
-        
-        if(withoutExtension == wantedDatasetName){
-        	
-        	//open file
-        	std::ifstream file(datasetPath + filename);
-			if (!file.is_open()) {
-			    closedir(dir);
-				throw OperatorException("GDAL Source Operator: unable to dataset file " + wantedDatasetName);
-			}
-
-			//read json object
-			Json::Reader reader(Json::Features::strictMode());
-			Json::Value json;
-			if (!reader.parse(file, json)) {
-			    closedir(dir);
-				throw OperatorException("GDAL Source Operator: unable to read json" + reader.getFormattedErrorMessages());				
-			}				
-
-		    closedir(dir);
-        	return json;
-        }
-    }
-
-    //file not found
-    closedir(dir);
-    throw OperatorException("GDAL Source: Dataset " + wantedDatasetName + " does not exist.");
-}
-
 // calculates the filename for queried time by snapping the wanted time to the 
 // nearest smaller timestamp that exists for the dataset
 std::string GDALTimesnap::getDatasetFilename(Json::Value datasetJson, double wantedTimeUnix)

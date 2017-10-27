@@ -17,6 +17,7 @@
 #include <json/json.h>
 #include <time.h>
 #include <dirent.h>
+#include <util/gdal_source_datasets.h>
 
 /**
  * Operator that loads raster data via gdal. Loads them from imported GDAL dataset, import via GDAL dataset importer.
@@ -73,7 +74,7 @@ REGISTER_OPERATOR(RasterGDALSourceOperator, "gdal_source");
 
 void RasterGDALSourceOperator::getProvenance(ProvenanceCollection &pc) {
 	std::string local_identifier = "data.gdal_source." + sourcename;
-	Json::Value datasetJson = GDALTimesnap::getDatasetJson(sourcename, datasetPath);
+	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
 
 	Json::Value provenanceinfo = datasetJson["provenance"];
 	if (provenanceinfo.isObject()) {
@@ -93,7 +94,7 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 
 // load the json definition of the dataset, then get the file to be loaded from GDALTimesnap. Finally load the raster.
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
-	Json::Value datasetJson = GDALTimesnap::getDatasetJson(sourcename, datasetPath);	
+	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
 	std::string file_path 	= GDALTimesnap::getDatasetFilename(datasetJson, rect.t1);	
 	auto raster 			= loadDataset(file_path, channel, rect.epsg, true, rect);	
 	//flip here so the tiff result will not be flipped
