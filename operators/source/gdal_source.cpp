@@ -165,40 +165,60 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	if (y1 > y2)
 		std::swap(y1, y2);
 
-	const TemporalReference &tref = (const TemporalReference &)qrect;
+	// Read Pixel data with GDAL
+    // limit to (0, width), (0, height) for gdal
+    int gdal_pixel_x1 = std::max(0, pixel_x1);
+    int gdal_pixel_y1 = std::max(0, pixel_y1);
+    int gdal_pixel_offset_x = gdal_pixel_x1 - pixel_x1;
+    int gdal_pixel_width = pixel_width - gdal_pixel_offset_x;
+    int gdal_pixel_offset_y = gdal_pixel_y1 - pixel_y1;
+    int gdal_pixel_height = pixel_height - gdal_pixel_offset_y;
+    gdal_pixel_width = std::min(nXSize - gdal_pixel_x1, gdal_pixel_width);
+    gdal_pixel_height = std::min(nYSize - gdal_pixel_y1, gdal_pixel_height);
 
+	// compute the stref for the gdal raster
+	double gdal_x1 = origin_x + scale_x * gdal_pixel_x1;
+	double gdal_y1 = origin_y + scale_y * gdal_pixel_y1;
+	double gdal_x2 = gdal_x1 + scale_x * gdal_pixel_width;
+	double gdal_y2 = gdal_y1 + scale_y * gdal_pixel_height;
+
+
+	const TemporalReference &tref = (const TemporalReference &)qrect;
 	SpatioTemporalReference stref(
-		SpatialReference(qrect.epsg, x1, y1, x2, y2, flipx, flipy),
-		TemporalReference(tref.timetype, tref.t1, tref.t2)		
+			SpatialReference(qrect.epsg, gdal_x1, gdal_y1, gdal_x2, gdal_y2, flipx, flipy),
+			TemporalReference(tref.timetype, tref.t1, tref.t2)
 	);
 	Unit unit = Unit::unknown();
 	unit.setMinMax(minvalue, maxvalue);
 	DataDescription dd(type, unit, hasnodata, nodata);
 
-
-	auto raster = GenericRaster::create(dd, stref, qrect.xres, qrect.yres);
+	// read the actual data
+	auto raster = GenericRaster::create(dd, stref, gdal_pixel_width, gdal_pixel_height);
 	void *buffer = raster->getDataForWriting();
 
-	// Read Pixel data
-    // limit to (0, width), (0, height) for gdal
-    int gdal_x1 = std::max(0, pixel_x1);
-    int gdal_y1 = std::max(0, pixel_y1);
-    int gdal_offset_x = gdal_x1 - pixel_x1;
-    int gdal_width = pixel_width - gdal_offset_x;
-    int gdal_offset_y = gdal_y1 - pixel_y1;
-    int gdal_height = pixel_height - gdal_offset_y;
-    gdal_width = std::min(nXSize - gdal_x1, gdal_width);
-    gdal_height = std::min(nYSize - gdal_y1, gdal_height);
-
-
     auto res = poBand->RasterIO(GF_Read,
-                                gdal_x1, gdal_y1, gdal_width, gdal_height,  // rectangle in the source raster
+                                gdal_pixel_x1, gdal_pixel_y1, gdal_pixel_width, gdal_pixel_height,  // rectangle in the source raster
                                 buffer, raster->width,  raster->height,  // position and size of the destination buffer
-                                type, gdal_offset_x, gdal_offset_y, NULL);
+                                type, 0, 0, NULL);
 
 	if (res != CE_None){
 		GDALClose(dataset);
 		throw OperatorException("GDAL Source: RasterIO failed");
+	}
+
+
+	// check if requested query rectangle exceed the data returned from GDAL
+	if (pixel_width > gdal_pixel_width || pixel_height > gdal_pixel_height) {
+		// loaded raster has to be filled up with nodata
+		SpatioTemporalReference stref(
+				SpatialReference(qrect.epsg, x1, y1, x2, y2, flipx, flipy),
+				TemporalReference(tref.timetype, tref.t1, tref.t2)
+		);
+
+		auto raster2 = GenericRaster::create(dd, stref, pixel_width, pixel_height);
+		raster2->blit(raster.get(), gdal_pixel_offset_x, gdal_pixel_offset_y);
+
+		return raster2;
 	}
 
 	//GDALRasterBand is not to be freed, is owned by GDALDataset that will be closed later
