@@ -176,7 +176,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
     gdal_pixel_width = std::min(nXSize - gdal_pixel_x1, gdal_pixel_width);
     gdal_pixel_height = std::min(nYSize - gdal_pixel_y1, gdal_pixel_height);
 
-	// compute the stref for the gdal raster
+	// compute the rectangle for the gdal raster
 	double gdal_x1 = origin_x + scale_x * gdal_pixel_x1;
 	double gdal_y1 = origin_y + scale_y * gdal_pixel_y1;
 	double gdal_x2 = gdal_x1 + scale_x * gdal_pixel_width;
@@ -193,7 +193,15 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	DataDescription dd(type, unit, hasnodata, nodata);
 
 	// read the actual data
-	auto raster = GenericRaster::create(dd, stref, gdal_pixel_width, gdal_pixel_height);
+	double scale_x_zoomed = (qrect.x2 - qrect.x1) / qrect.xres;
+	double scale_y_zoomed = (qrect.y2 - qrect.y1) / qrect.yres;
+
+	double factor_x = std::abs(scale_x / scale_x_zoomed);
+	double factor_y = std::abs(scale_y / scale_y_zoomed);
+
+	int gdal_raster_width = static_cast<int> (std::ceil(gdal_pixel_width * factor_x));
+	int gdal_raster_height = static_cast<int> (std::ceil(gdal_pixel_height * factor_y));
+	auto raster = GenericRaster::create(dd, stref, gdal_raster_width, gdal_raster_height);
 	void *buffer = raster->getDataForWriting();
 
     auto res = poBand->RasterIO(GF_Read,
@@ -215,7 +223,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 				TemporalReference(tref.timetype, tref.t1, tref.t2)
 		);
 
-		auto raster2 = GenericRaster::create(dd, stref, pixel_width, pixel_height);
+		auto raster2 = GenericRaster::create(dd, stref, qrect.xres, qrect.yres);
 		raster2->blit(raster.get(), gdal_pixel_offset_x, gdal_pixel_offset_y);
 
 		return raster2;
