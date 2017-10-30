@@ -135,7 +135,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	int nXSize = poBand->GetXSize();
 	int nYSize = poBand->GetYSize();
 
-	//calculate query rectangle in pixels of the source raster
+	//calculate query rectangle in pixels of the source raster TODO: reuse functionality from RasterDB/GDALCRS
 	int pixel_x1 = 0;
 	int pixel_y1 = 0;
 	int pixel_width = nXSize;
@@ -151,13 +151,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 		if (pixel_y1 > pixel_y2)
 			std::swap(pixel_y1, pixel_y2);
 
-		pixel_x1 = std::max(0, pixel_x1);
-		pixel_y1 = std::max(0, pixel_y1);
-
-		pixel_x2 = std::min(nXSize-1, pixel_x2);
-		pixel_y2 = std::min(nYSize-1, pixel_y2);
-
-        pixel_width = pixel_x2 - pixel_x1 + 1;// TODO: check
+        pixel_width = pixel_x2 - pixel_x1 + 1;
 		pixel_height = pixel_y2 - pixel_y1 + 1;
 	}
 
@@ -186,10 +180,21 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	void *buffer = raster->getDataForWriting();
 
 	// Read Pixel data
-	auto res = poBand->RasterIO( GF_Read,
-		pixel_x1, pixel_y1, pixel_width, pixel_height,  // rectangle in the source raster
-		buffer, raster->width, raster->height, 			// position and size of the destination buffer
-		type, 0, 0, NULL);
+    // limit to (0, width), (0, height) for gdal
+    int gdal_x1 = std::max(0, pixel_x1);
+    int gdal_y1 = std::max(0, pixel_y1);
+    int gdal_offset_x = gdal_x1 - pixel_x1;
+    int gdal_width = pixel_width - gdal_offset_x;
+    int gdal_offset_y = gdal_y1 - pixel_y1;
+    int gdal_height = pixel_height - gdal_offset_y;
+    gdal_width = std::min(nXSize - gdal_x1, gdal_width);
+    gdal_height = std::min(nYSize - gdal_y1, gdal_height);
+
+
+    auto res = poBand->RasterIO(GF_Read,
+                                gdal_x1, gdal_y1, gdal_width, gdal_height,  // rectangle in the source raster
+                                buffer, raster->width,  raster->height,  // position and size of the destination buffer
+                                type, gdal_offset_x, gdal_offset_y, NULL);
 
 	if (res != CE_None){
 		GDALClose(dataset);
