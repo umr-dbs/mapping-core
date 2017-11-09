@@ -224,7 +224,9 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 		);
 
 		auto raster2 = GenericRaster::create(dd, stref, qrect.xres, qrect.yres);
-		raster2->blit(raster.get(), gdal_pixel_offset_x, gdal_pixel_offset_y);
+		int blit_offset_x = gdal_pixel_offset_x * factor_x;
+		int blit_offset_y = gdal_pixel_offset_y * factor_y;
+		raster2->blit(raster.get(), blit_offset_x, blit_offset_y);
 
 		return raster2;
 	}
