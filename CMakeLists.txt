@@ -254,6 +254,7 @@ add_library(mapping_core_unittests_lib
         test/unittests/temporal/timeshift.cpp
         test/unittests/util/formula.cpp
         test/unittests/util/sha1.cpp
+        test/unittests/gdal_source.cpp
         )
 target_link_libraries_internal(mapping_core_unittests_lib mapping_core_operators_lib mapping_core_services_lib)
 target_link_libraries_internal(mapping_unittests mapping_core_unittests_lib)

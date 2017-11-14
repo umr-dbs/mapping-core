@@ -95,10 +95,10 @@ int GDALTimesnap::getUnitDifference(tm diff, TimeUnit snapUnit){
 	//if one of the smaller time units than snapUnit is negative -> unitdiff -= 1 because one part of the difference was not a whole unit
 	for(int i = snapUnitAsInt+1; i <= (int)TimeUnit::Second; i++){
 		TimeUnit tu = (TimeUnit)i;		
-		if(getTimeUnitValueFromTm(diff, tu) < minValueForTimeUnit(tu)){			
-			if(unitDiff > 0)
-				unitDiff -= 1;
-			break;
+		if(getTimeUnitValueFromTm(diff, tu) < 0){
+			if(unitDiff > 0) {
+                unitDiff -= 1;
+            }
 		}
 	}	
 	return unitDiff;
@@ -123,7 +123,7 @@ TimeUnit GDALTimesnap::createTimeUnit(std::string value) {
 	return string_to_TimeUnit.at(value);
 }
 
-void GDALTimesnap::setTimeUnitValueInTm(tm &time, TimeUnit unit, int value){
+void GDALTimesnap::setTimeUnitValueInTm(std::tm &time, TimeUnit unit, int value) {
 	switch(unit){
 		case TimeUnit::Year:
 			time.tm_year = value;
@@ -143,10 +143,10 @@ void GDALTimesnap::setTimeUnitValueInTm(tm &time, TimeUnit unit, int value){
 		case TimeUnit::Second:
 			time.tm_sec = value;
 			return;
-	}	
+	}
 }
 
-int GDALTimesnap::getTimeUnitValueFromTm(tm &time, TimeUnit unit){	
+int GDALTimesnap::getTimeUnitValueFromTm(const tm &time, TimeUnit unit){
 	switch(unit){
 		case TimeUnit::Year:
 			return time.tm_year;
@@ -188,10 +188,6 @@ int GDALTimesnap::maxValueForTimeUnit(TimeUnit part) {
 	}
 }
 
-void GDALTimesnap::printTime(tm &time){
-	std::cout << "Y: " << time.tm_year << ", M: " << time.tm_mon << ", D: " << time.tm_mday << ", H: " << time.tm_hour << ", M: " << time.tm_min << ", S: " << time.tm_sec << std::endl;
-}
-
 // Takes the actual month and year numbers, not how they would be in tm struct.
 int GDALTimesnap::daysOfMonth(int year, int month){
 	if(month == 4 || month == 6 || month == 9 || month == 11)
@@ -208,21 +204,21 @@ int GDALTimesnap::daysOfMonth(int year, int month){
 
 // calculates the filename for queried time by snapping the wanted time to the 
 // nearest smaller timestamp that exists for the dataset
-std::string GDALTimesnap::getDatasetFilename(Json::Value datasetJson, double wantedTimeUnix)
+GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value datasetJson, double wantedTimeUnix)
 {
 	std::string time_format = datasetJson.get("time_format", "%Y-%m-%d").asString();
 	std::string time_start 	= datasetJson.get("time_start", "0").asString();
 	std::string time_end 	= datasetJson.get("time_end", "0").asString();
     
-    auto timeParser = TimeParser::createCustom(time_format); 
+    auto timeParser = TimeParser::create(TimeParser::Format::ISO);
 
     //check if requested time is in range of dataset timestamps    
     //a dataset only has start not end time. if wantedtime is past the last file of dataset, it can simply not be loaded.
 	double startUnix 	= timeParser->parse(time_start);	
-	if(wantedTimeUnix < startUnix)
-		throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
+//	if(wantedTimeUnix < startUnix)
+//		throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
 	
-	Json::Value timeInterval = datasetJson.get("time_interval", NULL);
+	Json::Value timeInterval = datasetJson.get("time_interval", Json::Value(Json::objectValue));
 	TimeUnit intervalUnit 	 = GDALTimesnap::createTimeUnit(timeInterval.get("unit", "Month").asString());
 	int intervalValue 		 = timeInterval.get("value", 1).asInt();
 	
@@ -233,27 +229,19 @@ std::string GDALTimesnap::getDatasetFilename(Json::Value datasetJson, double wan
 
 	time_t startTimeTimet = startUnix;				
 	tm startTimeTm = {};
-	gmtime_r(&startTimeTimet, &startTimeTm);	
-
-	// this is a workaround for time formats not containing days. because than the date is reliably the last day before the wanted date
-	if(time_format.find("%d") == std::string::npos){
-		int currDayValue  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Day);		
-		int yearValue  	  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Year);
-		int monthValue 	  = GDALTimesnap::getTimeUnitValueFromTm(startTimeTm, TimeUnit::Month);
-			
-		if(currDayValue == GDALTimesnap::daysOfMonth(yearValue + 1900, monthValue + 1))
-		{			
-			GDALTimesnap::setTimeUnitValueInTm(startTimeTm, TimeUnit::Day, currDayValue + 1);
-			time_t overflow = mktime(&startTimeTm) - timezone;	// because mktime depends on the timezone the timezone field of time.h has to be subtracted
-			gmtime_r(&overflow, &startTimeTm);			
-		}
-	}	
+	gmtime_r(&startTimeTimet, &startTimeTm);
 
 	//snap the time to the given interval
-	tm snappedTime = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
+	tm snappedTimeStart = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
+
+	tm snappedTimeEnd = snappedTimeStart;
+    setTimeUnitValueInTm(snappedTimeEnd, intervalUnit, getTimeUnitValueFromTm(snappedTimeEnd, intervalUnit) + intervalValue);
+
+	time_t snappedTimeStartUnix = timegm(&snappedTimeStart);
+	time_t snappedTimeEndUnix = timegm(&snappedTimeEnd);
 	
 	// get string of snapped time and put the file path, name together
-	std::string snappedTimeString  = GDALTimesnap::tmStructToString(&snappedTime, time_format);
+	std::string snappedTimeString  = GDALTimesnap::tmStructToString(&snappedTimeStart, time_format);
 
 	std::string path 	 = datasetJson.get("path", "").asString();
 	std::string fileName = datasetJson.get("file_name", "").asString();
@@ -262,5 +250,6 @@ std::string GDALTimesnap::getDatasetFilename(Json::Value datasetJson, double wan
 	size_t placeholderPos   = fileName.find(placeholder);
 
 	fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
-	return path + "/" + fileName;
+
+	return GDALDataLoadingInfo(path + "/" + fileName, TemporalReference(TIMETYPE_UNIX, snappedTimeStartUnix, snappedTimeEndUnix));
 }

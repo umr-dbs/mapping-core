@@ -44,7 +44,8 @@ class RasterGDALSourceOperator : public GenericOperator {
 													int rasterid, 													
 													epsg_t epsg, 
 													bool clip, 
-													const QueryRectangle &qrect);
+													const QueryRectangle &qrect,
+													const TemporalReference &tref);
 		
 		std::unique_ptr<GenericRaster> loadRaster(  GDALDataset *dataset, 
 													int rasteridx, double origin_x, 
@@ -53,7 +54,8 @@ class RasterGDALSourceOperator : public GenericOperator {
 													epsg_t default_epsg, bool clip, 
 													double clip_x1, double clip_y1, 
 													double clip_x2, double clip_y2,
-													const QueryRectangle &qrect);					
+													const QueryRectangle &qrect,
+													const TemporalReference &tref);
 };
 
 
@@ -95,14 +97,14 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 // load the json definition of the dataset, then get the file to be loaded from GDALTimesnap. Finally load the raster.
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
 	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
-	std::string file_path 	= GDALTimesnap::getDatasetFilename(datasetJson, rect.t1);	
-	auto raster 			= loadDataset(file_path, channel, rect.epsg, true, rect);	
+	GDALTimesnap::GDALDataLoadingInfo loadingInfo = GDALTimesnap::getDataLoadingInfo(datasetJson, rect.t1);
+	auto raster = loadDataset(loadingInfo.fileName, channel, rect.epsg, true, rect, loadingInfo.tref);
 	//flip here so the tiff result will not be flipped
 	return raster->flip(false, true);
 }
 
 // loads the raster and read the wanted raster data section into a GenericRaster
-std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset *dataset, int rasteridx, double origin_x, double origin_y, double scale_x, double scale_y, epsg_t default_epsg, bool clip, double clip_x1, double clip_y1, double clip_x2, double clip_y2, const QueryRectangle& qrect) {
+std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset *dataset, int rasteridx, double origin_x, double origin_y, double scale_x, double scale_y, epsg_t default_epsg, bool clip, double clip_x1, double clip_y1, double clip_x2, double clip_y2, const QueryRectangle& qrect, const TemporalReference &tref) {
 	GDALRasterBand  *poBand;
 	int             nBlockXSize, nBlockYSize;
 	int             bGotMin, bGotMax;
@@ -182,8 +184,6 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	double gdal_x2 = gdal_x1 + scale_x * gdal_pixel_width;
 	double gdal_y2 = gdal_y1 + scale_y * gdal_pixel_height;
 
-
-	const TemporalReference &tref = (const TemporalReference &)qrect;
 	SpatioTemporalReference stref(
 			SpatialReference(qrect.epsg, gdal_x1, gdal_y1, gdal_x2, gdal_y2, flipx, flipy),
 			TemporalReference(tref.timetype, tref.t1, tref.t2)
@@ -236,7 +236,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 }
 
 //load the GDALDataset from disk
-std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string filename, int rasterid, epsg_t epsg, bool clip, const QueryRectangle &qrect) {
+std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string filename, int rasterid, epsg_t epsg, bool clip, const QueryRectangle &qrect, const TemporalReference &tref) {
 	
 	GDAL::init();
 
@@ -258,7 +258,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string
 		throw OperatorException("GDAL Source: rasterid not found");
 	}
 
-	auto raster = loadRaster(dataset, rasterid, adfGeoTransform[0], adfGeoTransform[3], adfGeoTransform[1], adfGeoTransform[5], epsg, clip, qrect.x1, qrect.y1, qrect.x2, qrect.y2, qrect);
+	auto raster = loadRaster(dataset, rasterid, adfGeoTransform[0], adfGeoTransform[3], adfGeoTransform[1], adfGeoTransform[5], epsg, clip, qrect.x1, qrect.y1, qrect.x2, qrect.y2, qrect, tref);
 
 	GDALClose(dataset);
 
