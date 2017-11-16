@@ -42,15 +42,16 @@ class GDALTimesnap {
 	public:
 		class GDALDataLoadingInfo {
 		public:
-			GDALDataLoadingInfo(const std::string &fileName, const TemporalReference &tref): fileName(fileName), tref(tref) {}
+			GDALDataLoadingInfo(const std::string &fileName, int channel, const TemporalReference &tref): fileName(fileName), channel(channel), tref(tref) {}
 
 			std::string fileName;
+            int channel;
 			TemporalReference tref;
 		};
 
         static tm snapToInterval(TimeUnit unit, int unitValue, tm startTime, tm wantedTime);
 
-		static GDALDataLoadingInfo getDataLoadingInfo(Json::Value datasetJson, double wantedTimeUnix);
+		static GDALDataLoadingInfo getDataLoadingInfo(Json::Value datasetJson, int channel, double wantedTimeUnix);
 		
 		static TimeUnit createTimeUnit(std::string value);
 		static const std::map<std::string, TimeUnit> string_to_TimeUnit;

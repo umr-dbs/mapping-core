@@ -97,7 +97,7 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 // load the json definition of the dataset, then get the file to be loaded from GDALTimesnap. Finally load the raster.
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
 	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
-	GDALTimesnap::GDALDataLoadingInfo loadingInfo = GDALTimesnap::getDataLoadingInfo(datasetJson, rect.t1);
+	GDALTimesnap::GDALDataLoadingInfo loadingInfo = GDALTimesnap::getDataLoadingInfo(datasetJson, channel, rect.t1);
 	auto raster = loadDataset(loadingInfo.fileName, channel, rect.epsg, true, rect, loadingInfo.tref);
 	//flip here so the tiff result will not be flipped
 	return raster->flip(false, true);

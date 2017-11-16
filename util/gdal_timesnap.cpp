@@ -204,11 +204,14 @@ int GDALTimesnap::daysOfMonth(int year, int month){
 
 // calculates the filename for queried time by snapping the wanted time to the 
 // nearest smaller timestamp that exists for the dataset
-GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value datasetJson, double wantedTimeUnix)
+GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value datasetJson, int channel, double wantedTimeUnix)
 {
-	std::string time_format = datasetJson.get("time_format", "%Y-%m-%d").asString();
-	std::string time_start 	= datasetJson.get("time_start", "0").asString();
-	std::string time_end 	= datasetJson.get("time_end", "0").asString();
+    Json::Value channelJson = datasetJson["channels"][channel];
+
+
+	std::string time_format = channelJson.get("time_format", datasetJson.get("time_format", "%Y-%m-%d")).asString();
+	std::string time_start 	= channelJson.get("time_start", datasetJson.get("time_start", "0")).asString();
+	std::string time_end 	= channelJson.get("time_end", datasetJson.get("time_end", "0")).asString();
     
     auto timeParser = TimeParser::create(TimeParser::Format::ISO);
 
@@ -243,13 +246,15 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
 	// get string of snapped time and put the file path, name together
 	std::string snappedTimeString  = GDALTimesnap::tmStructToString(&snappedTimeStart, time_format);
 
-	std::string path 	 = datasetJson.get("path", "").asString();
-	std::string fileName = datasetJson.get("file_name", "").asString();
+	std::string path 	 = channelJson.get("path", datasetJson.get("path", "")).asString();
+	std::string fileName = channelJson.get("file_name", datasetJson.get("file_name", "")).asString();
+
+    channel = channelJson.get("channel", channel).asInt();
 
 	std::string placeholder = "%%%TIME_STRING%%%";
 	size_t placeholderPos   = fileName.find(placeholder);
 
 	fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
 
-	return GDALDataLoadingInfo(path + "/" + fileName, TemporalReference(TIMETYPE_UNIX, snappedTimeStartUnix, snappedTimeEndUnix));
+	return GDALDataLoadingInfo(path + "/" + fileName, channel, TemporalReference(TIMETYPE_UNIX, snappedTimeStartUnix, snappedTimeEndUnix));
 }
