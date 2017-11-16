@@ -9,6 +9,7 @@
 #include <fstream>
 #include "util/exceptions.h"
 #include "util/timeparser.h"
+#include "datatypes/spatiotemporal.h"
 
 /**
  * enum representing the unit of a date that is snapped to
@@ -51,7 +52,7 @@ class GDALTimesnap {
 
         static tm snapToInterval(TimeUnit unit, int unitValue, tm startTime, tm wantedTime);
 
-		static GDALDataLoadingInfo getDataLoadingInfo(Json::Value datasetJson, int channel, double wantedTimeUnix);
+		static GDALDataLoadingInfo getDataLoadingInfo(Json::Value datasetJson, int channel, const TemporalReference &tref);
 		
 		static TimeUnit createTimeUnit(std::string value);
 		static const std::map<std::string, TimeUnit> string_to_TimeUnit;

@@ -204,57 +204,76 @@ int GDALTimesnap::daysOfMonth(int year, int month){
 
 // calculates the filename for queried time by snapping the wanted time to the 
 // nearest smaller timestamp that exists for the dataset
-GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value datasetJson, int channel, double wantedTimeUnix)
+GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value datasetJson, int channel, const TemporalReference &tref)
 {
+    // get parameters
     Json::Value channelJson = datasetJson["channels"][channel];
 
+	std::string time_format = channelJson.get("time_format", datasetJson.get("time_format", "")).asString();
+	std::string time_start 	= channelJson.get("time_start", datasetJson.get("time_start", "")).asString();
+	std::string time_end 	= channelJson.get("time_end", datasetJson.get("time_end", "")).asString();
 
-	std::string time_format = channelJson.get("time_format", datasetJson.get("time_format", "%Y-%m-%d")).asString();
-	std::string time_start 	= channelJson.get("time_start", datasetJson.get("time_start", "0")).asString();
-	std::string time_end 	= channelJson.get("time_end", datasetJson.get("time_end", "0")).asString();
-    
-    auto timeParser = TimeParser::create(TimeParser::Format::ISO);
-
-    //check if requested time is in range of dataset timestamps    
-    //a dataset only has start not end time. if wantedtime is past the last file of dataset, it can simply not be loaded.
-	double startUnix 	= timeParser->parse(time_start);	
-//	if(wantedTimeUnix < startUnix)
-//		throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
-	
-	Json::Value timeInterval = datasetJson.get("time_interval", Json::Value(Json::objectValue));
-	TimeUnit intervalUnit 	 = GDALTimesnap::createTimeUnit(timeInterval.get("unit", "Month").asString());
-	int intervalValue 		 = timeInterval.get("value", 1).asInt();
-	
-	//cast the unix time stamps into time_t structs (having a field for year, month, etc..)
-	time_t wantedTimeTimet = wantedTimeUnix;	
-	tm wantedTimeTm = {};
-	gmtime_r(&wantedTimeTimet, &wantedTimeTm);
-
-	time_t startTimeTimet = startUnix;				
-	tm startTimeTm = {};
-	gmtime_r(&startTimeTimet, &startTimeTm);
-
-	//snap the time to the given interval
-	tm snappedTimeStart = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
-
-	tm snappedTimeEnd = snappedTimeStart;
-    setTimeUnitValueInTm(snappedTimeEnd, intervalUnit, getTimeUnitValueFromTm(snappedTimeEnd, intervalUnit) + intervalValue);
-
-	time_t snappedTimeStartUnix = timegm(&snappedTimeStart);
-	time_t snappedTimeEndUnix = timegm(&snappedTimeEnd);
-	
-	// get string of snapped time and put the file path, name together
-	std::string snappedTimeString  = GDALTimesnap::tmStructToString(&snappedTimeStart, time_format);
-
-	std::string path 	 = channelJson.get("path", datasetJson.get("path", "")).asString();
-	std::string fileName = channelJson.get("file_name", datasetJson.get("file_name", "")).asString();
+    std::string path 	 = channelJson.get("path", datasetJson.get("path", "")).asString();
+    std::string fileName = channelJson.get("file_name", datasetJson.get("file_name", "")).asString();
 
     channel = channelJson.get("channel", channel).asInt();
 
-	std::string placeholder = "%%%TIME_STRING%%%";
-	size_t placeholderPos   = fileName.find(placeholder);
+    // resolve time
+    auto timeParser = TimeParser::create(TimeParser::Format::ISO);
 
-	fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
+    double time_start_mapping;
+    double time_end_mapping;
 
-	return GDALDataLoadingInfo(path + "/" + fileName, channel, TemporalReference(TIMETYPE_UNIX, snappedTimeStartUnix, snappedTimeEndUnix));
+    if(time_start.empty()) {
+        time_start_mapping = tref.beginning_of_time();
+    } else {
+        time_start_mapping = timeParser->parse(time_start);
+    }
+
+    if(time_end.empty()) {
+        time_end_mapping = tref.end_of_time();
+    } else {
+        time_end_mapping = timeParser->parse(time_end);
+    }
+
+    double wantedTimeUnix = tref.t1;
+
+    //check if requested time is in range of dataset timestamps
+    //a dataset only has start not end time. if wantedtime is past the last file of dataset, it can simply not be loaded.
+    if(wantedTimeUnix < time_start_mapping || wantedTimeUnix > time_end_mapping)
+        throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
+
+    if(datasetJson.isMember("time_interval") || channelJson.isMember("time_interval")) {
+        Json::Value timeInterval = channelJson.get("time_interval", datasetJson.get("time_interval", Json::Value(Json::objectValue)));
+        TimeUnit intervalUnit 	 = GDALTimesnap::createTimeUnit(timeInterval.get("unit", "Month").asString());
+        int intervalValue 		 = timeInterval.get("value", 1).asInt();
+
+        //cast the unix time stamps into time_t structs (having a field for year, month, etc..)
+        time_t wantedTimeTimet = wantedTimeUnix;
+        tm wantedTimeTm = {};
+        gmtime_r(&wantedTimeTimet, &wantedTimeTm);
+
+        time_t startTimeTimet = time_start_mapping;
+        tm startTimeTm = {};
+        gmtime_r(&startTimeTimet, &startTimeTm);
+
+        //snap the time to the given interval
+        tm snappedTimeStart = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, startTimeTm, wantedTimeTm);
+
+        tm snappedTimeEnd = snappedTimeStart;
+        setTimeUnitValueInTm(snappedTimeEnd, intervalUnit, getTimeUnitValueFromTm(snappedTimeEnd, intervalUnit) + intervalValue);
+
+        time_start_mapping = timegm(&snappedTimeStart);
+        time_end_mapping = timegm(&snappedTimeEnd);
+
+        // get string of snapped time and put the file path, name together
+        std::string snappedTimeString  = GDALTimesnap::tmStructToString(&snappedTimeStart, time_format);
+
+        std::string placeholder = "%%%TIME_STRING%%%";
+        size_t placeholderPos = fileName.find(placeholder);
+
+        fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
+    }
+
+	return GDALDataLoadingInfo(path + "/" + fileName, channel, TemporalReference(TIMETYPE_UNIX, time_start_mapping, time_end_mapping));
 }
