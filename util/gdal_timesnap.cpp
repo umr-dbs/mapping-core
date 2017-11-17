@@ -204,6 +204,7 @@ int GDALTimesnap::daysOfMonth(int year, int month){
 
 // calculates the filename for queried time by snapping the wanted time to the 
 // nearest smaller timestamp that exists for the dataset
+// TODO: move general parameter parsing to a more appropriate function
 GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value datasetJson, int channel, const TemporalReference &tref)
 {
     // get parameters
@@ -275,5 +276,17 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
         fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
     }
 
-	return GDALDataLoadingInfo(path + "/" + fileName, channel, TemporalReference(TIMETYPE_UNIX, time_start_mapping, time_end_mapping));
+
+    // other GDAL parameters
+    Unit unit = Unit::unknown();
+    if (channelJson.isMember("unit")) {
+        unit = Unit(channelJson["unit"]);
+    }
+
+    double nodata = NAN;
+    if (channelJson.isMember("nodata")) {
+        nodata = channelJson["nodata"].asDouble();
+    }
+
+	return GDALDataLoadingInfo(path + "/" + fileName, channel, TemporalReference(TIMETYPE_UNIX, time_start_mapping, time_end_mapping), nodata, unit);
 }

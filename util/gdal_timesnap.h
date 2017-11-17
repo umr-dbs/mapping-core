@@ -7,6 +7,7 @@
 #include <dirent.h>
 #include <sstream>
 #include <fstream>
+#include <gdal.h>
 #include "util/exceptions.h"
 #include "util/timeparser.h"
 #include "datatypes/spatiotemporal.h"
@@ -43,11 +44,16 @@ class GDALTimesnap {
 	public:
 		class GDALDataLoadingInfo {
 		public:
-			GDALDataLoadingInfo(const std::string &fileName, int channel, const TemporalReference &tref): fileName(fileName), channel(channel), tref(tref) {}
+			GDALDataLoadingInfo(const std::string &fileName, int channel, const TemporalReference &tref,
+                                double nodata, const Unit &unit): fileName(fileName), channel(channel),
+                                                                                 tref(tref), nodata(nodata), unit(unit) {}
 
 			std::string fileName;
             int channel;
 			TemporalReference tref;
+
+            double nodata;
+            Unit unit;
 		};
 
         static tm snapToInterval(TimeUnit unit, int unitValue, tm startTime, tm wantedTime);

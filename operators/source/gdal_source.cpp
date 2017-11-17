@@ -40,7 +40,7 @@ class RasterGDALSourceOperator : public GenericOperator {
 		std::string sourcename;
 		int channel;
 
-		std::unique_ptr<GenericRaster> loadDataset( GDALTimesnap::GDALDataLoadingInfo loadingInfo,
+		std::unique_ptr<GenericRaster> loadDataset( const GDALTimesnap::GDALDataLoadingInfo &loadingInfo,
 													epsg_t epsg, 
 													bool clip, 
 													const QueryRectangle &qrect);
@@ -53,7 +53,8 @@ class RasterGDALSourceOperator : public GenericOperator {
 													double clip_x1, double clip_y1, 
 													double clip_x2, double clip_y2,
 													const QueryRectangle &qrect,
-													const TemporalReference &tref);
+													const TemporalReference &tref,
+                                                    const GDALTimesnap::GDALDataLoadingInfo &loadingInfo);
 };
 
 
@@ -102,7 +103,12 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRe
 }
 
 // loads the raster and read the wanted raster data section into a GenericRaster
-std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset *dataset, int rasteridx, double origin_x, double origin_y, double scale_x, double scale_y, epsg_t default_epsg, bool clip, double clip_x1, double clip_y1, double clip_x2, double clip_y2, const QueryRectangle& qrect, const TemporalReference &tref) {
+std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset *dataset, int rasteridx, double origin_x,
+																	double origin_y, double scale_x, double scale_y,
+																	epsg_t default_epsg, bool clip, double clip_x1,
+																	double clip_y1, double clip_x2, double clip_y2,
+																	const QueryRectangle& qrect, const TemporalReference &tref,
+																	const GDALTimesnap::GDALDataLoadingInfo &loadingInfo) {
 	GDALRasterBand  *poBand;
 	int             nBlockXSize, nBlockYSize;
 	int             bGotMin, bGotMax;
@@ -115,23 +121,22 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 
 	GDALDataType type = poBand->GetRasterDataType();
 
-	adfMinMax[0] = poBand->GetMinimum( &bGotMin );
-	adfMinMax[1] = poBand->GetMaximum( &bGotMax );
-	if( ! (bGotMin && bGotMax) )
-		GDALComputeRasterMinMax((GDALRasterBandH)poBand, TRUE, adfMinMax);
+    bool hasnodata;
+    double nodata;
 
-	int hasnodata = true;
-	int success;
-	double nodata = poBand->GetNoDataValue(&success);
+    if (std::isnan(loadingInfo.nodata)) {
+        int success;
+        double nodata = poBand->GetNoDataValue(&success);
 
-	if (!success) {
-		hasnodata = false;
-		nodata = 0;
-	}
+        if (!success) {
+            hasnodata = false;
+            nodata = 0;
+        }
+    } else {
+        hasnodata = true;
+        nodata = loadingInfo.nodata;
+    }
 	
-	double minvalue = adfMinMax[0];
-	double maxvalue = adfMinMax[1];
-
 	int nXSize = poBand->GetXSize();
 	int nYSize = poBand->GetYSize();
 
@@ -141,10 +146,10 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	int pixel_width = nXSize;
 	int pixel_height = nYSize;
 	if (clip) {
-		pixel_x1 = floor((clip_x1 - origin_x) / scale_x);
-		pixel_y1 = floor((clip_y1 - origin_y) / scale_y);
-		int pixel_x2 = floor((clip_x2 - origin_x) / scale_x);
-		int pixel_y2 = floor((clip_y2 - origin_y) / scale_y);
+		pixel_x1 = static_cast<int>(floor((clip_x1 - origin_x) / scale_x));
+		pixel_y1 = static_cast<int>(floor((clip_y1 - origin_y) / scale_y));
+		int pixel_x2 = static_cast<int>(floor((clip_x2 - origin_x) / scale_x));
+		int pixel_y2 = static_cast<int>(floor((clip_y2 - origin_y) / scale_y));
 
 		if (pixel_x1 > pixel_x2)
 			std::swap(pixel_x1, pixel_x2);
@@ -186,9 +191,8 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 			SpatialReference(qrect.epsg, gdal_x1, gdal_y1, gdal_x2, gdal_y2, flipx, flipy),
 			TemporalReference(tref.timetype, tref.t1, tref.t2)
 	);
-	Unit unit = Unit::unknown();
-	unit.setMinMax(minvalue, maxvalue);
-	DataDescription dd(type, unit, hasnodata, nodata);
+
+	DataDescription dd(type, loadingInfo.unit, hasnodata, nodata);
 
 	// read the actual data
 	double scale_x_zoomed = (qrect.x2 - qrect.x1) / qrect.xres;
@@ -199,13 +203,14 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 
 	int gdal_raster_width = static_cast<int> (std::ceil(gdal_pixel_width * factor_x));
 	int gdal_raster_height = static_cast<int> (std::ceil(gdal_pixel_height * factor_y));
-	auto raster = GenericRaster::create(dd, stref, gdal_raster_width, gdal_raster_height);
+	auto raster = GenericRaster::create(dd, stref, static_cast<uint32_t>(gdal_raster_width),
+                                        static_cast<uint32_t>(gdal_raster_height));
 	void *buffer = raster->getDataForWriting();
 
     auto res = poBand->RasterIO(GF_Read,
                                 gdal_pixel_x1, gdal_pixel_y1, gdal_pixel_width, gdal_pixel_height,  // rectangle in the source raster
                                 buffer, raster->width,  raster->height,  // position and size of the destination buffer
-                                type, 0, 0, NULL);
+                                type, 0, 0, nullptr);
 
 	if (res != CE_None){
 		GDALClose(dataset);
@@ -222,8 +227,8 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 		);
 
 		auto raster2 = GenericRaster::create(dd, stref, qrect.xres, qrect.yres);
-		int blit_offset_x = gdal_pixel_offset_x * factor_x;
-		int blit_offset_y = gdal_pixel_offset_y * factor_y;
+		int blit_offset_x = static_cast<int>(gdal_pixel_offset_x * factor_x);
+		int blit_offset_y = static_cast<int>(gdal_pixel_offset_y * factor_y);
 		raster2->blit(raster.get(), blit_offset_x, blit_offset_y);
 
 		return raster2;
@@ -234,7 +239,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 }
 
 //load the GDALDataset from disk
-std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(GDALTimesnap::GDALDataLoadingInfo loadingInfo,
+std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(const GDALTimesnap::GDALDataLoadingInfo &loadingInfo,
                                                                      epsg_t epsg, bool clip, const QueryRectangle &qrect) {
 	
 	GDAL::init();
@@ -258,7 +263,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(GDALTimesna
 	}
 
 	auto raster = loadRaster(dataset, loadingInfo.channel, adfGeoTransform[0], adfGeoTransform[3], adfGeoTransform[1],
-                             adfGeoTransform[5], epsg, clip, qrect.x1, qrect.y1, qrect.x2, qrect.y2, qrect, loadingInfo.tref);
+                             adfGeoTransform[5], epsg, clip, qrect.x1, qrect.y1, qrect.x2, qrect.y2, qrect, loadingInfo.tref, loadingInfo);
 
 	GDALClose(dataset);
 
