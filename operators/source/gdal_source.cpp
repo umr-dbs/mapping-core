@@ -40,12 +40,10 @@ class RasterGDALSourceOperator : public GenericOperator {
 		std::string sourcename;
 		int channel;
 
-		std::unique_ptr<GenericRaster> loadDataset( std::string filename, 
-													int rasterid, 													
+		std::unique_ptr<GenericRaster> loadDataset( GDALTimesnap::GDALDataLoadingInfo loadingInfo,
 													epsg_t epsg, 
 													bool clip, 
-													const QueryRectangle &qrect,
-													const TemporalReference &tref);
+													const QueryRectangle &qrect);
 		
 		std::unique_ptr<GenericRaster> loadRaster(  GDALDataset *dataset, 
 													int rasteridx, double origin_x, 
@@ -98,7 +96,7 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
 	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
 	GDALTimesnap::GDALDataLoadingInfo loadingInfo = GDALTimesnap::getDataLoadingInfo(datasetJson, channel, rect);
-	auto raster = loadDataset(loadingInfo.fileName, channel, rect.epsg, true, rect, loadingInfo.tref);
+	auto raster = loadDataset(loadingInfo, rect.epsg, true, rect);
 	//flip here so the tiff result will not be flipped
 	return raster->flip(false, true);
 }
@@ -236,14 +234,15 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 }
 
 //load the GDALDataset from disk
-std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string filename, int rasterid, epsg_t epsg, bool clip, const QueryRectangle &qrect, const TemporalReference &tref) {
+std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(GDALTimesnap::GDALDataLoadingInfo loadingInfo,
+                                                                     epsg_t epsg, bool clip, const QueryRectangle &qrect) {
 	
 	GDAL::init();
 
-	GDALDataset *dataset = (GDALDataset *) GDALOpen(filename.c_str(), GA_ReadOnly);
+	GDALDataset *dataset = (GDALDataset *) GDALOpen(loadingInfo.fileName.c_str(), GA_ReadOnly);
 
 	if (dataset == NULL)
-		throw OperatorException(concat("GDAL Source: Could not open dataset ", filename));
+		throw OperatorException(concat("GDAL Source: Could not open dataset ", loadingInfo.fileName));
 
 	//read GeoTransform to get origin and scale
 	double adfGeoTransform[6];
@@ -253,12 +252,13 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(std::string
 	}
 
 	int rastercount = dataset->GetRasterCount();
-	if (rasterid < 1 || rasterid > rastercount) {
+	if (loadingInfo.channel < 1 || loadingInfo.channel > rastercount) {
 		GDALClose(dataset);
 		throw OperatorException("GDAL Source: rasterid not found");
 	}
 
-	auto raster = loadRaster(dataset, rasterid, adfGeoTransform[0], adfGeoTransform[3], adfGeoTransform[1], adfGeoTransform[5], epsg, clip, qrect.x1, qrect.y1, qrect.x2, qrect.y2, qrect, tref);
+	auto raster = loadRaster(dataset, loadingInfo.channel, adfGeoTransform[0], adfGeoTransform[3], adfGeoTransform[1],
+                             adfGeoTransform[5], epsg, clip, qrect.x1, qrect.y1, qrect.x2, qrect.y2, qrect, loadingInfo.tref);
 
 	GDALClose(dataset);
 
