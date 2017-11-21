@@ -173,6 +173,7 @@ add_library(mapping_core_operators_lib
         operators/processing/combined/projection.cpp
         operators/processing/combined/raster_value_extraction.cpp
         operators/processing/combined/rasterization.cpp
+        operators/processing/combined/rasterize_polygon.cpp
         operators/processing/combined/timeshift.cpp
         operators/processing/meteosat/temperature.cpp
         operators/processing/meteosat/reflectance.cpp
@@ -185,7 +186,7 @@ add_library(mapping_core_operators_lib
         operators/plots/histogram.cpp
         operators/plots/feature_attributes_plot.cpp
         operators/source/featurecollectiondb_source.cpp
-        )
+        util/rasterize_polygons.cpp util/rasterize_polygons.h)
 target_link_libraries_internal(mapping_core_operators_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_operators_lib)
 target_link_libraries_internal(mapping_manager mapping_core_operators_lib)
