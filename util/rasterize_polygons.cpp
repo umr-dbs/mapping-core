@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 #include "rasterize_polygons.h"
 
 RasterizePolygons::RasterizePolygons(const QueryRectangle &rect, const PolygonCollection &polygon_collection) :
@@ -163,7 +164,7 @@ auto RasterizePolygons::draw_polygon(
 
     for (const auto &ring : polygon) {
         for (const Line &line : getLinePoints(ring)) {
-            if (isinf(line.inverse_slope())) {
+            if (std::isinf(line.inverse_slope())) {
                 // horizontal line (special case)
 
                 auto y = line.lower_y;
