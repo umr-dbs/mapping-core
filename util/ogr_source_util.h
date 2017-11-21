@@ -12,13 +12,13 @@
 #include <vector>
 #include <json/json.h>
 #include <unordered_map>
+#include <functional>
 
 
-
- /*
- * Additionally defines a few enums (including string representations) for parameter parsing. 
- * These are copied from CSV Source because that functionality is supposed to be replaced by this operator.
- */
+/*
+* Additionally defines a few enums (including string representations) for parameter parsing.
+* These are copied from CSV Source because that functionality is supposed to be replaced by this operator.
+*/
 
 enum class TimeSpecification {
 	NONE,

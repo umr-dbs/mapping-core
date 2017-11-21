@@ -7,6 +7,7 @@
 #include <json/json.h>
 #include <util/enumconverter.h>
 #include <algorithm>
+#include <functional>
 
 enum class EngineType {
     EXACT, CONTAINS, STARTSWITH,

@@ -12,6 +12,7 @@
 #include <istream>
 #include <vector>
 #include <json/json.h>
+#include <functional>
 
 
 /**
