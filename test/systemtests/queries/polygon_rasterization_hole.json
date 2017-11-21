@@ -1,0 +1,38 @@
+{
+	"name" : "Polygon Rasterization Hole",
+	"query_result": "raster",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 0,
+        "end": 2147483647
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },
+	"resolution": {
+		"type": "pixels",
+		"x": 256,
+		"y": 256
+	},
+	"query" : 
+	{
+		"type" : "rasterize_polygon",
+		"sources" : {
+			"polygons": [
+				{
+					"params" : 
+						{
+							"type": "polygons",
+							"wkt": "GEOMETRYCOLLECTION(POLYGON((35 10, 45 45, 15 40, 10 20, 35 10),(20 30, 35 35, 30 20, 20 30)))"
+						},
+					"type" : "wkt_source"
+				}		
+			]
+		}		
+	},
+	"query_expected_hash" : "0"
+}

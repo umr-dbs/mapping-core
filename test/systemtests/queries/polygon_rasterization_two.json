@@ -1,0 +1,38 @@
+{
+	"name" : "Polygon Rasterization Two",
+	"query_result": "raster",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 0,
+        "end": 2147483647
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },
+	"resolution": {
+		"type": "pixels",
+		"x": 256,
+		"y": 256
+	},
+	"query" : 
+	{
+		"type" : "rasterize_polygon",
+		"sources" : {
+			"polygons": [
+				{
+					"params" : 
+						{
+							"type": "polygons",
+							"wkt": "GEOMETRYCOLLECTION(MULTIPOLYGON(((40 40, 20 45, 45 30, 40 40)),((20 35, 10 30, 10 10, 30 5, 45 20, 20 35),(30 20, 20 15, 20 25, 30 20))))"
+						},
+					"type" : "wkt_source"
+				}		
+			]
+		}		
+	},
+	"query_expected_hash" : "0"
+}
