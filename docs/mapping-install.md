@@ -72,6 +72,7 @@ MAPPING_LIBS+=" make"
 
 MAPPING_LIBS+=" libpng-dev"
 MAPPING_LIBS+=" libjpeg-dev"
+MAPPING_LIBS+=" libturbojpeg0-dev"
 MAPPING_LIBS+=" libgeos-dev"
 MAPPING_LIBS+=" libgeos++-dev"
 MAPPING_LIBS+=" libbz2-dev"
