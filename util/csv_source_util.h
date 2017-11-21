@@ -19,12 +19,14 @@
  */
 
 enum class GeometrySpecification {
+	NONE,
 	XY,
 	WKT
 	// ShapeFile? Others?
 };
 
 const std::vector< std::pair<GeometrySpecification, std::string> > GeometrySpecificationMap {
+	std::make_pair(GeometrySpecification::NONE, "none"),
 	std::make_pair(GeometrySpecification::XY, "xy"),
 	std::make_pair(GeometrySpecification::WKT, "wkt")
 };
@@ -95,6 +97,8 @@ class CSVSourceUtil {
 		double time_duration;
 		std::string column_x;
 		std::string column_y;
+		std::string default_x;
+		std::string default_y;
 		std::string column_time1;
 		std::string column_time2;
 		std::unique_ptr<TimeParser> time1Parser;

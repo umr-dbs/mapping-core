@@ -1,0 +1,28 @@
+{
+    "name": "Blup",
+	"query_result": "points",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1205280000
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },    
+    "query": {        
+        "params": {       		
+            "filename": "test/systemtests/data/places_dump/places_dump_DE_100k.csv",
+            "on_error" : "abort",
+            "time" : "none",
+            "columns" : {
+                "x" : "X",
+                "y" : "Y",
+                "textual" : ["Name", "PLZ"]
+            }
+        },
+        "type": "ogr_source"
+    }    
+}

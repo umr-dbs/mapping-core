@@ -6,6 +6,7 @@
 #include "rasterdb/rasterdb.h"
 
 #include <json/json.h>
+#include <util/gdal_source_datasets.h>
 
 /**
  * This class provides user specific methods
@@ -52,20 +53,35 @@ void UserService::run() {
 
 		if (request == "sourcelist") {
 			Json::Value v(Json::ValueType::objectValue);
+
+			// RasterDB
 			auto sourcenames = RasterDB::getSourceNames();
 			for (const auto &name : sourcenames) {
-				auto description = RasterDB::getSourceDescription(name);
-				std::istringstream iss(description);
-				Json::Reader reader(Json::Features::strictMode());
-				Json::Value root;
-				if (!reader.parse(iss, root))
-					continue;
-
 				// check permissions: only return rasters the user can access
 				if(user.hasPermission("data.rasterdb_source." + name)) {
+					auto description = RasterDB::getSourceDescription(name);
+					std::istringstream iss(description);
+					Json::Reader reader(Json::Features::strictMode());
+					Json::Value root;
+					if (!reader.parse(iss, root))
+						continue;
+
 					v[name] = root;
 				}
 			}
+
+			// GDALSource
+			auto dataSets= GDALSourceDataSets::getDataSetNames();
+			for(const auto &dataSet : dataSets) {
+                if (user.hasPermission("data.gdal_source." + dataSet)) {
+                    auto description = GDALSourceDataSets::getDataSetDescription(dataSet);
+                    description["operator"] = "gdal_source";
+
+                    // TODO: resolve name clashes
+                    v[dataSet] = description;
+                }
+            }
+
 			response.sendSuccessJSON("sourcelist", v);
 			return;
 		}

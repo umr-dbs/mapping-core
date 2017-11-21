@@ -1,0 +1,34 @@
+{
+    "name": "large cities csv tested with query start time 2015-08-01 and a feature duration of 1 month",
+	"query_result": "points",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1438387200        
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },    
+    "query": {        
+        "params": {       		
+            "filename": "test/systemtests/data/osm_large_cities/osm_large_cities.csv",
+            "on_error" : "keep",
+            "time": "start",
+            "duration": 2678400,
+            "time1_format": {
+                "format" : "custom",
+                "custom_format" : "%Y-%m-%d %H:%M:%S%z"
+            },
+            "columns" : {
+                "x" : "wkt",
+                "time1" : "time_start",
+                "textual" : ["name"],
+                "numeric" : ["population"]
+            }
+        },
+        "type": "ogr_source"
+    }    
+}

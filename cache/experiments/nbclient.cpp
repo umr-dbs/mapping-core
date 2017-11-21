@@ -328,7 +328,7 @@ std::queue<QTriple> replay_logs(const char *logfile) {
 
 				TemporalReference tref = ogc.parseTime(params);
 				if(!params.hasParam("srsname"))
-					throw new ArgumentException("WFSService: Parameter srsname is missing");
+					throw ArgumentException("WFSService: Parameter srsname is missing");
 				epsg_t queryEpsg = ogc.parseEPSG(params, "srsname");
 
 				SpatialReference sref(queryEpsg);

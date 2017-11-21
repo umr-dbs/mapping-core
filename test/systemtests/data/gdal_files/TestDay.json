@@ -1,0 +1,17 @@
+{
+	"dataset_name" : "TestDay",
+	"path" : "test/systemtests/data/gdal_files/TestDay",
+	"file_name" : "MOD13A2_M_NDVI_%%%TIME_STRING%%%.TIFF",
+	
+	"time_format" : "%Y-%m-%d",
+	"time_start" : "2014-08-31",
+	"time_end" : "2014-10-15",
+	
+	"time_interval" : {
+		"unit" : "Day",
+		"value" : 5	
+	},
+
+	"channel" : 1,
+	"description" : "test files 1"
+}

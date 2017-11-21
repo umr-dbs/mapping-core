@@ -62,7 +62,11 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 	}
 	catch (const std::exception &e) {
 		error << "Request failed with an exception: " << e.what() << "\n";
-		response.send500("invalid request");
+		if (Configuration::getBool("global.debug", false)) {
+        		response.send500(concat("invalid request: ", e.what()));
+	        } else {
+           		response.send500("invalid request");
+        	}
 	}
 	Log::off();
 }
@@ -90,7 +94,11 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 	}
 	catch (const std::exception &e) {
 		error << "Request failed with an exception: " << e.what() << "\n";
-		response.send500("invalid request");
+		if (Configuration::getBool("global.debug", false)) {
+                        response.send500(concat("invalid request: ", e.what()));
+                } else {
+                        response.send500("invalid request");
+                }
 	}
 	Log::off();
 }

@@ -1,0 +1,18 @@
+{
+	"dataset_name" : "MOD13A2_M_NDVI(copy)",
+	"path" : "test/systemtests/data/gdal_files",
+	"file_name" : "MOD13A2_M_NDVI_%%%TIME_STRING%%% (copy).TIFF",
+	
+	"time_format" : "%Y-%m-%d",
+	"time_start" : "2014-01-01",
+	"time_end" : "2014-06-01",
+	
+	"time_interval" : {
+		"unit" : "Month",
+		"value" : 2	
+	},
+
+	"channel" : 1,
+	"description" : "test files 1"
+}
+

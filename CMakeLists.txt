@@ -82,6 +82,7 @@ add_library(mapping_core_base_lib
         util/sizeutil.cpp
         util/stringsplit.h
         util/uriloader.cpp
+        util/gdal_dataset_importer.cpp
         operators/operator.cpp
         operators/provenance.cpp
         operators/queryrectangle.cpp
@@ -110,7 +111,7 @@ add_library(mapping_core_base_lib
         cache/node/node_config.cpp
         cache/node/manager/remote_manager.cpp
         cache/node/manager/hybrid_manager.cpp
-        )
+        util/gdal_source_datasets.cpp util/gdal_source_datasets.h)
 target_include_directories(mapping_core_base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi mapping_core_base_lib)
 target_link_libraries_internal(mapping_manager mapping_core_base_lib)
@@ -161,6 +162,10 @@ add_library(mapping_core_operators_lib
         operators/source/postgres_source.cpp
         operators/source/rasterdb_source.cpp
         operators/source/wkt_source.cpp
+        operators/source/gdal_source.cpp
+        operators/source/ogr_source.cpp
+        util/ogr_source_util.cpp
+        util/gdal_timesnap.cpp
         util/csv_source_util.cpp
         operators/processing/raster/matrixkernel.cpp
         operators/processing/raster/expression.cpp
@@ -250,6 +255,7 @@ add_library(mapping_core_unittests_lib
         test/unittests/temporal/timeshift.cpp
         test/unittests/util/formula.cpp
         test/unittests/util/sha1.cpp
+        test/unittests/gdal_source.cpp
         )
 target_link_libraries_internal(mapping_core_unittests_lib mapping_core_operators_lib mapping_core_services_lib)
 target_link_libraries_internal(mapping_unittests mapping_core_unittests_lib)

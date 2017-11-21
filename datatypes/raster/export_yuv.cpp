@@ -12,7 +12,7 @@ template<typename T> void Raster2D<T>::toYUV(const char *filename) {
 		throw ExporterException("Could not write to file");
 
 	if (width%2 || height%2)
-		throw new ExporterException("YUV420 needs even width and height");
+		throw ExporterException("YUV420 needs even width and height");
 
 	// YUV420p wie in wikipedia definiert
 	// kein Header

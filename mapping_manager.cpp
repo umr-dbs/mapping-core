@@ -12,6 +12,8 @@
 
 #include "userdb/userdb.h"
 
+#include "util/gdal_dataset_importer.h"
+
 #include "util/binarystream.h"
 #include "util/configuration.h"
 #include "util/gdal.h"
@@ -66,7 +68,8 @@ static void usage() {
 		printf("%s testquery <queryname> [S|F]\n", program_name);
 		printf("%s showprovenance <queryname>\n", program_name);
 		printf("%s enumeratesources [verbose]\n", program_name);
-		printf("%s userdb ...", program_name);
+		printf("%s userdb ...\n", program_name);
+		printf("%s importgdaldataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> [--unit <measurement> <unit> <interpolation>] [--citation|--c <provenance_citation>] [--license|--l <provenance_license>] [--uri|--u <provenence_uri>]\n", program_name);
 		exit(5);
 }
 
@@ -339,8 +342,9 @@ static void runquery(int argc, char *argv[]) {
 			fprintf(stderr, "invalid query mode");
 			exit(5);
 		}
-
-		auto raster = graph->getCachedRaster(qrect, QueryTools(profiler), queryMode);
+		
+		auto raster = graph->getCachedRaster(qrect, QueryTools(profiler), queryMode); 
+		
 		printf("flip: %d %d\n", flipx, flipy);
 		printf("QRect(%f,%f -> %f,%f)\n", qrect.x1, qrect.y1, qrect.x2, qrect.y2);
 		if (flipx || flipy)
@@ -660,6 +664,119 @@ static int userdb(int argc, char *argv[]) {
 	}
 }
 
+// Imports a gdal dataset for use by source operator GDALSource
+static int import_gdal_dataset(int argc, char *argv[]){
+	
+	if(argc < 9 || argc > 19){
+		usage();
+	}
+
+	// Indexes:
+	// program name:  		1
+	// importgdaldataset: 	1
+	// std parameter: 		7
+	// ---------------------------
+	// subtotal				9
+
+	// opt:
+	// provenance:			3 + 3	
+	// unit					3 + 1
+	// ---------------------------
+	// total				19
+	
+	//importgdaldataset <dataset_name> <dataset_filename_with_placeholder> <dataset_file_path> <time_format> <time_start> <time_unit> <interval_value> 
+	// 				[--unit <measurement> <unit> <interpolation>] 
+	//				[--citation|--c <provenance_citation>] [--license|--l <provenance_license>] [--uri|--u <provenence_uri>]
+	
+	//check if any of the standard parameters is actually a optional parameter, so an actual value is missing	
+	for(int i = 2; i < 9; i++){
+		if(argv[i][0] == '-'){
+			usage();			
+		}
+	}
+
+	std::string dataset_name		= argv[2];
+	std::string dataset_filename 	= argv[3];
+	std::string dataset_file_path 	= argv[4];
+	std::string time_format 		= argv[5];
+	std::string time_start 			= argv[6];
+	std::string time_unit 			= argv[7];
+	std::string interval_value		= argv[8];
+
+	std::string citation;
+	std::string license;
+	std::string uri;
+
+	std::string unit;
+	std::string measurement;
+	std::string interpolation;
+
+	//read the optional parameters
+	int i = 9;
+	while(i < argc)
+	{
+		std::string arg(argv[i]);
+
+		if((arg == "--c" || arg == "--citation") && i+1 < argc){
+			std::string param(argv[i + 1]);	
+			if(param[0] == '-'){	//if parameter value is missing, meaning next argument starts with -
+				usage();
+			} else {
+				i += 2;
+				citation = param;
+			}						
+		} else if((arg == "--l" || arg == "--license") && i+1 < argc){			
+			std::string param(argv[i + 1]);	
+			if(param[0] == '-'){
+				usage();
+			} else {
+				i += 2;
+				license = param;
+			}						
+		} else if((arg == "--uri" || arg == "--u") && i+1 < argc){
+			std::string param(argv[i + 1]);	
+			if(param[0] == '-'){
+				usage();
+			} else {
+				i += 2;
+				uri = param;
+			}						
+		} else if(arg == "--unit" && i + 3 < argc)
+		{	
+			std::string param1(argv[i+1]);
+			std::string param2(argv[i+2]);
+			std::string param3(argv[i+3]);
+
+			if(param1[0] == '-' || param2[0] == '-' || param3[0] == '-')
+				usage();
+
+			measurement 	= argv[i+1];
+			unit 			= argv[i+2];
+			interpolation 	= argv[i+3];
+
+			i += 4;
+		} else {
+			usage();
+		}
+	}
+
+	GDALDatasetImporter::importDataset(	dataset_name, 
+									dataset_filename, 
+									dataset_file_path, 
+									time_format, 
+									time_start, 
+									time_unit, 
+									interval_value, 
+									citation, 
+									license, 
+									uri, 
+									measurement, 
+									unit, 
+									interpolation);
+
+	return 1;
+}
+
 int main(int argc, char *argv[]) {
 
 	program_name = argv[0];
@@ -741,6 +858,9 @@ int main(int argc, char *argv[]) {
 		printf("maximum buffer size is %ud (%d MB)\n", mbs, mbs/1024/1024);
 	}
 #endif
+	else if(strcmp(command, "importgdaldataset") == 0){
+		import_gdal_dataset(argc, argv);
+	}
 	else {
 		usage();
 	}

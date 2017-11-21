@@ -1,0 +1,17 @@
+{
+	"dataset_name" : "TestMonth6Compressed",
+	"path" : "test/systemtests/data/gdal_files/TestMonth6Compressed",
+	"file_name" : "6Month_%%%TIME_STRING%%%_comp.TIFF",
+	
+	"time_format" : "%Y-%m-%d",
+	"time_start" : "2014-09-05",
+	"time_end" : "2016-09-05",
+	
+	"time_interval" : {
+		"unit" : "Month",
+		"value" : 6	
+	},
+
+	"channel" : 1,
+	"description" : "test files 1"
+}

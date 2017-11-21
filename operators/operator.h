@@ -91,7 +91,6 @@ class GenericOperator {
 		int getPointCollectionSourceCount() { return sourcecounts[1]; }
 		int getLineCollectionSourceCount() { return sourcecounts[2]; }
 		int getPolygonCollectionSourceCount() { return sourcecounts[3]; }
-
 		virtual std::unique_ptr<GenericRaster> getRaster(const QueryRectangle &rect, const QueryTools &tools);
 		virtual std::unique_ptr<PointCollection> getPointCollection(const QueryRectangle &rect, const QueryTools &tools);
 		virtual std::unique_ptr<LineCollection> getLineCollection(const QueryRectangle &rect, const QueryTools &tools);

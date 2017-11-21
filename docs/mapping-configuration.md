@@ -32,6 +32,7 @@ The CGI mode is specified via an environment variable. If the variable `FCGI_WEB
 | featurecollectiondb.backend | postgres | | The backend for the featurecollectiondb |
 | featurecollectiondb.postgres.location | \<string\> || The SQL connection string e.g. `user = 'user' host = 'localhost' password = 'pass' dbname = 'featurecollectiondb_test'`. Note that the corresponding database needs to have the `POSTGIS` extension installed |
 | wms.norasterforgiventimeexception | 0 \| 1 | 1 | Configures the handling of NoRasterForGivenTimeException in WMS. If set to 0, a requested tile for a raster where there is no data for the given time results in a blank tile. If it is set to 1, the Exception is thrown.
+| gdalsource.datasets.path | \<string\> | | The path to the JSON data set descriptions for the GDALSource |
 
 ### Distributed mode
 Specific configurations for distributed mode where the CGI connects to index node and workers compute results.
