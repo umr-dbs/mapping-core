@@ -272,7 +272,6 @@ auto RasterValueExtractionOperator::getPolygonCollection(const QueryRectangle &r
                             if (ignore_nan) {
                                 continue;
                             } else {
-                                mean = M2 = min = max = std::numeric_limits<double>::quiet_NaN();
                                 goto out_of_loop;
                             }
                         }
@@ -293,6 +292,10 @@ auto RasterValueExtractionOperator::getPolygonCollection(const QueryRectangle &r
                 }
             }
             out_of_loop:;
+
+            if (n == 0 || (has_nan && !ignore_nan)) {
+                mean = M2 = min = max = std::numeric_limits<double>::quiet_NaN();
+            }
 
             polygon_collection->feature_attributes.numeric(concat(name_prefix, "_", "mean")).set(feature, mean);
             double variance = M2 / (n - 1);
