@@ -5,7 +5,8 @@
 #include <vector>
 
 #include <stdint.h>
-#include <cmake-build-debug/jsoncpp-src/include/json/json.h>
+#include <json/json.h>
+
 
 using color_t = uint32_t;
 
