@@ -16,8 +16,8 @@
  * Parameters:
  * - names: array of names for the new feature attributes that contain the raster values
  *          A name has to be specified for each input raster
- * - x_resolution: the x resolution for the input rasters in pixels
- * - y_resolution: the y resolution for the input rasters in pixels
+ * - xResolution: the x resolution for the input rasters in pixels
+ * - yResolution: the y resolution for the input rasters in pixels
  */
 class RasterValueExtractionOperator : public GenericOperator {
     public:
@@ -67,11 +67,11 @@ RasterValueExtractionOperator::RasterValueExtractionOperator(int sourcecounts[],
         names.push_back(arr[i].asString());
     }
 
-    if (!params["x_resolution"].isInt() || !params["y_resolution"].isInt()) {
+    if (!params["xResolution"].isInt() || !params["yResolution"].isInt()) {
         throw OperatorException("raster_metadata_to_points: there must be a valid x and y resolution.");
     } else {
-        x_resolution = params["x_resolution"].asUInt();
-        y_resolution = params["y_resolution"].asUInt();
+        x_resolution = params["xResolution"].asUInt();
+        y_resolution = params["yResolution"].asUInt();
     }
 }
 
