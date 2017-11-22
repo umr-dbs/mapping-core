@@ -1,0 +1,38 @@
+{
+	"name" : "Polygon Rasterization Uneven",
+	"query_result": "raster",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 0,
+        "end": 2147483647
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },
+	"resolution": {
+		"type": "pixels",
+		"x": 256,
+		"y": 256
+	},
+	"query" : 
+	{
+		"type" : "rasterize_polygon",
+		"sources" : {
+			"polygons": [
+				{
+					"params" : 
+						{
+							"type": "polygons",
+							"wkt": "GEOMETRYCOLLECTION(POLYGON((10 35, 180 0, 140 70, 10 70, 10 35)))"
+						},
+					"type" : "wkt_source"
+				}		
+			]
+		}		
+	},
+	"query_expected_hash" : "0"
+}

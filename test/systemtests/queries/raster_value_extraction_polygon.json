@@ -1,0 +1,49 @@
+{
+	"name" : "Raster metadata to polygon",
+	"query_result": "polygons",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1404172800,
+        "end": 1404172801
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },
+	"query" : 
+	{
+        "type": "raster_value_extraction",
+        "params": {
+            "names": [
+                "raster_value"
+            ],
+            "xResolution" : 1024,
+            "yResolution": 1024
+        },
+        "sources": {
+            "raster": [
+                {
+                    "type": "rasterdb_source",
+                    "params": {
+                        "sourcename": "ndvi",
+                        "channel": 0
+                    }
+                }
+            ],
+          "polygons": [
+            {
+              "params" :
+              {
+                "type": "polygons",
+                "wkt": "GEOMETRYCOLLECTION(MULTIPOLYGON(((40 40, 20 45, 45 30, 40 40)),((20 35, 10 30, 10 10, 30 5, 45 20, 20 35),(30 20, 20 15, 20 25, 30 20))))"
+              },
+              "type" : "wkt_source"
+            }
+          ]
+        }
+    },
+	"query_expected_hash" : "0"
+}

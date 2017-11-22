@@ -11,7 +11,7 @@
  * Each Polygon consists of one outer and zero or more inner rings (holes) that are stored in this order.
  */
 class PolygonCollection : public SimpleFeatureCollection {
-private:
+public:
 	template<typename C> class PolygonFeatureReference;
 	template<typename C> class PolygonPolygonReference;
 	template<typename C> class PolygonRingReference;
@@ -219,7 +219,7 @@ protected:
 
 	virtual void validateSpecifics() const;
 
-private:
+public:
 
 	/*
 	 * Finally, implement the helper classes for iteration.
@@ -399,6 +399,7 @@ private:
 			const size_t idx;
 	};
 
+	private:
 	/**
 	 * This class should be used to test many points for containment in a PolygonCollection
 	 * on instantiation it performs pre-calculations in order to make tests faster
