@@ -272,7 +272,7 @@ auto RasterValueExtractionOperator::getPolygonCollection(const QueryRectangle &r
                             if (ignore_nan) {
                                 continue;
                             } else {
-                                min = max = std::numeric_limits<double>::quiet_NaN();
+                                mean = M2 = min = max = std::numeric_limits<double>::quiet_NaN();
                                 goto out_of_loop;
                             }
                         }
