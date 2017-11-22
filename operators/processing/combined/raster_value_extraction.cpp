@@ -241,7 +241,7 @@ auto RasterValueExtractionOperator::getPolygonCollection(const QueryRectangle &r
 
         const auto &raster = getRasterFromSource(raster_source_id, raster_rect, tools, RasterQM::EXACT);
 
-        for (const std::string &suffix : {"mean", "var", "min", "max"}) {
+        for (const std::string &suffix : {"mean", "stdev", "min", "max"}) {
             polygon_collection->feature_attributes.addNumericAttribute(
                     concat(name_prefix, "_", suffix),
                     raster->dd.unit
@@ -259,10 +259,23 @@ auto RasterValueExtractionOperator::getPolygonCollection(const QueryRectangle &r
             double min = std::numeric_limits<double>::infinity();
             double max = -std::numeric_limits<double>::infinity();
 
+            bool ignore_nan = false; // TODO: extract as parameter
+            bool has_nan = false;
+
             for (uint32_t x = 0; x < raster_stat_cells->width; ++x) {
                 for (uint32_t y = 0; y < raster_stat_cells->height; ++y) {
                     if (raster_stat_cells->get(x, y) > 0) { // include into stats
                         double value = raster->getAsDouble(x, y);
+
+                        if (std::isnan(value)) {
+                            has_nan = true;
+                            if (ignore_nan) {
+                                continue;
+                            } else {
+                                min = max = std::numeric_limits<double>::quiet_NaN();
+                                goto out_of_loop;
+                            }
+                        }
 
                         ++n;
                         double delta = value - mean;
@@ -279,9 +292,11 @@ auto RasterValueExtractionOperator::getPolygonCollection(const QueryRectangle &r
                     }
                 }
             }
+            out_of_loop:;
 
             polygon_collection->feature_attributes.numeric(concat(name_prefix, "_", "mean")).set(feature, mean);
-            polygon_collection->feature_attributes.numeric(concat(name_prefix, "_", "var")).set(feature, M2 / (n - 1));
+            double variance = M2 / (n - 1);
+            polygon_collection->feature_attributes.numeric(concat(name_prefix, "_", "stdev")).set(feature, std::sqrt(variance));
             polygon_collection->feature_attributes.numeric(concat(name_prefix, "_", "min")).set(feature, min);
             polygon_collection->feature_attributes.numeric(concat(name_prefix, "_", "max")).set(feature, max);
         }

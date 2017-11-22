@@ -20,8 +20,8 @@
             "names": [
                 "raster_value"
             ],
-            "x_resolution" : 1024,
-            "y_resolution": 1024
+            "xResolution" : 1024,
+            "yResolution": 1024
         },
         "sources": {
             "raster": [
