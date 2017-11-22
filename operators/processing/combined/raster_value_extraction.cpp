@@ -259,7 +259,7 @@ auto RasterValueExtractionOperator::getPolygonCollection(const QueryRectangle &r
             double min = std::numeric_limits<double>::infinity();
             double max = -std::numeric_limits<double>::infinity();
 
-            bool ignore_nan = false; // TODO: extract as parameter
+            bool ignore_nan = true; // TODO: extract as parameter
             bool has_nan = false;
 
             for (uint32_t x = 0; x < raster_stat_cells->width; ++x) {
