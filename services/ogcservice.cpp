@@ -134,9 +134,17 @@ SpatialReference OGCService::parseBBOX(const std::string bbox_str, epsg_t epsg, 
 
 
 void OGCService::outputImage(GenericRaster *raster, bool flipx, bool flipy, const std::string &colors, Raster2D<uint8_t> *overlay) {
-	// For now, always guess the colorizer, ignore any user-specified colors
-	//auto colorizer = Colorizer::create(colors);
-	auto colorizer = Colorizer::fromUnit(raster->dd.unit);
+	std::unique_ptr<Colorizer> colorizer;
+	if(colors.empty()) {
+		colorizer = Colorizer::fromUnit(raster->dd.unit);
+	} else {
+		Json::Reader reader(Json::Features::strictMode());
+		Json::Value json;
+		if (!reader.parse(colors, json))
+			throw std::runtime_error(concat("OGCService: could not parse colors"));
+
+		colorizer = Colorizer::fromJson(json);
+	}
 
 	if (!response.hasSentHeaders()) {
 		response.sendDebugHeader();

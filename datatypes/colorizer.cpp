@@ -297,3 +297,23 @@ std::unique_ptr<Colorizer> Colorizer::fromUnit(const Unit &unit) {
 	c->table.emplace_back(unit.getMax(), color_from_rgba(255,255,255,255));
 	return std::unique_ptr<Colorizer>(c.release());
 }
+
+std::unique_ptr<Colorizer> Colorizer::fromJson(const Json::Value &json) {
+    if(json.isMember("breakpoints")) {
+        Colorizer::ColorTable breakpoints;
+        for (auto& breakpoint : json["breakpoints"]) {
+            double value = breakpoint["value"].asDouble();
+            int r = breakpoint["r"].asInt();
+            int g = breakpoint["g"].asInt();
+            int b = breakpoint["b"].asInt();
+            int a = breakpoint["a"].asInt();
+            breakpoints.emplace_back(value, color_from_rgba(r, g, b, a));
+        }
+
+        auto colorizer = make_unique<OwningColorizer>();
+        colorizer->table = breakpoints;
+        return std::unique_ptr<Colorizer>(colorizer.release());
+    }
+
+    throw ArgumentException("Missing breakpoints for colorizer");
+}

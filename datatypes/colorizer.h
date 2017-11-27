@@ -5,6 +5,8 @@
 #include <vector>
 
 #include <stdint.h>
+#include <json/json.h>
+
 
 using color_t = uint32_t;
 
@@ -39,6 +41,7 @@ class Colorizer {
 		std::string toJson() const;
 
 		static std::unique_ptr<Colorizer> fromUnit(const Unit &unit);
+		static std::unique_ptr<Colorizer> fromJson(const Json::Value &json);
 	private:
 		static std::unique_ptr<Colorizer> create(const std::string &name);
 		const ColorTable &table;
