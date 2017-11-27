@@ -162,7 +162,7 @@ void NonblockingServer::Connection::forkAndProcess(int timeout_seconds) {
 	}
 }
 
-void NonblockingServer::Connection::processDataAsync() {
+void NonblockingServer::Connection::processDataAsync(BinaryStream stream) {
 	throw MustNotHappenException("processDataAsync not implemented on this connection!");
 }
 void NonblockingServer::Connection::processDataForked(BinaryStream stream) {
@@ -404,7 +404,12 @@ void NonblockingServer::worker_thread() {
 			auto connection = popTask();
 			if (connection == nullptr)
 				return;
-			connection->processDataAsync();
+
+			BinaryStream new_stream = std::move(connection->stream);
+			new_stream.makeBlocking();
+			connection->close();
+
+			connection->processDataAsync(std::move(new_stream));
 			// as soon as this method call returns, the main thread may or may not have deleted the connection,
 			// which means that unfortunately we cannot safely check this.
 			//if (connection->state == Connection::State::PROCESSING_DATA_ASYNC)

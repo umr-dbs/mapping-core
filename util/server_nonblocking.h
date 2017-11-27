@@ -30,7 +30,7 @@ class NonblockingServer {
 				virtual ~Connection();
 			private:
 				virtual void processData(std::unique_ptr<BinaryReadBuffer> request) = 0;
-				virtual void processDataAsync();
+				virtual void processDataAsync(BinaryStream stream);
 				virtual void processDataForked(BinaryStream stream);
 
 				const int fd;

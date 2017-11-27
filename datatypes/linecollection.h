@@ -10,7 +10,7 @@
  * This collection contains Multi-Lines
  */
 class LineCollection : public SimpleFeatureCollection {
-private:
+public:
 	template<typename C> class LineFeatureReference;
 	template<typename C> class LineLineReference;
 public:
@@ -185,7 +185,7 @@ protected:
 
 	virtual void validateSpecifics() const;
 
-private:
+public:
 
 	/*
 	 * Finally, implement the helper classes for iteration.
