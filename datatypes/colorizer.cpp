@@ -306,7 +306,7 @@ std::unique_ptr<Colorizer> Colorizer::fromJson(const Json::Value &json) {
             int r = breakpoint["r"].asInt();
             int g = breakpoint["g"].asInt();
             int b = breakpoint["b"].asInt();
-            int a = breakpoint["a"].asInt();
+            int a = breakpoint.get("a", 255).asInt();
             breakpoints.emplace_back(value, color_from_rgba(r, g, b, a));
         }
 
