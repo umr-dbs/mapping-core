@@ -142,7 +142,7 @@ void WMSService::run() {
 				errorraster->printCentered(1, msg.c_str());
 			}
 
-			outputImage(errorraster.get(), false, false, "hsv");
+			outputImage(errorraster.get(), false, false, "");
 		}
 		// cut into pieces
 
