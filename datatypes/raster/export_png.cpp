@@ -38,51 +38,20 @@ template<typename T> void Raster2D<T>::toPNG(std::ostream &output, const Coloriz
 	}
 
 	// calculate the actual min/max so we can include only the range we require in the palette
-	T actual_min = std::numeric_limits<T>::max();
-	T actual_max = std::numeric_limits<T>::min();
-	bool found_pixel = false;
-	auto size = getPixelCount();
-	for (size_t i=0;i<size;i++) {
-		T v = data[i];
-		if (dd.is_no_data(v))
-			continue;
-		actual_min = std::min(actual_min, v);
-		actual_max = std::max(actual_max, v);
-		found_pixel = true;
-	}
-	if (!found_pixel) {
-		actual_min = 0;
-		actual_max = 1;
-	}
-	if (actual_max <= actual_min) {
-		actual_min = actual_max;
-		if (actual_min >= std::numeric_limits<T>::max() - 1)
-			actual_min--;
-		else
-			actual_max++;
-	}
 
-	if (!std::isfinite(actual_min) || !std::isfinite(actual_max))
-		throw ExporterException("Cannot export PNG with infinite raster values");
-
-	if(dd.unit.isDiscrete()) {
-		actual_min = 1;
-		actual_max = 22;
-	}
-
-	//auto actual_range = RasterTypeInfo<T>::getRange(actual_min, actual_max);
 
 	uint32_t colors[256];
 	colors[0] = color_from_rgba(0,0,0,0);
 	colors[1] = color_from_rgba(255,0,255,255);
-	if(dd.unit.isDiscrete()) {
-		colorizer.fillPalette(&colors[2], 22, actual_min, actual_max);
-	} else
-		colorizer.fillPalette(&colors[2], 254, actual_min, actual_max);
+
+    double actual_min = colorizer.minValue();
+    double actual_max = colorizer.maxValue();
+
+    colorizer.fillPalette(&colors[2], 254, actual_min, actual_max);
 
 	if (overlay) {
 		std::ostringstream msg;
-		msg << GDALGetDataTypeName(dd.datatype) << " (" << (double) actual_min << " - " << (double) actual_max << ")";
+		msg << GDALGetDataTypeName(dd.datatype) << " (" << actual_min << " - " << actual_max << ")";
 		overlay->print(4, 16, 1, msg.str().c_str());
 	}
 
