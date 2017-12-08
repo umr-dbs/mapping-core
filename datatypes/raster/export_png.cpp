@@ -137,7 +137,7 @@ template<typename T> void Raster2D<T>::toPNG(std::ostream &output, const Coloriz
 					row[x] = 3;
 				else {
 					if(dd.unit.isDiscrete())
-						row[x] = v + 2;
+						row[x] = v - actual_min + 2;
 					else
 						row[x] = round(253.0 * ((float) v - actual_min) / (actual_max - actual_min)) + 2;
 				}

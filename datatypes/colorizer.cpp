@@ -126,7 +126,7 @@ void Colorizer::fillPalette(color_t *colors, int num_colors, double min, double 
 						color = color_from_rgba(r, g, b, a);
 					}
 					else if (interpolation == Interpolation::NEAREST) {
-						if (value-table[i-1].value > table[i].value-value)
+						if (std::abs(value-table[i-1].value) < std::abs(table[i].value-value))
 							color = table[i-1].color;
 						else
 							color = table[i].color;
