@@ -44,7 +44,7 @@ class Colorizer {
 		static std::unique_ptr<Colorizer> fromJson(const Json::Value &json);
 
         double minValue() const {
-            table.front().value;
+            return table.front().value;
         }
 
         double maxValue() const {
