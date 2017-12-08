@@ -47,7 +47,14 @@ template<typename T> void Raster2D<T>::toPNG(std::ostream &output, const Coloriz
     double actual_min = colorizer.minValue();
     double actual_max = colorizer.maxValue();
 
-    colorizer.fillPalette(&colors[2], 254, actual_min, actual_max);
+    unsigned int num_colors = 254;
+
+    if (dd.unit.isDiscrete()) {
+        // this assumes classes are consecutive
+        num_colors = actual_max - actual_min + 1;
+    }
+
+    colorizer.fillPalette(&colors[2], num_colors, actual_min, actual_max);
 
 	if (overlay) {
 		std::ostringstream msg;
