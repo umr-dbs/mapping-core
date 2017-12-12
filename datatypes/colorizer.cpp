@@ -126,7 +126,7 @@ void Colorizer::fillPalette(color_t *colors, int num_colors, double min, double 
 						color = color_from_rgba(r, g, b, a);
 					}
 					else if (interpolation == Interpolation::NEAREST) {
-						if (value-table[i-1].value > table[i].value-value)
+						if (std::abs(value-table[i-1].value) < std::abs(table[i].value-value))
 							color = table[i-1].color;
 						else
 							color = table[i].color;
@@ -299,21 +299,35 @@ std::unique_ptr<Colorizer> Colorizer::fromUnit(const Unit &unit) {
 }
 
 std::unique_ptr<Colorizer> Colorizer::fromJson(const Json::Value &json) {
-    if(json.isMember("breakpoints")) {
-        Colorizer::ColorTable breakpoints;
-        for (auto& breakpoint : json["breakpoints"]) {
-            double value = breakpoint["value"].asDouble();
-            int r = breakpoint["r"].asInt();
-            int g = breakpoint["g"].asInt();
-            int b = breakpoint["b"].asInt();
-            int a = breakpoint["a"].asInt();
-            breakpoints.emplace_back(value, color_from_rgba(r, g, b, a));
-        }
-
-        auto colorizer = make_unique<OwningColorizer>();
-        colorizer->table = breakpoints;
-        return std::unique_ptr<Colorizer>(colorizer.release());
+    if(!json.isMember("breakpoints")) {
+        throw ArgumentException("Missing breakpoints for colorizer");
     }
 
-    throw ArgumentException("Missing breakpoints for colorizer");
+    Colorizer::ColorTable breakpoints;
+    for (auto& breakpoint : json["breakpoints"]) {
+        double value = breakpoint["value"].asDouble();
+        int r = breakpoint["r"].asInt();
+        int g = breakpoint["g"].asInt();
+        int b = breakpoint["b"].asInt();
+        int a = breakpoint.get("a", 255).asInt();
+        breakpoints.emplace_back(value, color_from_rgba(r, g, b, a));
+    }
+
+    std::string type = json.get("type", "gradient").asString();
+
+    Interpolation interpolation;
+    if (type == "gradient") {
+        // TODO: allow nearest neighbor gradient interpolation
+        interpolation = Interpolation::LINEAR;
+    } else if (type == "palette") {
+        // TODO: use discrete
+        interpolation = Interpolation::NEAREST;
+    } else {
+        throw ArgumentException("Unknown type for colorizer");
+    }
+
+    auto colorizer = make_unique<OwningColorizer>();
+    colorizer->table = breakpoints;
+    colorizer->interpolation = interpolation;
+    return std::unique_ptr<Colorizer>(colorizer.release());
 }

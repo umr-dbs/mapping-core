@@ -42,7 +42,16 @@ class Colorizer {
 
 		static std::unique_ptr<Colorizer> fromUnit(const Unit &unit);
 		static std::unique_ptr<Colorizer> fromJson(const Json::Value &json);
-	private:
+
+        double minValue() const {
+            return table.front().value;
+        }
+
+        double maxValue() const {
+            return table.back().value;
+        }
+
+private:
 		static std::unique_ptr<Colorizer> create(const std::string &name);
 		const ColorTable &table;
 		Interpolation interpolation;
