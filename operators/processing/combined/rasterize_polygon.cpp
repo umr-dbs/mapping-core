@@ -53,9 +53,23 @@ auto RasterizePolygonOperator::getRaster(const QueryRectangle &rect,
     QueryRectangle vector_rect{rect, rect, QueryResolution::none()};
     const auto polygon_collection = getPolygonCollectionFromSource(0, vector_rect, tools);
 
-    RasterizePolygons rasterizePolygons {rect, *polygon_collection};
+    if (polygon_collection->getFeatureCount() == 0) {
+        // create empty raster
+        Unit unit = Unit::unknown();
+        size_t number_of_polygons = 0; // TODO: need total number of features on whole extent
+        unit.setMinMax(0, number_of_polygons);
 
-    return rasterizePolygons.get_raster();
+        DataDescription data_description(GDT_UInt32, unit, true, 0);
+        return make_unique<Raster2D<uint32_t>>(
+                data_description,
+                rect,
+                rect.xres,
+                rect.yres);
+    } else {
+        RasterizePolygons rasterizePolygons{rect, *polygon_collection};
+
+        return rasterizePolygons.get_raster();
+    }
 }
 
 #endif
