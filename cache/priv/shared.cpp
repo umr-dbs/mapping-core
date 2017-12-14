@@ -26,8 +26,9 @@ ResolutionInfo::ResolutionInfo() :
 
 ResolutionInfo::ResolutionInfo(const GridSpatioTemporalResult& result) :
 	restype(QueryResolution::Type::PIXELS),
-	pixel_scale_x( result.pixel_scale_x, result.pixel_scale_x*2 ),
-	pixel_scale_y( result.pixel_scale_y, result.pixel_scale_y*2 ),
+	// TODO: get next zoom level pixel_scale to set validity
+	pixel_scale_x( result.pixel_scale_x, result.pixel_scale_x ),
+	pixel_scale_y( result.pixel_scale_y, result.pixel_scale_y ),
 	actual_pixel_scale_x(result.pixel_scale_x),
 	actual_pixel_scale_y(result.pixel_scale_y) {
 }

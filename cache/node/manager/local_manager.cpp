@@ -32,26 +32,27 @@ bool LocalCacheWrapper<T>::put(const std::string &semantic_id,
 
 	if ( mgr.get_strategy().do_cache(profiler,size) && size <= this->cache.get_max_size() ) {
 		CacheCube cube = NodeCacheWrapper<T>::get_bounds(*item, query);
+        // TODO: find proper way to determine min/max overview resolution
 		// Min/Max resolution hack
-		if ( query.restype == QueryResolution::Type::PIXELS ) {
-			double scale_x = (query.x2-query.x1) / query.xres;
-			double scale_y = (query.y2-query.y1) / query.yres;
-
-			// Result was max
-			if ( scale_x < cube.resolution_info.pixel_scale_x.a )
-				cube.resolution_info.pixel_scale_x.a = 0;
-			// Result was minimal
-			else if ( scale_x > cube.resolution_info.pixel_scale_x.b )
-				cube.resolution_info.pixel_scale_x.b = std::numeric_limits<double>::infinity();
-
-
-			// Result was max
-			if ( scale_y < cube.resolution_info.pixel_scale_y.a )
-				cube.resolution_info.pixel_scale_y.a = 0;
-			// Result was minimal
-			else if ( scale_y > cube.resolution_info.pixel_scale_y.b )
-				cube.resolution_info.pixel_scale_y.b = std::numeric_limits<double>::infinity();
-		}
+//		if ( query.restype == QueryResolution::Type::PIXELS ) {
+//			double scale_x = (query.x2-query.x1) / query.xres;
+//			double scale_y = (query.y2-query.y1) / query.yres;
+//
+//			// Result was max
+//			if ( scale_x < cube.resolution_info.pixel_scale_x.a )
+//				cube.resolution_info.pixel_scale_x.a = 0;
+//			// Result was minimal
+//			else if ( scale_x > cube.resolution_info.pixel_scale_x.b )
+//				cube.resolution_info.pixel_scale_x.b = std::numeric_limits<double>::infinity();
+//
+//
+//			// Result was max
+//			if ( scale_y < cube.resolution_info.pixel_scale_y.a )
+//				cube.resolution_info.pixel_scale_y.a = 0;
+//			// Result was minimal
+//			else if ( scale_y > cube.resolution_info.pixel_scale_y.b )
+//				cube.resolution_info.pixel_scale_y.b = std::numeric_limits<double>::infinity();
+//		}
 		// Perform put
 		Log::trace("Adding item to local cache");
 		{
