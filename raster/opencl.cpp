@@ -174,10 +174,10 @@ static const std::string rasterinfo_source(
 */
 struct RasterInfo {
 	cl_uint size[3];
-	cl_float origin[3];
-	cl_float scale[3];
+	cl_double origin[3];
+	cl_double scale[3];
 
-	cl_float min, max, no_data;
+	cl_double min, max, no_data;
 
 	cl_ushort epsg;
 	cl_ushort has_no_data;
@@ -186,9 +186,9 @@ struct RasterInfo {
 static const std::string rasterinfo_source(
 "typedef struct {"
 "	uint size[3];"
-"	float origin[3];"
-"	float scale[3];"
-"	float min, max, no_data;"
+"	double origin[3];"
+"	double scale[3];"
+"	double min, max, no_data;"
 "	ushort epsg;"
 "	ushort has_no_data;"
 "} RasterInfo;\n"
