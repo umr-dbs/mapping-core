@@ -126,11 +126,12 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 
     if (std::isnan(loadingInfo.nodata)) {
         int success;
-        double nodata = poBand->GetNoDataValue(&success);
+        nodata = poBand->GetNoDataValue(&success);
 
-        if (!success) {
+        if (success) {
+            hasnodata = true;
+        } else {
             hasnodata = false;
-            nodata = 0;
         }
     } else {
         hasnodata = true;
