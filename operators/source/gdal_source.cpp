@@ -109,7 +109,8 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 																	double clip_y1, double clip_x2, double clip_y2,
 																	const QueryRectangle& qrect, const TemporalReference &tref,
 																	const GDALTimesnap::GDALDataLoadingInfo &loadingInfo) {
-	GDALRasterBand  *poBand;
+	// get raster metadata
+    GDALRasterBand  *poBand;
 	int             nBlockXSize, nBlockYSize;
 	int             bGotMin, bGotMax;
 	double          adfMinMax[2];
@@ -144,13 +145,15 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	//calculate query rectangle in pixels of the source raster TODO: reuse functionality from RasterDB/GDALCRS
 	int pixel_x1 = 0;
 	int pixel_y1 = 0;
+    int pixel_x2 = nXSize - 1;
+    int pixel_y2 = nYSize - 1;
 	int pixel_width = nXSize;
 	int pixel_height = nYSize;
 	if (clip) {
 		pixel_x1 = static_cast<int>(floor((clip_x1 - origin_x) / scale_x));
 		pixel_y1 = static_cast<int>(floor((clip_y1 - origin_y) / scale_y));
-		int pixel_x2 = static_cast<int>(floor((clip_x2 - origin_x) / scale_x));
-		int pixel_y2 = static_cast<int>(floor((clip_y2 - origin_y) / scale_y));
+		pixel_x2 = static_cast<int>(floor((clip_x2 - origin_x) / scale_x));
+		pixel_y2 = static_cast<int>(floor((clip_y2 - origin_y) / scale_y));
 
 		if (pixel_x1 > pixel_x2)
 			std::swap(pixel_x1, pixel_x2);
@@ -171,16 +174,14 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	if (y1 > y2)
 		std::swap(y1, y2);
 
-	// Read Pixel data with GDAL
-    // limit to (0, width), (0, height) for gdal
-    int gdal_pixel_x1 = std::max(0, pixel_x1);
-    int gdal_pixel_y1 = std::max(0, pixel_y1);
-    int gdal_pixel_offset_x = gdal_pixel_x1 - pixel_x1;
-    int gdal_pixel_width = pixel_width - gdal_pixel_offset_x;
-    int gdal_pixel_offset_y = gdal_pixel_y1 - pixel_y1;
-    int gdal_pixel_height = pixel_height - gdal_pixel_offset_y;
-    gdal_pixel_width = std::min(nXSize - gdal_pixel_x1, gdal_pixel_width);
-    gdal_pixel_height = std::min(nYSize - gdal_pixel_y1, gdal_pixel_height);
+    // limit to (0, nXSize), (0, nySize) for gdal
+    int gdal_pixel_x1 = std::min(nXSize - 1, std::max(0, pixel_x1));
+    int gdal_pixel_y1 = std::min(nYSize - 1, std::max(0, pixel_y1));
+    int gdal_pixel_x2 = std::min(nXSize - 1, std::max(0, pixel_x2));
+    int gdal_pixel_y2 = std::min(nYSize - 1, std::max(0, pixel_y2));
+
+    int gdal_pixel_width = gdal_pixel_x2 - gdal_pixel_x1 + 1;
+    int gdal_pixel_height = gdal_pixel_y2 - gdal_pixel_y1 + 1;
 
 	// compute the rectangle for the gdal raster
 	double gdal_x1 = origin_x + scale_x * gdal_pixel_x1;
@@ -188,36 +189,43 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	double gdal_x2 = gdal_x1 + scale_x * gdal_pixel_width;
 	double gdal_y2 = gdal_y1 + scale_y * gdal_pixel_height;
 
-	SpatioTemporalReference stref(
-			SpatialReference(qrect.epsg, gdal_x1, gdal_y1, gdal_x2, gdal_y2, flipx, flipy),
-			TemporalReference(tref.timetype, tref.t1, tref.t2)
-	);
+    // query scale and factor
+    double query_scale_x = (qrect.x2 - qrect.x1) / qrect.xres;
+    double query_scale_y = (qrect.y2 - qrect.y1) / qrect.yres;
 
-	DataDescription dd(type, loadingInfo.unit, hasnodata, nodata);
+    double query_scale_factor_x = std::abs(scale_x / query_scale_x);
+    double query_scale_factor_y = std::abs(scale_y / query_scale_y);
 
-	// read the actual data
-	double scale_x_zoomed = (qrect.x2 - qrect.x1) / qrect.xres;
-	double scale_y_zoomed = (qrect.y2 - qrect.y1) / qrect.yres;
+    // load raster from gdal
+    std::unique_ptr<GenericRaster> raster;
+    if (gdal_pixel_width > 0 && gdal_pixel_height > 0) {
 
-	double factor_x = std::abs(scale_x / scale_x_zoomed);
-	double factor_y = std::abs(scale_y / scale_y_zoomed);
+        SpatioTemporalReference stref(
+                SpatialReference(qrect.epsg, gdal_x1, gdal_y1, gdal_x2, gdal_y2, flipx, flipy),
+                TemporalReference(tref.timetype, tref.t1, tref.t2)
+        );
 
-	int gdal_raster_width = static_cast<int> (std::ceil(gdal_pixel_width * factor_x));
-	int gdal_raster_height = static_cast<int> (std::ceil(gdal_pixel_height * factor_y));
-	auto raster = GenericRaster::create(dd, stref, static_cast<uint32_t>(gdal_raster_width),
-                                        static_cast<uint32_t>(gdal_raster_height));
-	void *buffer = raster->getDataForWriting();
+        DataDescription dd(type, loadingInfo.unit, hasnodata, nodata);
 
-    auto res = poBand->RasterIO(GF_Read,
-                                gdal_pixel_x1, gdal_pixel_y1, gdal_pixel_width, gdal_pixel_height,  // rectangle in the source raster
-                                buffer, raster->width,  raster->height,  // position and size of the destination buffer
-                                type, 0, 0, nullptr);
+        // read the actual data
+        int gdal_raster_width = static_cast<int> (std::ceil(gdal_pixel_width * query_scale_factor_x));
+        int gdal_raster_height = static_cast<int> (std::ceil(gdal_pixel_height * query_scale_factor_y));
+        raster = GenericRaster::create(dd, stref, static_cast<uint32_t>(gdal_raster_width),
+                                            static_cast<uint32_t>(gdal_raster_height));
+        void *buffer = raster->getDataForWriting();
 
-	if (res != CE_None){
-		GDALClose(dataset);
-		throw OperatorException("GDAL Source: RasterIO failed");
-	}
+        auto res = poBand->RasterIO(GF_Read,
+                                    gdal_pixel_x1, gdal_pixel_y1, gdal_pixel_width,
+                                    gdal_pixel_height,  // rectangle in the source raster
+                                    buffer, raster->width,
+                                    raster->height,  // position and size of the destination buffer
+                                    type, 0, 0, nullptr);
 
+        if (res != CE_None) {
+            GDALClose(dataset);
+            throw OperatorException("GDAL Source: RasterIO failed");
+        }
+    }
 
 	// check if requested query rectangle exceed the data returned from GDAL
 	if (pixel_width > gdal_pixel_width || pixel_height > gdal_pixel_height) {
@@ -227,10 +235,17 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 				TemporalReference(tref.timetype, tref.t1, tref.t2)
 		);
 
+        DataDescription dd(type, loadingInfo.unit, hasnodata, nodata);
+
 		auto raster2 = GenericRaster::create(dd, stref, qrect.xres, qrect.yres);
-		int blit_offset_x = static_cast<int>(gdal_pixel_offset_x * factor_x);
-		int blit_offset_y = static_cast<int>(gdal_pixel_offset_y * factor_y);
-		raster2->blit(raster.get(), blit_offset_x, blit_offset_y);
+
+        if (raster) {
+            int gdal_pixel_offset_x = gdal_pixel_x1 - pixel_x1;
+            int gdal_pixel_offset_y = gdal_pixel_y1 - pixel_y1;
+            int blit_offset_x = static_cast<int>(gdal_pixel_offset_x * query_scale_factor_x);
+            int blit_offset_y = static_cast<int>(gdal_pixel_offset_y * query_scale_factor_y);
+            raster2->blit(raster.get(), blit_offset_x, blit_offset_y);
+        }
 
 		return raster2;
 	}
