@@ -14,6 +14,7 @@
  * LibArchive
  * Fcgi
  * Fcgi++
+ * cmake >= 3.7
  * Optional
    * OpenCL
 

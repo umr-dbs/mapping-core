@@ -7,6 +7,7 @@ source_name=ndvi
 channel_file=1
 channel_source=0
 
+bin_path=$1
 
 for file in $directory*.TIFF; do
 	#extract date from filename
@@ -28,5 +29,5 @@ for file in $directory*.TIFF; do
 
     duration=$(( $time_end - $time_start ))
 
-	./mapping_manager import $source_name $file $channel_file $channel_source $time_start $duration $compression
+	$bin_path/mapping_manager import $source_name $file $channel_file $channel_source $time_start $duration $compression
 done

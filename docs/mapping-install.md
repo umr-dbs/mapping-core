@@ -56,11 +56,19 @@ clinfo
 
 
 ## MAPPING Dependencies
+For Ubuntu <= 16:
 Repository for GDAL:
 ```
 sudo add-apt-repository ppa:ubuntugis/ppa
 sudo apt-get update
 ```
+
+For Ubuntu <= 16 also do
+```
+sudo add-apt-repository ppa:adrozdoff/cmake
+sudo apt-get update
+```
+
 
 Install Packages:
 ```
@@ -69,6 +77,7 @@ MAPPING_LIBS=""
 MAPPING_LIBS+=" clang"
 MAPPING_LIBS+=" g++"
 MAPPING_LIBS+=" make"
+MAPPING_LIBS+=" cmake"
 
 MAPPING_LIBS+=" libpng-dev"
 MAPPING_LIBS+=" libjpeg-dev"
