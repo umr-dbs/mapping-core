@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<abcd:DataSets xmlns:abcd="http://www.tdwg.org/schemas/abcd/2.06">
+  <abcd:DataSet>
+    <abcd:TechnicalContacts>
+      <abcd:TechnicalContact>
+        <abcd:Name>Example Data Center</abcd:Name>
+        <abcd:Email>data-center@example.com</abcd:Email>
+      </abcd:TechnicalContact>
+    </abcd:TechnicalContacts>
+    <abcd:ContentContacts>
+      <abcd:ContentContact>
+        <abcd:Name>Sample Person</abcd:Name>
+        <abcd:Email>person@example.com</abcd:Email>
+      </abcd:ContentContact>
+    </abcd:ContentContacts>
+    <abcd:Metadata>
+      <abcd:Description>
+        <abcd:Representation abcd:language="en">
+          <abcd:Title>Example Collection</abcd:Title>
+          <abcd:Details>Example Collection Details</abcd:Details>
+          <abcd:URI>http:://www.example.com/collection</abcd:URI>
+        </abcd:Representation>
+      </abcd:Description>
+      <abcd:RevisionData>
+        <abcd:DateModified>2016-15-01T15:00:00</abcd:DateModified>
+      </abcd:RevisionData>
+      <abcd:Owners>
+        <abcd:Owner>
+          <abcd:Organisation>
+            <abcd:Name>
+              <abcd:Representation abcd:language="en">
+                <abcd:Text>Example Data Center</abcd:Text>
+              </abcd:Representation>
+            </abcd:Name>
+          </abcd:Organisation>
+          <abcd:Person>
+            <abcd:FullName>Sample Person</abcd:FullName>
+          </abcd:Person>
+          <abcd:Roles>
+            <abcd:Role>Database curator</abcd:Role>
+          </abcd:Roles>
+          <abcd:EmailAddresses>
+            <abcd:EmailAddress>person@example.com</abcd:EmailAddress>
+          </abcd:EmailAddresses>
+          <abcd:URIs>
+            <abcd:URL>http://www.example.com</abcd:URL>
+          </abcd:URIs>
+          <abcd:LogoURI>http://www.example.com/owner</abcd:LogoURI>
+        </abcd:Owner>
+      </abcd:Owners>
+      <abcd:IPRStatements>
+        <abcd:Copyrights>
+          <abcd:Copyright abcd:language="en">
+            <abcd:Text>© Example Data Center</abcd:Text>
+            <abcd:URI>http://www.example.com</abcd:URI>
+          </abcd:Copyright>
+        </abcd:Copyrights>
+        <abcd:Licenses>
+          <abcd:License abcd:language="en">
+            <abcd:Text>CC-BY-SA 3.0</abcd:Text>
+            <abcd:URI>https://creativecommons.org/licenses/by-sa/3.0/de/deed.en</abcd:URI>
+          </abcd:License>
+        </abcd:Licenses>
+        <abcd:TermsOfUseStatements>
+          <abcd:TermsOfUse abcd:language="en">
+            <abcd:Text>Permission is given for free use of data in the search result for non-commercial purposes</abcd:Text>
+          </abcd:TermsOfUse>
+        </abcd:TermsOfUseStatements>
+        <abcd:Disclaimers>
+          <abcd:Disclaimer abcd:language="en">
+            <abcd:Text>http://www.example.com/Disclaimer.html</abcd:Text>
+            <abcd:URI>http://www.example.com/Disclaimer.html</abcd:URI>
+          </abcd:Disclaimer>
+        </abcd:Disclaimers>
+      </abcd:IPRStatements>
+    </abcd:Metadata>
+    <abcd:Units>
+      <abcd:Unit>
+        <abcd:UnitGUID>http://example.com/collection/0</abcd:UnitGUID>
+        <abcd:SourceInstitutionID>ExampleDataCenter</abcd:SourceInstitutionID>
+        <abcd:SourceID>ExampleCollection</abcd:SourceID>
+        <abcd:UnitID>0</abcd:UnitID>
+        <abcd:DateLastEdited>2016-15-01T15:00:00</abcd:DateLastEdited>
+        <abcd:Identifications>
+          <abcd:Identification>
+            <abcd:Result>
+              <abcd:TaxonIdentified>
+                <abcd:HigherTaxa>
+                  <abcd:HigherTaxon>
+                    <abcd:HigherTaxonName>Example Taxon Name</abcd:HigherTaxonName>
+                    <abcd:HigherTaxonRank>Example Taxon Rank</abcd:HigherTaxonRank>
+                  </abcd:HigherTaxon>
+                </abcd:HigherTaxa>
+                <abcd:ScientificName>
+                  <abcd:FullScientificNameString>Example Scientific Name</abcd:FullScientificNameString>
+                </abcd:ScientificName>
+              </abcd:TaxonIdentified>
+            </abcd:Result>
+          </abcd:Identification>
+        </abcd:Identifications>
+        <abcd:RecordBasis>DrawingOrPhotograph</abcd:RecordBasis>
+        <abcd:KindOfUnit language="en">PreservedSpecimen</abcd:KindOfUnit>
+        <abcd:SpecimenUnit>
+          <abcd:Preparations>
+            <abcd:Preparation>
+              <abcd:PreparationType language="en" />
+            </abcd:Preparation>
+          </abcd:Preparations>
+        </abcd:SpecimenUnit>
+        <abcd:MultiMediaObjects>
+          <abcd:MultiMediaObject>
+            <abcd:FileURI>http://www.example.com/picture.jpg</abcd:FileURI>
+            <abcd:Format>jpg</abcd:Format>
+            <abcd:IPR>
+              <abcd:Copyrights>
+                <abcd:Copyright abcd:language="en">
+                  <abcd:Text>© Example Collection</abcd:Text>
+                </abcd:Copyright>
+              </abcd:Copyrights>
+              <abcd:Licenses>
+                <abcd:License abcd:language="en">
+                  <abcd:Text>CC BY-SA 3.0</abcd:Text>
+                  <abcd:URI>https://creativecommons.org/licenses/by-sa/3.0/de/deed.en</abcd:URI>
+                </abcd:License>
+              </abcd:Licenses>
+              <abcd:TermsOfUseStatements>
+                <abcd:TermsOfUse abcd:language="en">
+                  <abcd:Text>Permission is given for free use of data in the search result for non-commercial purposes</abcd:Text>
+                </abcd:TermsOfUse>
+              </abcd:TermsOfUseStatements>
+            </abcd:IPR>
+          </abcd:MultiMediaObject>
+        </abcd:MultiMediaObjects>
+        <abcd:Associations>
+          <abcd:UnitAssociation>
+            <abcd:AssociatedUnitSourceInstitutionCode>ExampleDataCenter</abcd:AssociatedUnitSourceInstitutionCode>
+            <abcd:AssociatedUnitSourceName>ExampleCollection</abcd:AssociatedUnitSourceName>
+            <abcd:AssociatedUnitID>1</abcd:AssociatedUnitID>
+            <abcd:AssociationType language="en">Type0</abcd:AssociationType>
+            <abcd:Comment language="en">Example Comment</abcd:Comment>
+          </abcd:UnitAssociation>
+        </abcd:Associations>
+        <abcd:Gathering>
+          <abcd:DateTime>
+            <abcd:ISODateTimeBegin>2016-01-01T:00:00:00</abcd:ISODateTimeBegin>
+          </abcd:DateTime>
+          <abcd:Agents>
+            <abcd:GatheringAgent primarycollector="true">
+              <abcd:AgentText>Sample Person</abcd:AgentText>
+            </abcd:GatheringAgent>
+          </abcd:Agents>
+          <abcd:LocalityText language="de">Sample Location Name</abcd:LocalityText>
+          <abcd:Country>
+            <abcd:Name language="en">Germany</abcd:Name>
+            <abcd:ISO3166Code>DE</abcd:ISO3166Code>
+          </abcd:Country>
+          <abcd:SiteCoordinateSets>
+            <abcd:SiteCoordinates>
+              <abcd:CoordinatesLatLong>
+                <abcd:LongitudeDecimal> 8.770080</abcd:LongitudeDecimal>
+                <abcd:LatitudeDecimal>50.798949</abcd:LatitudeDecimal>
+                <abcd:SpatialDatum>WGS84</abcd:SpatialDatum>
+              </abcd:CoordinatesLatLong>
+            </abcd:SiteCoordinates>
+          </abcd:SiteCoordinateSets>
+        </abcd:Gathering>
+        <abcd:RecordURI>http:://www.example.com/record/0</abcd:RecordURI>
+      </abcd:Unit>
+      <abcd:Unit>
+        <abcd:UnitGUID>http://example.com/collection/1</abcd:UnitGUID>
+        <abcd:SourceInstitutionID>ExampleDataCenter</abcd:SourceInstitutionID>
+        <abcd:SourceID>ExampleCollection</abcd:SourceID>
+        <abcd:UnitID>1</abcd:UnitID>
+        <abcd:DateLastEdited>2016-15-01T15:00:00</abcd:DateLastEdited>
+        <abcd:Identifications>
+          <abcd:Identification>
+            <abcd:Result>
+              <abcd:TaxonIdentified>
+                <abcd:HigherTaxa>
+                  <abcd:HigherTaxon>
+                    <abcd:HigherTaxonName>Example Taxon Name</abcd:HigherTaxonName>
+                    <abcd:HigherTaxonRank>Example Taxon Rank</abcd:HigherTaxonRank>
+                  </abcd:HigherTaxon>
+                </abcd:HigherTaxa>
+                <abcd:ScientificName>
+                  <abcd:FullScientificNameString>Example Scientific Name</abcd:FullScientificNameString>
+                </abcd:ScientificName>
+              </abcd:TaxonIdentified>
+            </abcd:Result>
+          </abcd:Identification>
+        </abcd:Identifications>
+        <abcd:RecordBasis>DrawingOrPhotograph</abcd:RecordBasis>
+        <abcd:KindOfUnit language="en">PreservedSpecimen</abcd:KindOfUnit>
+        <abcd:SpecimenUnit>
+          <abcd:Preparations>
+            <abcd:Preparation>
+              <abcd:PreparationType language="en" />
+            </abcd:Preparation>
+          </abcd:Preparations>
+        </abcd:SpecimenUnit>
+        <abcd:MultiMediaObjects>
+          <abcd:MultiMediaObject>
+            <abcd:FileURI>http://www.example.com/picture.jpg</abcd:FileURI>
+            <abcd:Format>jpg</abcd:Format>
+            <abcd:IPR>
+              <abcd:Copyrights>
+                <abcd:Copyright abcd:language="en">
+                  <abcd:Text>© Example Collection</abcd:Text>
+                </abcd:Copyright>
+              </abcd:Copyrights>
+              <abcd:Licenses>
+                <abcd:License abcd:language="en">
+                  <abcd:Text>CC BY-SA 3.0</abcd:Text>
+                  <abcd:URI>https://creativecommons.org/licenses/by-sa/3.0/de/deed.en</abcd:URI>
+                </abcd:License>
+              </abcd:Licenses>
+              <abcd:TermsOfUseStatements>
+                <abcd:TermsOfUse abcd:language="en">
+                  <abcd:Text>Permission is given for free use of data in the search result for non-commercial purposes</abcd:Text>
+                </abcd:TermsOfUse>
+              </abcd:TermsOfUseStatements>
+            </abcd:IPR>
+          </abcd:MultiMediaObject>
+        </abcd:MultiMediaObjects>
+        <abcd:Associations>
+          <abcd:UnitAssociation>
+            <abcd:AssociatedUnitSourceInstitutionCode>ExampleDataCenter</abcd:AssociatedUnitSourceInstitutionCode>
+            <abcd:AssociatedUnitSourceName>ExampleCollection</abcd:AssociatedUnitSourceName>
+            <abcd:AssociatedUnitID>1</abcd:AssociatedUnitID>
+            <abcd:AssociationType language="en">Type0</abcd:AssociationType>
+            <abcd:Comment language="en">Example Comment</abcd:Comment>
+          </abcd:UnitAssociation>
+        </abcd:Associations>
+        <abcd:Gathering>
+          <abcd:LocalityText language="de" />
+          <abcd:Country>
+            <abcd:Name language="en" />
+          </abcd:Country>
+        </abcd:Gathering>
+        <abcd:RecordURI>http:://www.example.com/record/1</abcd:RecordURI>
+      </abcd:Unit>
+    </abcd:Units>
+  </abcd:DataSet>
+</abcd:DataSets>

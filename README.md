@@ -1,4 +1,5 @@
 # MAPPING Core Module
+This module is part of MAPPING - Marburg's Analysis, Processing and Provenance of Information for Networked Geographics.
 
 ## Requirements
  * BZip2
@@ -17,6 +18,15 @@
  * cmake >= 3.7
  * Optional
    * OpenCL
+
+## Install
+For information how to install MAPPING see [mapping-install.md](docs/mapping-install.md).
+
+
+## Configuration
+For information how to configure MAPPING see [mapping-configuration.md](docs/mapping-configuration.md).
+If you want to run MAPPING as FCGI, see [Fast CGI configuration.md](docs/Fast%20CGI%20configuration.md).
+
 
 ## Building
 ```

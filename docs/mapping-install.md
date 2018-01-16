@@ -98,7 +98,7 @@ MAPPING_LIBS+=" libproj-dev"
 MAPPING_LIBS+=" git"
 MAPPING_LIBS+=" valgrind"
 
-MAPPING_LIBS+=" r-cran-***REMOVED***"
+MAPPING_LIBS+=" r-cran-rcpp"
 MAPPING_LIBS+=" libpqxx-dev"
 
 MAPPING_LIBS+=" libgdal-dev"

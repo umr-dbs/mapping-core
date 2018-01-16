@@ -1,4 +1,4 @@
-// This file is available in electronic form at http://www.psa.es/sdg/sunpos.htm
+// This algorithm is based on Blanco-Muriel, Manuel, et al. "Computing the solar vector." Solar Energy 70.5 (2001): 431-441.
 
 // 18.08.2014 -  Johannes Drönner: Modified this file to split intermediate variables from actual positions
 #ifndef __SUNPOS_H
