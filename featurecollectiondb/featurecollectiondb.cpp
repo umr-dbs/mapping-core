@@ -2,9 +2,10 @@
 #include "featurecollectiondb.h"
 #include "featurecollectiondbbackend.h"
 #include "util/configuration.h"
+#include "util/log.h"
 
 #include <unordered_map>
-#include <string.h>
+#include <cstring>
 
 
 
@@ -30,7 +31,13 @@ FeatureCollectionDBBackendRegistration::FeatureCollectionDBBackendRegistration(c
  * Initialization
  */
 void FeatureCollectionDB::initFromConfiguration() {
-	auto backend = Configuration::get("featurecollectiondb.backend");
+	std::string backend;
+	try {
+		backend = Configuration::get("featurecollectiondb.backend");
+	} catch (const ArgumentException &e) {
+		Log::info("No configuration found for key featurecollectiondb.backend. Leave FeatureCollectionDB uninitialized.");
+		return;
+	}
 	auto location = Configuration::get("featurecollectiondb." + backend + ".location");
 	init(backend, location);
 }
