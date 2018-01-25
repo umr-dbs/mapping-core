@@ -100,9 +100,9 @@ class GenericRaster : public GridSpatioTemporalResult {
 		static std::unique_ptr<GenericRaster> create(const DataDescription &datadescription, const GridSpatioTemporalResult &other, Representation representation = Representation::CPU) {
 			return create(datadescription, other.stref, other.width, other.height, 0, representation);
 		}
-		static std::unique_ptr<GenericRaster> fromGDAL(const char *filename, int rasterid, epsg_t epsg = EPSG_UNKNOWN);
-		static std::unique_ptr<GenericRaster> fromGDAL(const char *filename, int rasterid, bool &flipx, bool &flipy, epsg_t epsg = EPSG_UNKNOWN);
-		static std::unique_ptr<GenericRaster> fromGDAL(const char *filename, int rasterid, bool &flipx, bool &flipy, epsg_t epsg, double x1, double y1, double x2, double y2);
+		static std::unique_ptr<GenericRaster> fromGDAL(const char *filename, int rasterid, CrsId crsId = CrsId::unreferenced());
+		static std::unique_ptr<GenericRaster> fromGDAL(const char *filename, int rasterid, bool &flipx, bool &flipy, CrsId crsId = CrsId::unreferenced());
+		static std::unique_ptr<GenericRaster> fromGDAL(const char *filename, int rasterid, bool &flipx, bool &flipy, CrsId crsId, double x1, double y1, double x2, double y2);
 
 		virtual ~GenericRaster();
 		GenericRaster(const GenericRaster &) = delete;

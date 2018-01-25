@@ -71,7 +71,7 @@ ExecTimer::~ExecTimer() {
 
 std::string CacheCommon::qr_to_string(const QueryRectangle &rect) {
 	std::ostringstream os;
-	os << "QueryRectangle[ epsg: " << (uint16_t) rect.epsg << ", time: " << rect.t1 << " - " << rect.t2 << ", x: ["
+	os << "QueryRectangle[ crsId: " << rect.crsId.to_string() << ", time: " << rect.t1 << " - " << rect.t2 << ", x: ["
 		<< rect.x1 << "," << rect.x2 << "]" << ", y: [" << rect.y1 << "," << rect.y2 << "]" << ", res: ["
 		<< rect.xres << "," << rect.yres << "] ]";
 	return os.str();
@@ -79,7 +79,7 @@ std::string CacheCommon::qr_to_string(const QueryRectangle &rect) {
 
 std::string CacheCommon::stref_to_string(const SpatioTemporalReference &ref) {
 	std::ostringstream os;
-	os << "SpatioTemporalReference[ epsg: " << (uint16_t) ref.epsg << ", timetype: "
+	os << "SpatioTemporalReference[ crsId: " << ref.crsId.to_string() << ", timetype: "
 		<< (uint16_t) ref.timetype << ", time: [" << ref.t1 << "," << ref.t2 << "]" << ", x: [" << ref.x1
 		<< "," << ref.x2 << "]" << ", y: [" << ref.y1 << "," << ref.y2 << "] ]";
 	return os.str();

@@ -299,8 +299,8 @@ std::queue<QTriple> replay_logs(const char *logfile) {
 					throw ArgumentException("Not GetMap");
 
 				// raster query
-				auto query_epsg = ogc.parseEPSG(params, "crs");
-				SpatialReference sref = ogc.parseBBOX(params.get("bbox"), query_epsg, false);
+				auto query_crsId = ogc.parseEPSG(params, "crs");
+				SpatialReference sref = ogc.parseBBOX(params.get("bbox"), query_crsId, false);
 				TemporalReference tref = ogc.parseTime(params);
 
 				int output_width = params.getInt("width");
@@ -329,7 +329,7 @@ std::queue<QTriple> replay_logs(const char *logfile) {
 				TemporalReference tref = ogc.parseTime(params);
 				if(!params.hasParam("srsname"))
 					throw ArgumentException("WFSService: Parameter srsname is missing");
-				epsg_t queryEpsg = ogc.parseEPSG(params, "srsname");
+				CrsId queryEpsg = ogc.parseEPSG(params, "srsname");
 
 				SpatialReference sref(queryEpsg);
 				if(params.hasParam("bbox")) {

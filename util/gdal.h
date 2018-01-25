@@ -7,14 +7,14 @@
 
 namespace GDAL {
 	void init();
-	std::string SRSFromEPSG(epsg_t epsg);
+	std::string SRSFromCrsId(const CrsId &crsId);
 
 	/**
 	 * This class allows the transformation of coordinates between two projections
 	 */
 	class CRSTransformer {
 		public:
-			CRSTransformer(epsg_t in_epsg, epsg_t out_epsg);
+			CRSTransformer(CrsId in_crsId, CrsId out_crsId);
 			~CRSTransformer();
 
 			CRSTransformer(const CRSTransformer &copy) = delete;
@@ -22,7 +22,8 @@ namespace GDAL {
 
 			bool transform(double &px, double &py, double &pz) const;
 			bool transform(double &px, double &py) const { double pz = 0.0; return transform(px, py, pz); }
-			const epsg_t in_epsg, out_epsg;
+			const CrsId in_crsId;
+            const CrsId out_crsId;
 
 			static void msg_pixcoord2geocoord(int column, int row, double *longitude, double *latitude);
 			static void msg_geocoord2pixcoord(double longitude, double latitude, int *column, int *row);

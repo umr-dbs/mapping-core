@@ -1,10 +1,7 @@
 #include "gdal_dataset_importer.h"
 #include "gdal_timesnap.h"
 #include "configuration.h"
-#include "exceptions.h"
-#include "timeparser.h"
-#include <iostream> 
-#include <fstream>
+#include <ogr_spatialref.h>
 
 const std::string GDALDatasetImporter::placeholder = "%%%TIME_STRING%%%";
 
@@ -94,7 +91,7 @@ void GDALDatasetImporter::importDataset(std::string dataset_name,
 
 }
 
-//read epsg, size, scale, origin from actual GDALDatset
+//read crsId, size, scale, origin from actual GDALDatset
 Json::Value GDALDatasetImporter::readCoords(GDALDataset *dataset){
 	Json::Value coordsJson(Json::ValueType::objectValue);
 
@@ -117,8 +114,7 @@ Json::Value GDALDatasetImporter::readCoords(GDALDataset *dataset){
 	sizeJson.append(dataset->GetRasterXSize());
 	sizeJson.append(dataset->GetRasterYSize());
 
-	std::string epsg = getEpsg(dataset);
-	coordsJson["epsg"] = epsg;
+	coordsJson["crs"] = getCrsId(dataset->GetProjectionRef()).to_string();
 	coordsJson["origin"] = originJson;
 	coordsJson["scale"] = scaleJson;
 	coordsJson["size"] = sizeJson;
@@ -126,49 +122,12 @@ Json::Value GDALDatasetImporter::readCoords(GDALDataset *dataset){
 	return coordsJson;
 }
 
-//reads the epsg information from GetProjectionRef String of the GDALDataset
-std::string GDALDatasetImporter::getEpsg(GDALDataset *dataset){
-	std::string gdalInput = dataset->GetProjectionRef(); //this returns an internal char*
+//reads the crsId information from GetProjectionRef String of the GDALDataset
+CrsId GDALDatasetImporter::getCrsId(const std::string &crs_wkt){
+	OGRSpatialReference sref = OGRSpatialReference(crs_wkt.c_str());
+	return CrsId(std::string(sref.GetAuthorityName("GEOGCS")),
+				 static_cast<uint32_t>(std::stoi(sref.GetAuthorityCode("GEOGCS"))));
 
-	int index = 0;
-	int openBrackets = 0;
-	while(index < gdalInput.length()){
-		const char c = gdalInput[index];
-		if(c == '[')
-		{
-			openBrackets++;
-		} 
-		else if(c == ']')
-		{
-			openBrackets--;
-		}
-		else if(c == ',')
-		{			
-			if(openBrackets == 1 && gdalInput.compare(index+1, 9, "AUTHORITY") == 0)
-			{
-				while(gdalInput[index] != '['){
-					index++;
-				}
-				index += 2;
-				int closingQuote = index;
-				while(gdalInput[closingQuote] != '"'){
-					closingQuote++;
-				}
-				//between index and closingQuote is the description of the value. has to be EPSG
-				//std::string desc = gdalInput.substr(index,closingQuote-index);
-				index = closingQuote + 3;
-				closingQuote = index;
-				while(gdalInput[closingQuote] != '"'){
-					closingQuote++;
-				}
-				std::string val = gdalInput.substr(index, closingQuote - index);
-				return val;
-			}
-		}
-
-		index++;
-	}
-	return "unknown";
 }
 
 //read channel values from GDALDataset, some from given parameters

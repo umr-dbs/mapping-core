@@ -60,7 +60,7 @@ void PostgresSourceOperator::writeSemanticParameters(std::ostringstream& stream)
 #ifndef MAPPING_OPERATOR_STUBS
 std::unique_ptr<PointCollection> PostgresSourceOperator::getPointCollection(const QueryRectangle &rect, const QueryTools &tools) {
 
-	if (rect.epsg != EPSG_WEBMERCATOR)
+	if (rect.crsId != CrsId::from_epsg_code(3857))
 		throw OperatorException("PGPointSourceOperator: Shouldn't load points in a projection other than webmercator");
 
 	std::stringstream sql;

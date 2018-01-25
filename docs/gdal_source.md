@@ -17,7 +17,7 @@ The GDALSource allows incorporating arbitrary data sets that can be read by GDAL
       }
    ],
    "coords" : {
-      "epsg" : "4326",
+      "crs" : "EPSG:4326",
       "origin" : [ -180, 90 ],
       "scale" : [ 0.008333333333333,-0.008333333333333 ],
       "size" : [ 43200, 21600 ]

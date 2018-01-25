@@ -60,7 +60,7 @@ static const char *program_name;
 static void usage() {
 		printf("Usage:\n");
 		printf("%s convert <input_filename> <png_filename>\n", program_name);
-		printf("%s createsource <epsg> <channel1_example> <channel2_example> ...\n", program_name);
+		printf("%s createsource <crs> <channel1_example> <channel2_example> ...\n", program_name);
 		printf("%s loadsource <sourcename>\n", program_name);
 		printf("%s import <sourcename> <filename> <filechannel> <sourcechannel> <time_start> <duration> <compression>\n", program_name);
 		printf("%s link <sourcename> <sourcechannel> <time_reference> <time_start> <duration>\n", program_name);
@@ -102,11 +102,11 @@ static void createsource(int argc, char *argv[]) {
 
 	std::unique_ptr<GDALCRS> lcrs;
 
-	epsg_t epsg = (epsg_t) atoi(argv[2]);
+	CrsId crsId = CrsId::from_epsg_code(atoi(argv[2]));
 
 	for (int i=0;i<argc-3;i++) {
 		try {
-			raster = GenericRaster::fromGDAL(argv[i+3], 1, epsg);
+			raster = GenericRaster::fromGDAL(argv[i+3], 1, crsId);
 		}
 		catch (ImporterException &e) {
 			printf("%s\n", e.what());
@@ -125,7 +125,7 @@ static void createsource(int argc, char *argv[]) {
 				origins[d] = lcrs->origin[d];
 				scales[d] = lcrs->scale[d];
 			}
-			coords["epsg"] = lcrs->epsg;
+			coords["crsId"] = lcrs->crsId.;
 			coords["size"] = sizes;
 			coords["origin"] = origins;
 			coords["scale"] = scales;
@@ -212,14 +212,14 @@ static SpatialReference sref_from_json(Json::Value &root, bool &flipx, bool &fli
 	if(root.isMember("spatial_reference")){
 		Json::Value& json = root["spatial_reference"];
 
-		epsg_t epsg = epsgCodeFromSrsString(json.get("projection", "EPSG:4326").asString());
+		CrsId crsId = crsIdCodeFromSrsString(json.get("projection", "EPSG:4326").asString());
 
 		double x1 = json.get("x1", -180).asDouble();
 		double y1 = json.get("y1", -90).asDouble();
 		double x2 = json.get("x2", 180).asDouble();
 		double y2 = json.get("y2", 90).asDouble();
 
-		return SpatialReference(epsg, x1, y1, x2, y2, flipx, flipy);
+		return SpatialReference(crsId, x1, y1, x2, y2, flipx, flipy);
 	}
 
 	return SpatialReference::unreferenced();
@@ -838,7 +838,7 @@ int main(int argc, char *argv[]) {
 		returncode = userdb(argc, argv);
 	}
 	else if (strcmp(command, "msgcoord") == 0) {
-		GDAL::CRSTransformer t(EPSG_LATLON, EPSG_GEOSMSG);
+		GDAL::CRSTransformer t(CrsId::from_epsg_code(4326), CrsId::from_srs_string("SR-ORG:81"));
 		auto f = [&] (double x, double y) -> void {
 			double px = x, py = y;
 			if (t.transform(px, py))

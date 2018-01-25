@@ -24,14 +24,14 @@ class Provenance;
  */
 class GDALCRS {
 	public:
-		GDALCRS(epsg_t epsg, uint32_t w, uint32_t h, double origin_x, double origin_y, double scale_x, double scale_y)
-			: epsg(epsg), dimensions(2), size{w, h, 0}, origin{origin_x, origin_y, 0}, scale{scale_x, scale_y, 0} {};
+		GDALCRS(CrsId crsId, uint32_t w, uint32_t h, double origin_x, double origin_y, double scale_x, double scale_y)
+			: crsId(crsId), dimensions(2), size{w, h, 0}, origin{origin_x, origin_y, 0}, scale{scale_x, scale_y, 0} {};
 
-		GDALCRS(epsg_t epsg, int dimensions, uint32_t w, uint32_t h, uint32_t d, double origin_x, double origin_y, double origin_z, double scale_x, double scale_y, double scale_z)
-			: epsg(epsg), dimensions(dimensions), size{w, h, d}, origin{origin_x, origin_y, origin_z}, scale{scale_x, scale_y, scale_z} {};
+		GDALCRS(CrsId crsId, int dimensions, uint32_t w, uint32_t h, uint32_t d, double origin_x, double origin_y, double origin_z, double scale_x, double scale_y, double scale_z)
+			: crsId(crsId), dimensions(dimensions), size{w, h, d}, origin{origin_x, origin_y, origin_z}, scale{scale_x, scale_y, scale_z} {};
 
 		GDALCRS(const GridSpatioTemporalResult &stres)
-			: epsg(stres.stref.epsg), dimensions(2), size{stres.width, stres.height, 0}, origin{stres.PixelToWorldX(0), stres.PixelToWorldY(0), 0.0}, scale{stres.pixel_scale_x, stres.pixel_scale_y, 1.0}
+			: crsId(stres.stref.crsId), dimensions(2), size{stres.width, stres.height, 0}, origin{stres.PixelToWorldX(0), stres.PixelToWorldY(0), 0.0}, scale{stres.pixel_scale_x, stres.pixel_scale_y, 1.0}
 			{};
 
 		GDALCRS() = default;
@@ -51,7 +51,7 @@ class GDALCRS {
 
 		SpatialReference toSpatialReference(bool &flipx, bool &flipy) const;
 
-		epsg_t epsg;
+		CrsId crsId;
 		uint8_t dimensions; // 1 .. 3
 		uint32_t size[3]; // size of the raster in pixels
 		double origin[3]; // world coordinates of the outer corner of pixel (0,0)

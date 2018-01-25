@@ -84,19 +84,19 @@ void GenericOperator::validateQRect(const QueryRectangle &rect, GenericOperator:
 	else if (res == ResolutionRequirement::FORBIDDEN && rect.restype != QueryResolution::Type::NONE)
 		throw OperatorException("Cannot query a feature collection when specifying a desired resolution");
 
-	if (rect.epsg == EPSG_UNREFERENCED)
+	if (rect.crsId == CrsId::unreferenced())
 		throw OperatorException("Cannot query with EPSG_UNREFERENCED");
 	if (rect.timetype == TIMETYPE_UNREFERENCED)
 		throw OperatorException("Cannot query with TIMETYPE_UNREFERENCED");
 }
 
 void GenericOperator::validateResult(const QueryRectangle &rect, SpatioTemporalResult *result) {
-	if (result->stref.epsg == EPSG_UNREFERENCED)
+	if (result->stref.crsId == CrsId::unreferenced())
 		throw OperatorException(concat("Operator ", type, " returned result with EPSG_UNREFERENCED"));
 	if (result->stref.timetype == TIMETYPE_UNREFERENCED)
 		throw OperatorException(concat("Operator ", type, " returned result with TIMETYPE_UNREFERENCED"));
 
-	if (!result->stref.SpatialReference::contains(rect) || !result->stref.TemporalReference::contains(rect))
+	if (!result->stref.SpatialReference::contains((SpatialReference) rect) || !result->stref.TemporalReference::contains((TemporalReference) rect))
 		throw OperatorException(concat("Operator ", type, " returned a result which did not contain the given query rectangle. \nQuery: ",
 				CacheCommon::qr_to_string(rect), "\nResult: ", CacheCommon::stref_to_string(result->stref)));
 }
@@ -322,7 +322,7 @@ std::unique_ptr<ProvenanceCollection> GenericOperator::getCachedFullProvenance(c
 	QueryProfilerSimpleGuard parent_guard(parent_profiler);
 
 	// TODO: think about the semantics of provenance!
-	QueryRectangle fullRect(SpatialReference::extent(rect.epsg), TemporalReference(rect.timetype), QueryResolution::none());
+	QueryRectangle fullRect(SpatialReference::extent(rect.crsId), TemporalReference(rect.timetype), QueryResolution::none());
 
 	auto &cache = CacheManager::get_instance().get_provenance_cache();
 	std::unique_ptr<ProvenanceCollection> result;

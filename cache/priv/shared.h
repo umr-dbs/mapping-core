@@ -103,7 +103,7 @@ public:
 	 */
 	void serialize(BinaryWriteBuffer &buffer, bool is_persistent_memory) const;
 
-	epsg_t epsg;
+	CrsId crsId;
 	timetype_t timetype;
 };
 

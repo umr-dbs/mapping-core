@@ -257,7 +257,7 @@ std::priority_queue<CacheQueryInfo<EType>> CacheStructure<KType, EType>::get_que
 	for (auto &e : entries) {
 		CacheCube &bounds = e.second->bounds;
 
-		if ( qc.epsg == bounds.epsg &&
+		if ( qc.crsId == bounds.crsId &&
 			 qc.timetype == bounds.timetype &&
 			 bounds.resolution_info.matches(qc) &&
 			 bounds.intersects(qc) ) {
@@ -382,7 +382,7 @@ QueryRectangle CacheStructure<KType, EType>::enlarge_expected_result( const Quer
 	}
 
 	return QueryRectangle(
-		SpatialReference( qc.epsg, values[0], values[2], values[1], values[3] ),
+		SpatialReference( qc.crsId, values[0], values[2], values[1], values[3] ),
 		TemporalReference( qc.timetype, values[4], values[5] ),
 		qr
 	);

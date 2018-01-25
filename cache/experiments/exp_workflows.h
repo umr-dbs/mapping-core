@@ -570,15 +570,15 @@ const std::string srtm_ex_wf = R"WF_ESCAPE(
 )WF_ESCAPE";
 
 
-	const QuerySpec btw(btw_wf,EPSG_LATLON,CacheType::RASTER,TemporalReference(TIMETYPE_UNIX,42), "BTW Cats");
-	const QuerySpec cloud_detection(cloud_detection_wf,EPSG_GEOSMSG,CacheType::RASTER,tref, "CloudDetection");
-	const QuerySpec avg_temp(avg_temp_wf,EPSG_LATLON,CacheType::RASTER,tref, "Average Temperature");
-	const QuerySpec srtm_proj(srtm_proj_wf,EPSG_WEBMERCATOR,CacheType::RASTER,tref, "SRTM Projected");
-	const QuerySpec srtm(srtm_wf,EPSG_LATLON,CacheType::RASTER,tref, "SRTM");
-	const QuerySpec ndvi(ndvi_wf,EPSG_LATLON,CacheType::RASTER,tref_ndvi, "NDVI");
-	const QuerySpec ndvi_proj(ndvi_proj_wf,EPSG_WEBMERCATOR,CacheType::RASTER,tref_ndvi, "NDVI projected");
-	const QuerySpec srtm_ts(srtm_ts_wf,EPSG_LATLON,CacheType::RASTER,tref, "SRTM Timeshifted");
-	const QuerySpec srtm_ex(srtm_ex_wf,EPSG_LATLON,CacheType::RASTER,tref, "SRTM Expression");
+	const QuerySpec btw(btw_wf,CrsId::from_crsId(4326),CacheType::RASTER,TemporalReference(TIMETYPE_UNIX,42), "BTW Cats");
+	const QuerySpec cloud_detection(cloud_detection_wf,CrsId::from_crsId(0x9E05),CacheType::RASTER,tref, "CloudDetection");
+	const QuerySpec avg_temp(avg_temp_wf,CrsId::from_crsId(4326),CacheType::RASTER,tref, "Average Temperature");
+	const QuerySpec srtm_proj(srtm_proj_wf,CrsId::from_crsId(3857),CacheType::RASTER,tref, "SRTM Projected");
+	const QuerySpec srtm(srtm_wf,CrsId::from_crsId(4326),CacheType::RASTER,tref, "SRTM");
+	const QuerySpec ndvi(ndvi_wf,CrsId::from_crsId(4326),CacheType::RASTER,tref_ndvi, "NDVI");
+	const QuerySpec ndvi_proj(ndvi_proj_wf,CrsId::from_crsId(3857),CacheType::RASTER,tref_ndvi, "NDVI projected");
+	const QuerySpec srtm_ts(srtm_ts_wf,CrsId::from_crsId(4326),CacheType::RASTER,tref, "SRTM Timeshifted");
+	const QuerySpec srtm_ex(srtm_ex_wf,CrsId::from_crsId(4326),CacheType::RASTER,tref, "SRTM Expression");
 
 	static QuerySpec projected_shifted_temp( const std::string &timestamp, const std::string &time_to ) {
 		std::string p1 = R"WF_ESCAPE(
@@ -606,7 +606,7 @@ const std::string srtm_ex_wf = R"WF_ESCAPE(
 
 		std::string wf = p1 + timestamp + p2 + time_to + p3;
 
-		return QuerySpec( wf, EPSG_WEBMERCATOR, CacheType::RASTER,tref,"Monthly Temperature (Projected, Shifted to " + timestamp + ")" );
+		return QuerySpec( wf, CrsId::from_crsId(3857), CacheType::RASTER,tref,"Monthly Temperature (Projected, Shifted to " + timestamp + ")" );
 	}
 
 	static QuerySpec shifted_temp( const std::string &timestamp, const std::string &time_to ) {
@@ -626,7 +626,7 @@ const std::string srtm_ex_wf = R"WF_ESCAPE(
 
 		std::string wf = p1 + timestamp + p2 + time_to + p3;
 
-		return QuerySpec( wf, EPSG_LATLON, CacheType::RASTER,tref,"Monthly Temperature (Shifted to " + timestamp + ")" );
+		return QuerySpec( wf, CrsId::from_crsId(4326), CacheType::RASTER,tref,"Monthly Temperature (Shifted to " + timestamp + ")" );
 	}
 }
 

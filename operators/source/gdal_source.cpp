@@ -31,13 +31,13 @@ class RasterGDALSourceOperator : public GenericOperator {
 		int channel;
 
 		std::unique_ptr<GenericRaster> loadDataset( const GDALTimesnap::GDALDataLoadingInfo &loadingInfo,
-													epsg_t epsg, 
+													CrsId crsId,
 													bool clip, 
 													const QueryRectangle &qrect);
 		
 		std::unique_ptr<GenericRaster> loadRaster(  GDALDataset *dataset, double origin_x, double origin_y,
 													double scale_x, double scale_y, 																					   
-													epsg_t epsg, bool clip,
+													CrsId crsId, bool clip,
 													double clip_x1, double clip_y1, 
 													double clip_x2, double clip_y2,
 													const QueryRectangle &qrect,
@@ -86,7 +86,7 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
 	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
 	GDALTimesnap::GDALDataLoadingInfo loadingInfo = GDALTimesnap::getDataLoadingInfo(datasetJson, channel, rect);
-	auto raster = loadDataset(loadingInfo, rect.epsg, true, rect);
+	auto raster = loadDataset(loadingInfo, rect.crsId, true, rect);
 	//flip here so the tiff result will not be flipped
 	return raster->flip(false, true);
 }
@@ -98,7 +98,7 @@ bool overlaps (double a_start, double a_end, double b_start, double b_end) {
 // loads the raster and read the wanted raster data section into a GenericRaster
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset *dataset, double origin_x,
 																	double origin_y, double scale_x, double scale_y,
-																	epsg_t epsg, bool clip, double clip_x1,
+																	CrsId crsId, bool clip, double clip_x1,
 																	double clip_y1, double clip_x2, double clip_y2,
 																	const QueryRectangle& qrect,
 																	const GDALTimesnap::GDALDataLoadingInfo &loadingInfo) {
@@ -190,7 +190,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 
         std::unique_ptr<GenericRaster> raster;
         SpatioTemporalReference stref_gdal(
-                SpatialReference(qrect.epsg, gdal_x1, gdal_y1, gdal_x2, gdal_y2, flipx, flipy),
+                SpatialReference(qrect.crsId, gdal_x1, gdal_y1, gdal_x2, gdal_y2, flipx, flipy),
                 loadingInfo.tref
         );
 
@@ -220,7 +220,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
         if (pixel_width > gdal_pixel_width || pixel_height > gdal_pixel_height) {
             // loaded raster has to be filled up with nodata
             SpatioTemporalReference stref(
-                    SpatialReference(qrect.epsg, x1, y1, x2, y2, flipx, flipy),
+                    SpatialReference(qrect.crsId, x1, y1, x2, y2, flipx, flipy),
                     loadingInfo.tref
             );
 
@@ -242,7 +242,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
     } else {
         // return empty raster
         SpatioTemporalReference stref(
-                SpatialReference(qrect.epsg, x1, y1, x2, y2, flipx, flipy),
+                SpatialReference(qrect.crsId, x1, y1, x2, y2, flipx, flipy),
                 loadingInfo.tref
         );
 
@@ -256,7 +256,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 
 //load the GDALDataset from disk
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(const GDALTimesnap::GDALDataLoadingInfo &loadingInfo,
-                                                                     epsg_t epsg, bool clip, const QueryRectangle &qrect) {
+                                                                     CrsId crsId, bool clip, const QueryRectangle &qrect) {
 	
 	GDAL::init();
 
@@ -279,7 +279,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(const GDALT
 	}
 
 	auto raster = loadRaster(dataset, adfGeoTransform[0], adfGeoTransform[3], adfGeoTransform[1],
-                             adfGeoTransform[5], epsg, clip, qrect.x1, qrect.y1, qrect.x2, qrect.y2, qrect, loadingInfo);
+                             adfGeoTransform[5], crsId, clip, qrect.x1, qrect.y1, qrect.x2, qrect.y2, qrect, loadingInfo);
 
 	GDALClose(dataset);
 

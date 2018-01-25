@@ -68,23 +68,23 @@ std::string ResolutionInfo::to_string() const {
 
 BaseCube::BaseCube(const SpatioTemporalReference& stref) :
 	Cube3(stref.x1,stref.x2,stref.y1,stref.y2,stref.t1,stref.t2),
-		epsg(stref.epsg), timetype(stref.timetype) {
+		crsId(stref.crsId), timetype(stref.timetype) {
 }
 
 BaseCube::BaseCube(const SpatialReference& sref,
 		const TemporalReference& tref) :
 	Cube3(sref.x1,sref.x2,sref.y1,sref.y2,tref.t1,tref.t2),
-			epsg(sref.epsg), timetype(tref.timetype) {
+			crsId(sref.crsId), timetype(tref.timetype) {
 }
 
 BaseCube::BaseCube(BinaryReadBuffer& buffer) : Cube3(buffer),
-		epsg(buffer.read<epsg_t>()), timetype(buffer.read<timetype_t>()) {
+		crsId(CrsId(buffer)), timetype(buffer.read<timetype_t>()) {
 }
 
 void BaseCube::serialize(BinaryWriteBuffer& buffer,
 		bool is_persistent_memory) const {
 	Cube3::serialize(buffer, is_persistent_memory);
-	buffer.write(epsg);
+	buffer.write(crsId);
 	buffer.write(timetype);
 }
 

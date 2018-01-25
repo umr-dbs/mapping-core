@@ -4,15 +4,10 @@
 #include "util/gdal.h"
 #include "util/log.h"
 
-#include <stdint.h>
-#include <cstdlib>
 #include <mutex>
-#include <sstream>
 
-#include <gdal_priv.h>
 #include <gdal_alg.h>
 
-#include <cpl_string.h>
 #include <ogr_spatialref.h>
 
 
@@ -60,20 +55,16 @@ void init() {
 }
 
 
-std::string SRSFromEPSG(epsg_t epsg) {
-		std::ostringstream epsg_name;
-		epsg_name << "EPSG:" << (int) epsg;
-
-		std::string epsg_name_str = epsg_name.str();
+std::string SRSFromCrsId(const CrsId &crsId) {
 		OGRSpatialReferenceH hSRS;
-		char *pszResult = NULL;
+		char *pszResult = nullptr;
 
 		CPLErrorReset();
 
-		hSRS = OSRNewSpatialReference( NULL );
+		hSRS = OSRNewSpatialReference(nullptr);
 		bool success = false;
 
-		if(epsg == EPSG_GEOSMSG) {
+		if(crsId == CrsId::from_srs_string("SR-ORG:81")) {
 			//MSG handling
 			success = (OSRSetGEOS(hSRS, 0, 35785831, 0, 0) == OGRERR_NONE); //this is valid for meteosat: lon, height, easting, northing (gdal notation)!
 			success = (OSRSetWellKnownGeogCS(hSRS, "WGS84" ) == OGRERR_NONE);
@@ -85,14 +76,14 @@ std::string SRSFromEPSG(epsg_t epsg) {
 		}
 		else {
 			//others
-			success = (OSRSetFromUserInput( hSRS, epsg_name_str.c_str() ) == OGRERR_NONE );
+			success = (OSRSetFromUserInput( hSRS, crsId.to_string().c_str() ) == OGRERR_NONE );
 		}
 
 		if(success)
 			//check for success and throw an exception if something went wrong
 			OSRExportToWkt( hSRS, &pszResult );
 		else {
-			throw GDALException(concat("SRS could not be created for epsg ", (int) epsg));
+			throw GDALException(concat("SRS could not be created for crsId ", crsId.to_string()));
 			/*
 				CPLError( CE_Failure, CPLE_AppDefined,
 									"Translating source or target SRS failed:\n%s",
@@ -109,15 +100,15 @@ std::string SRSFromEPSG(epsg_t epsg) {
 
 
 
-CRSTransformer::CRSTransformer(epsg_t in_epsg, epsg_t out_epsg) : in_epsg(in_epsg), out_epsg(out_epsg), transformer(nullptr) {
+CRSTransformer::CRSTransformer(CrsId in_crsId, CrsId out_crsId) : in_crsId(in_crsId), out_crsId(out_crsId), transformer(nullptr) {
 	init();
 
-	if (in_epsg == EPSG_UNKNOWN || out_epsg == EPSG_UNKNOWN)
-		throw GDALException("in- or out-epsg is UNKNOWN");
-	if (in_epsg == out_epsg)
-		throw GDALException("Cannot transform when in_epsg == out_epsg");
+	if (in_crsId == CrsId::unreferenced() || out_crsId == CrsId::unreferenced())
+		throw GDALException("in- or out-crsId is UNKNOWN");
+	if (in_crsId == out_crsId)
+		throw GDALException("Cannot transform when in_crsId == out_crsId");
 
-	transformer = GDALCreateReprojectionTransformer(SRSFromEPSG(in_epsg).c_str(), SRSFromEPSG(out_epsg).c_str());
+	transformer = GDALCreateReprojectionTransformer(SRSFromCrsId(in_crsId).c_str(), SRSFromCrsId(out_crsId).c_str());
 	if (!transformer)
 		throw GDALException("Could not initialize ReprojectionTransformer");
 }
@@ -131,7 +122,7 @@ CRSTransformer::~CRSTransformer() {
 
 bool CRSTransformer::transform(double &px, double &py, double &pz) const {
 	int success;
-	if (in_epsg != out_epsg) {
+	if (in_crsId != out_crsId) {
 		if (!GDALReprojectionTransform(transformer, false, 1, &px, &py, &pz, &success) || !success)
 			return false;
 	}

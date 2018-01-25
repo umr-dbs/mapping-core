@@ -55,7 +55,7 @@ double CachingStrategy::caching_time(uint32_t w, uint32_t h) {
 	for ( int i = 0; i < num_runs; i++ ) {
 		DataDescription dd(GDT_Byte,Unit::unknown());
 		SpatioTemporalReference stref(
-			SpatialReference::extent(EPSG_WEBMERCATOR),
+			SpatialReference::extent(CrsId::from_epsg_code(3857)),
 			TemporalReference(TIMETYPE_UNIX,i,i+1)
 		);
 		auto raster = GenericRaster::create(dd,stref,w,h);

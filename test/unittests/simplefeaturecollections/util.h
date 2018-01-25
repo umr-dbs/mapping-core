@@ -90,11 +90,11 @@ public:
 	}
 
 	static void checkStrefEquality(const SpatioTemporalReference &expected, const SpatioTemporalReference &actual){
-		EXPECT_EQ(expected.epsg, actual.epsg);
+		EXPECT_EQ(expected.crsId, actual.crsId);
 		EXPECT_EQ(expected.timetype, actual.timetype);
 		EXPECT_EQ(expected.t1, actual.t1);
 		EXPECT_EQ(expected.t2, actual.t2);
-		EXPECT_EQ(expected.epsg, actual.epsg);
+		EXPECT_EQ(expected.crsId, actual.crsId);
 		EXPECT_EQ(expected.x1, actual.x1);
 		EXPECT_EQ(expected.y1, actual.y1);
 		EXPECT_EQ(expected.x2, actual.x2);

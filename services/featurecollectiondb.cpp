@@ -96,9 +96,9 @@ void FeatureCollectionDBService::run() {
 			throw ArgumentException("FeatureCollectionDBService: name of data set not specified");
 		std::string name = params.get("name");
 
-		epsg_t queryEpsg = parseEPSG(params, "crs");
+		CrsId queryEpsg = parseEPSG(params, "crs");
 
-		if(queryEpsg != epsg_t::EPSG_LATLON) {
+		if(queryEpsg != CrsId::from_epsg_code(4326)) {
 			throw ArgumentException("FeatureCollectionDBService: only WGS84 supported");
 		}
 

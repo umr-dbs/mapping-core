@@ -58,7 +58,7 @@ static void compareBinaryReadBuffers(const BinaryReadBuffer &a, const BinaryRead
 
 TEST(Serialization, SpatioTemporalReference) {
 	SpatioTemporalReference ref1(
-		SpatialReference(EPSG_LATLON, -180, -90, 180, 90),
+		SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90),
 		TemporalReference(TIMETYPE_UNIX, 0, 1)
 	);
 	auto buf1 = getSerializedBuffer(ref1);
@@ -138,7 +138,7 @@ TEST(Serialization, ResolutionInfo) {
 
 TEST(Serialization, QueryCube) {
 	QueryRectangle qr(
-		SpatialReference(EPSG_LATLON, -180, -90, 180, 90),
+		SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90),
 		TemporalReference( TIMETYPE_UNIX, 0, 1e5 ),
 		QueryResolution::none()
 	);
@@ -149,7 +149,7 @@ TEST(Serialization, QueryCube) {
 
 TEST(Serialization, CacheCube) {
 	CacheCube cc(SpatioTemporalReference(
-			SpatialReference(EPSG_LATLON, -180, -90, 180, 90),
+			SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90),
 			TemporalReference( TIMETYPE_UNIX, 0, 1e5 ))
 	);
 	checkSerializationConstructor(cc);
@@ -164,7 +164,7 @@ TEST(Serialization, CacheEntry) {
 
 
 	CacheCube cc(SpatioTemporalReference(
-			SpatialReference(EPSG_LATLON, -180, -90, 180, 90),
+			SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90),
 			TemporalReference( TIMETYPE_UNIX, 0, 1e5 ) )
 	);
 
@@ -184,7 +184,7 @@ TEST(Serialization, TypedNodeCacheKey) {
 
 TEST(Serialization, MetaCacheEntry) {
 	CacheCube cc(SpatioTemporalReference(
-				SpatialReference(EPSG_LATLON, -180, -90, 180, 90),
+				SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90),
 				TemporalReference( TIMETYPE_UNIX, 0, 1e5 ) ));
 
 	CacheEntry ce( cc, 1024, ProfilingData(), 10024373, 5 );
@@ -209,7 +209,7 @@ TEST(Serialization, CacheRef) {
 
 TEST(Serialization, BaseRequest) {
 	QueryRectangle qr(
-			SpatialReference(EPSG_LATLON, -180, -90, 180, 90),
+			SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90),
 			TemporalReference(TIMETYPE_UNIX, 0, 1),
 			QueryResolution::pixels(1024,1024)
 	);
@@ -220,7 +220,7 @@ TEST(Serialization, BaseRequest) {
 
 TEST(Serialization, DeliveryRequest) {
 	QueryRectangle qr(
-			SpatialReference(EPSG_LATLON, -180, -90, 180, 90),
+			SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90),
 			TemporalReference(TIMETYPE_UNIX, 0, 1),
 			QueryResolution::pixels(1024,1024)
 	);
@@ -231,7 +231,7 @@ TEST(Serialization, DeliveryRequest) {
 
 TEST(Serialization, PuzzleRequest) {
 	QueryRectangle qr(
-			SpatialReference(EPSG_LATLON, -180, -90, 180, 90),
+			SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90),
 			TemporalReference(TIMETYPE_UNIX, 0, 1),
 			QueryResolution::pixels(1024,1024)
 	);
@@ -295,7 +295,7 @@ TEST(Serialization, SystemStats) {
 
 TEST(Serialization, HandshakeEntry) {
 	CacheCube cc(SpatioTemporalReference(
-				SpatialReference(EPSG_LATLON, -180, -90, 180, 90),
+				SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90),
 				TemporalReference( TIMETYPE_UNIX, 0, 1e5 )));
 
 	CacheEntry ce( cc, 1024, ProfilingData(), 10024373, 5 );
@@ -319,7 +319,7 @@ TEST(Serialization, CacheStats) {
 
 TEST(Serialization, CacheHandshake) {
 	CacheCube cc(SpatioTemporalReference(
-				 SpatialReference(EPSG_LATLON, -180, -90, 180, 90),
+				 SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90),
 				 TemporalReference( TIMETYPE_UNIX, 0, 1e5 )));
 
 	CacheHandshake ch(CacheType::RASTER,4096,2048);
@@ -366,7 +366,7 @@ TEST(Serialization, NodeStats) {
 TEST(Serialization, NodeHandshake) {
 
 	CacheCube cc( SpatioTemporalReference(
-				  SpatialReference(EPSG_LATLON, -180, -90, 180, 90),
+				  SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90),
 				  TemporalReference( TIMETYPE_UNIX, 0, 1e5 )));
 
 	CacheHandshake ch(CacheType::RASTER,4096,2048);

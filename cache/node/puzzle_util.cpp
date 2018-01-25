@@ -111,7 +111,7 @@ std::vector<QueryRectangle> PuzzleUtil::get_remainder_queries(
 	result.reserve(remainder.size());
 
 	for ( auto &rem : remainder ) {
-		result.push_back( QueryRectangle( SpatialReference(query.epsg, rem.get_dimension(0).a, rem.get_dimension(1).
+		result.push_back( QueryRectangle( SpatialReference(query.crsId, rem.get_dimension(0).a, rem.get_dimension(1).
 												a, rem.get_dimension(0).b, rem.get_dimension(1).b),
 											TemporalReference(query.timetype, rem.get_dimension(2).a,rem.get_dimension(2).b),
 											QueryResolution::none() ) );
@@ -142,7 +142,7 @@ std::vector<QueryRectangle> PuzzleUtil::get_remainder_queries(
 		snap_to_pixel_grid(y1,y2,ref_result.stref.y1,ref_result.pixel_scale_y);
 
 
-		result.push_back( QueryRectangle( SpatialReference(query.epsg, x1,y1,x2,y2),
+		result.push_back( QueryRectangle( SpatialReference(query.crsId, x1,y1,x2,y2),
 										  TemporalReference(query.timetype, rem.get_dimension(2).a,rem.get_dimension(2).b),
 										  QueryResolution::pixels( std::round((x2-x1) / ref_result.pixel_scale_x),
 																   std::round((y2-y1) / ref_result.pixel_scale_y) ) ) );
@@ -205,7 +205,7 @@ SpatioTemporalReference PuzzleUtil::enlarge_puzzle(const QueryRectangle& query,
 	}
 
 	return SpatioTemporalReference(
-			SpatialReference(query.epsg, values[0], values[2], values[1],
+			SpatialReference(query.crsId, values[0], values[2], values[1],
 					values[3]),
 			TemporalReference(query.timetype, values[4], values[5]));
 }

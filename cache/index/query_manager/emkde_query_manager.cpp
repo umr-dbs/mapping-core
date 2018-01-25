@@ -9,10 +9,10 @@
 #include "util/log.h"
 #include "util/exceptions.h"
 
-const GDAL::CRSTransformer EMKDEQueryManager::TRANS_GEOSMSG(EPSG_GEOSMSG,
-		EPSG_LATLON);
+const GDAL::CRSTransformer EMKDEQueryManager::TRANS_GEOSMSG(CrsId::from_crsId(0x9E05),
+		CrsId::from_crsId(4326));
 const GDAL::CRSTransformer EMKDEQueryManager::TRANS_WEBMERCATOR(
-		EPSG_WEBMERCATOR, EPSG_LATLON);
+		CrsId::from_crsId(3857), CrsId::from_crsId(4326));
 const uint32_t EMKDEQueryManager::MAX_Z = 0xFFFFFFFF;
 const uint32_t EMKDEQueryManager::MASKS[] = { 0x55555555, 0x33333333,
 		0x0F0F0F0F, 0x00FF00FF };
@@ -131,9 +131,9 @@ uint32_t EMKDEQueryManager::get_hilbert_value(const QueryRectangle& rect) {
 	double ex = rect.x1 + (rect.x2 - rect.x1) / 2.0;
 	double ey = rect.y1 + (rect.y2 - rect.y1) / 2.0;
 
-	if (rect.epsg == EPSG_GEOSMSG) {
+	if (rect.crsId == CrsId::from_crsId(0x9E05)) {
 		EMKDEQueryManager::TRANS_GEOSMSG.transform(ex, ey);
-	} else if (rect.epsg == EPSG_WEBMERCATOR) {
+	} else if (rect.crsId == CrsId::from_crsId(3857)) {
 		EMKDEQueryManager::TRANS_WEBMERCATOR.transform(ex, ey);
 	}
 

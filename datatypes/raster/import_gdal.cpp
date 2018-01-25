@@ -10,7 +10,7 @@
 
 
 
-static std::unique_ptr<GenericRaster> GDALImporter_loadRaster(GDALDataset *dataset, int rasteridx, double origin_x, double origin_y, double scale_x, double scale_y, bool &flipx, bool &flipy, epsg_t default_epsg, bool clip, double clip_x1, double clip_y1, double clip_x2, double clip_y2) {
+static std::unique_ptr<GenericRaster> GDALImporter_loadRaster(GDALDataset *dataset, int rasteridx, double origin_x, double origin_y, double scale_x, double scale_y, bool &flipx, bool &flipy, CrsId crsId, bool clip, double clip_x1, double clip_y1, double clip_x2, double clip_y2) {
 	GDALRasterBand  *poBand;
 	int             nBlockXSize, nBlockYSize;
 	int             bGotMin, bGotMax;
@@ -57,12 +57,11 @@ static std::unique_ptr<GenericRaster> GDALImporter_loadRaster(GDALDataset *datas
 */
 
 	// Figure out the data type
-	epsg_t epsg = default_epsg;
 	double minvalue = adfMinMax[0];
 	double maxvalue = adfMinMax[1];
 
 	//if (type == GDT_Byte) maxvalue = 255;
-	if(epsg == EPSG_GEOSMSG){
+	if(crsId == CrsId::from_srs_string("SR-ORG:81")){
 		hasnodata = true;
 		nodata = 0;
 		type = GDT_Int16; // TODO: sollte GDT_UInt16 sein!
@@ -103,7 +102,7 @@ static std::unique_ptr<GenericRaster> GDALImporter_loadRaster(GDALDataset *datas
 	double y2 = y1 + scale_y * pixel_height;
 
 	SpatioTemporalReference stref(
-		SpatialReference(epsg, x1, y1, x2, y2, flipx, flipy),
+		SpatialReference(crsId, x1, y1, x2, y2, flipx, flipy),
 		TemporalReference::unreferenced()
 	);
 	Unit unit = Unit::unknown();
@@ -135,7 +134,7 @@ CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag,
 
 	// Selectively read metadata
 	//char **mdList = GDALGetMetadata(poBand, "msg");
-	if (epsg == EPSG_GEOSMSG) {
+	if (crsId == CrsId::from_srs_string("SR-ORG:81")) {
 		char **mdList = poBand->GetMetadata("msg");
 		for (int i = 0; mdList && mdList[i] != nullptr; i++ ) {
 			//printf("GDALImport: got Metadata %s\n", mdList[i]);
@@ -161,12 +160,12 @@ CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag,
 	return raster;
 }
 
-static std::unique_ptr<GenericRaster> GDALImporter_loadDataset(const char *filename, int rasterid, bool &flipx, bool &flipy, epsg_t epsg, bool clip, double x1, double y1, double x2, double y2) {
+static std::unique_ptr<GenericRaster> GDALImporter_loadDataset(const char *filename, int rasterid, bool &flipx, bool &flipy, CrsId crsId, bool clip, double x1, double y1, double x2, double y2) {
 	GDAL::init();
 
-	GDALDataset *dataset = (GDALDataset *) GDALOpen(filename, GA_ReadOnly);
+	auto dataset = (GDALDataset *) GDALOpen(filename, GA_ReadOnly);
 
-	if (dataset == NULL)
+	if (dataset == nullptr)
 		throw ImporterException(concat("Could not open dataset ", filename));
 
 
@@ -219,11 +218,11 @@ static std::unique_ptr<GenericRaster> GDALImporter_loadDataset(const char *filen
 	//const char *drivername = dataset->GetDriverName();
 	//printf("Driver: %s\n", drivername);
 	if (strcmp(drivername, "MSG") == 0) {
-		if (epsg != EPSG_GEOSMSG)
+		if (crsId != CrsId::from_srs_string("SR-ORG:81"))
 			throw ImporterException("MSG driver can only import rasters in MSG projection");
 	}
 
-	auto raster = GDALImporter_loadRaster(dataset, rasterid, adfGeoTransform[0], adfGeoTransform[3], adfGeoTransform[1], adfGeoTransform[5], flipx, flipy, epsg, clip, x1, y1, x2, y2);
+	auto raster = GDALImporter_loadRaster(dataset, rasterid, adfGeoTransform[0], adfGeoTransform[3], adfGeoTransform[1], adfGeoTransform[5], flipx, flipy, crsId, clip, x1, y1, x2, y2);
 
 	GDALClose(dataset);
 
@@ -231,18 +230,18 @@ static std::unique_ptr<GenericRaster> GDALImporter_loadDataset(const char *filen
 }
 
 
-std::unique_ptr<GenericRaster> GenericRaster::fromGDAL(const char *filename, int rasterid, bool &flipx, bool &flipy, epsg_t epsg, double x1, double y1, double x2, double y2) {
-	return GDALImporter_loadDataset(filename, rasterid, flipx, flipy, epsg, true, x1, y1, x2, y2);
+std::unique_ptr<GenericRaster> GenericRaster::fromGDAL(const char *filename, int rasterid, bool &flipx, bool &flipy, CrsId crsId, double x1, double y1, double x2, double y2) {
+	return GDALImporter_loadDataset(filename, rasterid, flipx, flipy, crsId, true, x1, y1, x2, y2);
 }
 
-std::unique_ptr<GenericRaster> GenericRaster::fromGDAL(const char *filename, int rasterid, bool &flipx, bool &flipy, epsg_t epsg) {
-	return GDALImporter_loadDataset(filename, rasterid, flipx, flipy, epsg, false, 0, 0, 0, 0);
+std::unique_ptr<GenericRaster> GenericRaster::fromGDAL(const char *filename, int rasterid, bool &flipx, bool &flipy, CrsId crsId) {
+	return GDALImporter_loadDataset(filename, rasterid, flipx, flipy, crsId, false, 0, 0, 0, 0);
 }
 
 
-std::unique_ptr<GenericRaster> GenericRaster::fromGDAL(const char *filename, int rasterid, epsg_t epsg) {
+std::unique_ptr<GenericRaster> GenericRaster::fromGDAL(const char *filename, int rasterid, CrsId crsId) {
 	bool flipx, flipy;
-	auto result = fromGDAL(filename, rasterid, flipx, flipy, epsg);
+	auto result = fromGDAL(filename, rasterid, flipx, flipy, crsId);
 
 	if (flipx || flipy) {
 		result = result->flip(flipx, flipy);
@@ -309,7 +308,7 @@ template<typename T> void Raster2D<T>::toGDAL(const char *filename, const char *
 	double origin_y = flipy ? stref.y2 : stref.y1;
 
 	double adfGeoTransform[6]{ origin_x, scale_x, 0, origin_y, 0, scale_y };
-	std::string srs = GDAL::SRSFromEPSG(stref.epsg);
+	std::string srs = GDAL::SRSFromCrsId(stref.crsId);
 	//set dataset parameters
 	poDstDS->SetGeoTransform(adfGeoTransform);
 	poDstDS->SetProjection(srs.c_str());

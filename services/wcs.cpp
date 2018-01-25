@@ -99,8 +99,7 @@ void WCSService::run() {
 
 	if(params.get("request") == "getcoverage") {
 		//now we will identify the parameters for the QueryRectangle
-		std::pair<std::string, std::string> crsInformation = getCrsInformationFromOGCUri(params.get("outputcrs"));
-		epsg_t query_crsId = (epsg_t) std::stoi(crsInformation.second);
+		CrsId query_crsId = parseEPSG(params, "srsname");
 
 		/*
 		 *

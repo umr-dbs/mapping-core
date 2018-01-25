@@ -24,7 +24,7 @@ bool LateJob::extend(const BaseRequest& req) {
 		auto combined = current.combine(requested);
 
 		if ( combined.volume() <= max_volume && (current.volume() + requested.volume()) * 1.01 >= combined.volume() ) {
-			SpatialReference sref(orig_query.epsg, combined.get_dimension(0).a,
+			SpatialReference sref(orig_query.crsId, combined.get_dimension(0).a,
 												   combined.get_dimension(1).a,
 												   combined.get_dimension(0).b,
 												   combined.get_dimension(1).b);

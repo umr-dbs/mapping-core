@@ -8,7 +8,7 @@
  * This class serves results of plot queries. Although it does not follow any OGC standard we make use of common
  * functionality and inherit from the OGCService class
  *
- * Query pattern: mapping_url/?service=plot&query={QUERY_STRING}&time={ISO_TIME}&bbox={x1,y1,x2,y2}&crs={EPSG:epsg}
+ * Query pattern: mapping_url/?service=plot&query={QUERY_STRING}&time={ISO_TIME}&bbox={x1,y1,x2,y2}&crs={authority:code}
  * For plots containing at least one raster source, additionally parameters width and height have to be specified
  */
 class PlotService : public OGCService {
@@ -32,7 +32,7 @@ void PlotService::run() {
 	if(!params.hasParam("crs"))
 		throw ArgumentException("PlotService: crs not specified");
 
-	epsg_t queryEpsg = parseEPSG(params, "crs");
+	CrsId queryEpsg = parseEPSG(params, "crs");
 
 	SpatialReference sref(queryEpsg);
 	if(params.hasParam("bbox")) {

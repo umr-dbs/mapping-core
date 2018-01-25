@@ -93,8 +93,6 @@ public:
 private:
 	static void addPolygon(PolygonCollection& polygonCollection, const geos::geom::Geometry& polygonGeometry);
 
-	static epsg_t resolveGeosSRID(int srid);
-	static int resolveMappingEPSG(epsg_t epsg);
 };
 
 #endif

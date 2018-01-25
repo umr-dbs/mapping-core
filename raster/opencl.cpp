@@ -179,7 +179,7 @@ struct RasterInfo {
 
 	cl_double min, max, no_data;
 
-	cl_ushort epsg;
+	cl_ushort crs_code;
 	cl_ushort has_no_data;
 };
 
@@ -189,7 +189,7 @@ static const std::string rasterinfo_source(
 "	double origin[3];"
 "	double scale[3];"
 "	double min, max, no_data;"
-"	ushort epsg;"
+"	ushort crs_code;"
 "	ushort has_no_data;"
 "} RasterInfo;\n"
 "#define R(t,x,y) t ## _data[y * t ## _info->size[0] + x]\n"
@@ -209,7 +209,7 @@ std::unique_ptr<cl::Buffer> getBufferWithRasterinfo(GenericRaster *raster) {
 	ri.scale[1] = raster->pixel_scale_y;
 	ri.scale[2] = 1.0;
 
-	ri.epsg = raster->stref.epsg;
+	ri.crs_code = raster->stref.crsId.code;
 
 	ri.min = raster->dd.unit.getMin();
 	ri.max = raster->dd.unit.getMax();

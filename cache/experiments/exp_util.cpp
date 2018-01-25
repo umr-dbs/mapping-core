@@ -36,7 +36,7 @@ time_t parseIso8601DateTime(std::string dateTimeString) {
 	return (queryTimestamp);
 }
 
-void parseBBOX(double *bbox, const std::string bbox_str, epsg_t epsg,
+void parseBBOX(double *bbox, const std::string bbox_str, CrsId crsId,
 		bool allow_infinite) {
 	// &BBOX=0,0,10018754.171394622,10018754.171394622
 	for (int i = 0; i < 4; i++)
@@ -51,11 +51,11 @@ void parseBBOX(double *bbox, const std::string bbox_str, epsg_t epsg,
 	double extent_msg[4] { -5568748.276, -5568748.276, 5568748.276, 5568748.276 };
 
 	double *extent = nullptr;
-	if (epsg == EPSG_WEBMERCATOR)
+	if (crsId == CrsId::from_crsId(3857))
 		extent = extent_webmercator;
-	else if (epsg == EPSG_LATLON)
+	else if (crsId == CrsId::from_crsId(4326))
 		extent = extent_latlon;
-	else if (epsg == EPSG_GEOSMSG)
+	else if (crsId == CrsId::from_crsId(0x9E05))
 		extent = extent_msg;
 
 	std::string delimiters = " ,";
@@ -100,7 +100,7 @@ void parseBBOX(double *bbox, const std::string bbox_str, epsg_t epsg,
 	 * The simple solution is to swap the x and y coordinates.
 	 * OpenLayers 3 uses the axis orientation of the projection to determine the bbox axis order. https://github.com/openlayers/ol3/blob/master/src/ol/source/imagewmssource.js ~ line 317.
 	 */
-	if (epsg == EPSG_LATLON) {
+	if (crsId == CrsId::from_crsId(4326)) {
 		std::swap(bbox[0], bbox[1]);
 		std::swap(bbox[2], bbox[3]);
 	}
@@ -472,16 +472,16 @@ std::default_random_engine QuerySpec::generator(
 		std::chrono::system_clock::now().time_since_epoch().count());
 std::uniform_real_distribution<double> QuerySpec::distrib(0, 1);
 
-QuerySpec::QuerySpec(const std::string& workflow, epsg_t epsg, CacheType type,
+QuerySpec::QuerySpec(const std::string& workflow, CrsId crsId, CacheType type,
 		const TemporalReference& tref, std::string name) :
-		workflow(workflow), epsg(epsg), type(type), tref(tref), name(name), bounds(
-				SpatialReference::extent(epsg)) {
+		workflow(workflow), crsId(crsId), type(type), tref(tref), name(name), bounds(
+				SpatialReference::extent(crsId)) {
 }
 
 QueryRectangle QuerySpec::rectangle(double x1, double y1, double extend,
 		uint32_t resolution) const {
 	return QueryRectangle(
-			SpatialReference(epsg, x1, y1, x1 + extend, y1 + extend), tref,
+			SpatialReference(crsId, x1, y1, x1 + extend, y1 + extend), tref,
 			type == CacheType::RASTER ?
 					QueryResolution::pixels(resolution, resolution) :
 					QueryResolution::none());
@@ -567,7 +567,7 @@ void QuerySpec::get_op_spec(GenericOperator* op, QueryRectangle rect,
 
 	if (op->type == "projection") {
 		auto casted = dynamic_cast<ProjectionOperator*>(op);
-		GDAL::CRSTransformer transformer(casted->dest_epsg, casted->src_epsg);
+		GDAL::CRSTransformer transformer(casted->dest_crsId, casted->src_crsId);
 		QueryRectangle projected = casted->projectQueryRectangle(rect,
 				transformer);
 		rect = projected;

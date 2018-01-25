@@ -16,28 +16,6 @@
 GeosGeomUtil::~GeosGeomUtil() {
 }
 
-//TODO: also resolve time reference??
-epsg_t GeosGeomUtil::resolveGeosSRID(int srid){
-	if(srid == 4326){
-		return epsg_t::EPSG_LATLON;
-	}
-	else if (srid == 3857){
-		return epsg_t::EPSG_WEBMERCATOR;
-	}
-
-	//TODO: remove workaround that geos doesnt have correct epsg:
-	return epsg_t::EPSG_LATLON;
-}
-
-int GeosGeomUtil::resolveMappingEPSG(epsg_t epsg){
-	switch(epsg){
-		case epsg_t::EPSG_LATLON: return 4326;
-		case EPSG_WEBMERCATOR: return 3857;
-		default: return 0;
-	}
-}
-
-
 void GeosGeomUtil::addFeatureToCollection(PointCollection& pointCollection, const geos::geom::Geometry& geometry){
 	if(geometry.getGeometryTypeId() == geos::geom::GeometryTypeId::GEOS_POINT){
 		auto& coordinate = *geometry.getCoordinate();
@@ -162,7 +140,7 @@ std::unique_ptr<geos::geom::Geometry> GeosGeomUtil::createGeosLineCollection(con
 	std::unique_ptr<geos::geom::Geometry> collection (gf->createGeometryCollection(multiLines.release()));
 
 	//do this beforehand?
-	collection->setSRID(resolveMappingEPSG(lineCollection.stref.epsg));
+	collection->setSRID(lineCollection.stref.crsId.code);
 
 	return collection;
 }
@@ -307,7 +285,7 @@ std::unique_ptr<geos::geom::Geometry> GeosGeomUtil::createGeosPolygonCollection(
 	std::unique_ptr<geos::geom::Geometry> collection (gf->createGeometryCollection(multiPolygons.release()));
 
 	//do this beforehand?
-	collection->setSRID(resolveMappingEPSG(polygonCollection.stref.epsg));
+	collection->setSRID(polygonCollection.stref.crsId.code);
 
 	return collection;
 }

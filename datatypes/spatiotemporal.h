@@ -7,23 +7,34 @@
 #include <cmath>
 #include <string>
 
-/*
- * Coordinate systems for space, mapping an x/y coordinate to a place on earth.
- */
-enum epsg_t : uint16_t {
-	EPSG_UNKNOWN = 0,
-	EPSG_UNREFERENCED = 1,
-	EPSG_GEOSMSG = 0x9E05,    // 40453  // GEOS -> this is only valid for origin 0� 0� and satellite_height 35785831 (Proj4) [
-	EPSG_WEBMERCATOR = 3857, // 3785 is deprecated
-	EPSG_LATLON = 4326 // http://spatialreference.org/ref/epsg/wgs-84/
-};
-
 /**
- * This function parses the ID of an EPSG-spatial reference system
- * @param srsString The string containing the SRS as 'AUTHORITY:ID'
- * @param def The default value to return if srsString is empty -> ""
+ * Identification of a coordinate reference system by authority name and code
  */
-epsg_t epsgCodeFromSrsString(const std::string &srsString, epsg_t def = EPSG_WEBMERCATOR);
+class CrsId {
+public:
+	CrsId() = delete;
+
+	CrsId(std::string authority, uint32_t code);
+
+	static CrsId from_epsg_code(uint32_t epsg_code);
+
+    static CrsId from_srs_string(const std::string &srsString);
+
+	static CrsId unreferenced();
+
+	std::string to_string() const;
+
+	explicit CrsId(BinaryReadBuffer &buffer);
+
+	void serialize(BinaryWriteBuffer &buffer, bool is_persistent_memory) const;
+
+	bool operator==(const CrsId& other) const;
+
+	bool operator!=(const CrsId& other) const;
+
+	std::string authority;
+	uint32_t code;
+};
 
 /*
  * Coordinate systems for time, mapping a t value to a time.
@@ -49,19 +60,19 @@ class SpatialReference {
 		SpatialReference() = delete;
 		/**
 		 * Construct a reference that spans the known universe.
-		 * The actual endpoints are taken from the epsg_t t when known;
-		 * if in doubt they're set to extent(epsg)
+		 * The actual endpoints are taken from the CrsId t when known;
+		 * if in doubt they're set to extent(crsId)
 		 * @see extent
 		 */
-		SpatialReference(epsg_t epsg);
+		SpatialReference(CrsId crsId);
 		/*
 		 * Constructs a reference with all values
 		 */
-		SpatialReference(epsg_t epsg, double x1, double y1, double x2, double y2);
+		SpatialReference(CrsId crsId, double x1, double y1, double x2, double y2);
 		/*
 		 * Constructs a reference with all values, but flips the endpoints if required
 		 */
-		SpatialReference(epsg_t epsg, double x1, double y1, double x2, double y2, bool &flipx, bool &flipy);
+		SpatialReference(CrsId crsId, double x1, double y1, double x2, double y2, bool &flipx, bool &flipy);
 		/*
 		 * Read a SpatialReference from a buffer
 		 */
@@ -100,16 +111,15 @@ class SpatialReference {
 		 * This shall be used to instantiate rasters etc without an actual geo-reference.
 		 */
 		static SpatialReference unreferenced() {
-			return SpatialReference(EPSG_UNREFERENCED, 0.0, 0.0, 1.0, 1.0);
+			return SpatialReference(CrsId::unreferenced(), 0.0, 0.0, 1.0, 1.0);
 		}
 		/*
 		 * Named constructor for returning a reference that spans the whole earth in the given CRS
 		 * Defaults to -/+infinity.
 		 */
-		static SpatialReference extent(epsg_t epsg);
+		static SpatialReference extent(CrsId crsId);
 
-		// TODO: split into crs_authority_t / crs_code_t
-		epsg_t epsg;
+		CrsId crsId;
 		double x1, y1, x2, y2;
 };
 

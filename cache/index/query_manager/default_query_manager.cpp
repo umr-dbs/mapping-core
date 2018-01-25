@@ -222,7 +222,7 @@ bool CreateJob::extend(const BaseRequest& req) {
 		auto combined = current.combine(requested);
 
 		if ( combined.volume() <= max_volume && (current.volume() + requested.volume()) * 1.01 >= combined.volume() ) {
-			SpatialReference sref(orig_query.epsg, combined.get_dimension(0).a,
+			SpatialReference sref(orig_query.crsId, combined.get_dimension(0).a,
 												   combined.get_dimension(1).a,
 												   combined.get_dimension(0).b,
 												   combined.get_dimension(1).b);
@@ -275,7 +275,7 @@ bool CreateJob::extend(const BaseRequest& req) {
 //
 //
 //		if (orig_query.restype == QueryResolution::Type::NONE && narea / orig_area <= 4.01) {
-//			SpatialReference sref(orig_query.epsg, nx1, ny1, nx2, ny2);
+//			SpatialReference sref(orig_query.crsId, nx1, ny1, nx2, ny2);
 //			request.query = QueryRectangle(sref, orig_query, orig_query);
 //			return true;
 //		}
@@ -294,7 +294,7 @@ bool CreateJob::extend(const BaseRequest& req) {
 //				uint32_t nyres = std::ceil(
 //					orig_query.yres * ((ny2 - ny1) / (orig_query.y2 - orig_query.y1)));
 //
-//				SpatialReference sref(orig_query.epsg, nx1, ny1, nx2, ny2);
+//				SpatialReference sref(orig_query.crsId, nx1, ny1, nx2, ny2);
 //				request.query = QueryRectangle(sref, orig_query, QueryResolution::pixels(nxres, nyres));
 //				return true;
 //			}

@@ -35,7 +35,7 @@ TEST(FeatureCollectionDB, testALL) {
 	// Create a user
 	auto user = UserDB::createUser("testuser", "name", "email", "pass");
 
-	QueryRectangle qrect (QueryRectangle::extent(epsg_t::EPSG_LATLON), TemporalReference(timetype_t::TIMETYPE_UNIX), QueryResolution::none());
+	QueryRectangle qrect (QueryRectangle::extent(CrsId::from_epsg_code(4326)), TemporalReference(timetype_t::TIMETYPE_UNIX), QueryResolution::none());
 
 	auto points = createPointsWithAttributesAndTime();
 	points->replaceSTRef(qrect);

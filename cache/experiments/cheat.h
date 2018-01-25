@@ -28,7 +28,7 @@ class ProjectionOperator : public GenericOperator {
 		void writeSemanticParameters(std::ostringstream &stream);
 	private:
 		QueryRectangle projectQueryRectangle(const QueryRectangle &rect, const GDAL::CRSTransformer &transformer);
-		epsg_t src_epsg, dest_epsg;
+		CrsId src_crsId, dest_crsId;
 };
 
 class TimeShiftOperator : public GenericOperator {

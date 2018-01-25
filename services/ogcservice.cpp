@@ -11,10 +11,10 @@
 #include <algorithm>
 
 
-epsg_t OGCService::parseEPSG(const Parameters &params, const std::string &key, epsg_t defaultValue) {
+CrsId OGCService::parseEPSG(const Parameters &params, const std::string &key, CrsId defaultValue) {
 	if (!params.hasParam(key))
 		return defaultValue;
-	return epsgCodeFromSrsString(params.get(key));
+	return CrsId::from_srs_string(params.get(key));
 }
 
 TemporalReference OGCService::parseTime(const Parameters &parameters) const {
@@ -53,8 +53,8 @@ TemporalReference OGCService::parseTime(const Parameters &parameters) const {
 	return tref;
 }
 
-SpatialReference OGCService::parseBBOX(const std::string bbox_str, epsg_t epsg, bool allow_infinite) {
-	auto extent = SpatialReference::extent(epsg);
+SpatialReference OGCService::parseBBOX(const std::string bbox_str, CrsId crsId, bool allow_infinite) {
+	auto extent = SpatialReference::extent(crsId);
 
 	double bbox[4];
 	for(int i=0;i<4;i++)
@@ -104,7 +104,7 @@ SpatialReference OGCService::parseBBOX(const std::string bbox_str, epsg_t epsg, 
 	 * The simple solution is to swap the x and y coordinates.
 	 * OpenLayers 3 uses the axis orientation of the projection to determine the bbox axis order. https://github.com/openlayers/ol3/blob/master/src/ol/source/imagewmssource.js ~ line 317.
 	 */
-	if (epsg == EPSG_LATLON) {
+	if (crsId == CrsId::from_epsg_code(4326)) {
 		std::swap(bbox[0], bbox[1]);
 		std::swap(bbox[2], bbox[3]);
 	}
@@ -125,7 +125,7 @@ SpatialReference OGCService::parseBBOX(const std::string bbox_str, epsg_t epsg, 
 	}
 
 	bool flipx, flipy;
-	SpatialReference sref(epsg, bbox[0], bbox[1], bbox[2], bbox[3], flipx, flipy);
+	SpatialReference sref(crsId, bbox[0], bbox[1], bbox[2], bbox[3], flipx, flipy);
 	return sref;
 }
 

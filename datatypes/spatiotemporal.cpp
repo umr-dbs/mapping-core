@@ -3,18 +3,64 @@
 #include "operators/operator.h"
 #include "util/binarystream.h"
 
-#include <math.h>
 #include <limits>
-#include <sstream>
-#include <ctime>
 #include <iomanip>
+
+
+/**
+ * CrsId
+ */
+CrsId::CrsId(std::string authority, uint32_t code) : authority(std::move(authority)), code(code) {}
+
+CrsId CrsId::from_epsg_code(uint32_t epsg_code) {
+	return CrsId("EPSG", epsg_code);
+}
+
+CrsId CrsId::unreferenced() {
+	return CrsId("UNREFERENCED", 0);
+}
+
+std::string CrsId::to_string() const {
+	return concat(authority, ":", code);
+}
+
+CrsId::CrsId(BinaryReadBuffer &buffer) {
+	buffer.read(&authority);
+	buffer.read(&code);
+}
+
+void CrsId::serialize(BinaryWriteBuffer &buffer, bool) const {
+	buffer << authority << code;
+}
+
+bool CrsId::operator==(const CrsId &other) const {
+	return (authority == other.authority) && (code == other.code);
+}
+
+bool CrsId::operator!=(const CrsId &other) const {
+	return !(*this == other);
+}
+
+CrsId CrsId::from_srs_string(const std::string &srsString) {
+	size_t pos = srsString.find(":");
+
+	if (pos == std::string::npos) {
+		throw ArgumentException("Invalid CRS specified");
+	}
+
+	std::string authority = srsString.substr(0, pos);
+
+	auto code = static_cast<uint32_t>(std::stoi(srsString.substr(pos + 1)));
+
+	return CrsId(authority, code);
+}
 
 
 /**
  * SpatialReference
  */
-SpatialReference::SpatialReference(epsg_t epsg) : epsg(epsg) {
-	auto e = extent(epsg);
+SpatialReference::SpatialReference(CrsId crsId) : crsId(crsId) {
+	auto e = extent(crsId);
 	x1 = e.x1;
 	x2 = e.x2;
 	y1 = e.y1;
@@ -23,13 +69,13 @@ SpatialReference::SpatialReference(epsg_t epsg) : epsg(epsg) {
 	validate();
 }
 
-SpatialReference::SpatialReference(epsg_t epsg, double x1, double y1, double x2, double y2)
-	: epsg(epsg), x1(x1), y1(y1), x2(x2), y2(y2) {
+SpatialReference::SpatialReference(CrsId crsId, double x1, double y1, double x2, double y2)
+	: crsId(std::move(crsId)), x1(x1), y1(y1), x2(x2), y2(y2) {
 	validate();
 }
 
-SpatialReference::SpatialReference(epsg_t epsg, double x1, double y1, double x2, double y2, bool &flipx, bool &flipy)
-	: epsg(epsg), x1(x1), y1(y1), x2(x2), y2(y2) {
+SpatialReference::SpatialReference(CrsId crsId, double x1, double y1, double x2, double y2, bool &flipx, bool &flipy)
+	: crsId(std::move(crsId)), x1(x1), y1(y1), x2(x2), y2(y2) {
 	flipx = flipy = false;
 	if (x1 > x2) {
 		flipx = true;
@@ -42,11 +88,7 @@ SpatialReference::SpatialReference(epsg_t epsg, double x1, double y1, double x2,
 	validate();
 }
 
-SpatialReference::SpatialReference(BinaryReadBuffer &buffer) {
-	uint32_t uint;
-	buffer.read(&uint);
-	epsg = (epsg_t) uint;
-
+SpatialReference::SpatialReference(BinaryReadBuffer &buffer) : crsId(CrsId(buffer)) {
 	buffer.read(&x1);
 	buffer.read(&y1);
 	buffer.read(&x2);
@@ -55,11 +97,9 @@ SpatialReference::SpatialReference(BinaryReadBuffer &buffer) {
 	validate();
 }
 
-void SpatialReference::serialize(BinaryWriteBuffer &buffer, bool) const {
-	buffer
-		<< (uint32_t) epsg
-		<< x1 << y1 << x2 << y2
-	;
+void SpatialReference::serialize(BinaryWriteBuffer &buffer, bool is_persistent_buffer) const {
+	crsId.serialize(buffer, is_persistent_buffer);
+	buffer << x1 << y1 << x2 << y2;
 }
 
 /*
@@ -67,13 +107,13 @@ void SpatialReference::serialize(BinaryWriteBuffer &buffer, bool) const {
  * Throws an exception if the crs don't match
  */
 bool SpatialReference::contains(const SpatialReference &other) const {
-	if (epsg != other.epsg)
-		throw ArgumentException("SpatialReference::contains(): epsg don't match");
+	if (crsId != other.crsId)
+		throw ArgumentException("SpatialReference::contains(): crsId don't match");
 	if ( x1 <= other.x1 && x2 >= other.x2 && y1 <= other.y1 && y2 >= other.y2 )
 		return true;
 
 	//TODO: Talk about this
-	auto ex = SpatialReference::extent(epsg);
+	auto ex = SpatialReference::extent(crsId);
 	double xeps = (ex.x2-ex.x1)*std::numeric_limits<double>::epsilon();
 	double yeps = (ex.y2-ex.y1)*std::numeric_limits<double>::epsilon();
 
@@ -92,16 +132,16 @@ void SpatialReference::validate() const {
 	}
 }
 
-SpatialReference SpatialReference::extent(epsg_t epsg) {
+SpatialReference SpatialReference::extent(CrsId crsId) {
 	// WebMercator, http://www.easywms.com/easywms/?q=en/node/3592
-	if (epsg == EPSG_WEBMERCATOR)
-		return SpatialReference(EPSG_WEBMERCATOR, -20037508.34,-20037508.34,20037508.34,20037508.34);
-	if (epsg == EPSG_LATLON)
-		return SpatialReference(EPSG_LATLON, -180, -90, 180, 90);
-	if (epsg == EPSG_GEOSMSG)
-		return SpatialReference(EPSG_GEOSMSG, -5568748.276, -5568748.276, 5568748.276, 5568748.276);
+	if (crsId == CrsId::from_epsg_code(3857))
+		return SpatialReference(CrsId::from_epsg_code(3857), -20037508.34,-20037508.34,20037508.34,20037508.34);
+	if (crsId == CrsId::from_epsg_code(4326))
+		return SpatialReference(CrsId::from_epsg_code(4326), -180, -90, 180, 90);
+	if (crsId == CrsId::from_srs_string("SR-ORG:81"))
+		return SpatialReference(CrsId::from_srs_string("SR-ORG:81"), -5568748.276, -5568748.276, 5568748.276, 5568748.276);
 
-	return SpatialReference(epsg, -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
+	return SpatialReference(crsId, -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
 }
 
 
@@ -367,16 +407,4 @@ size_t SpatioTemporalResult::get_byte_size() const {
 
 size_t GridSpatioTemporalResult::get_byte_size() const {
 	return SpatioTemporalResult::get_byte_size() + 2 * sizeof(double) + 2 * sizeof(uint32_t);
-}
-
-
-/**
- * helper functions
- */
-epsg_t epsgCodeFromSrsString(const std::string &srsString, epsg_t def) {
-	if (srsString == "")
-		return def;
-	if (srsString.compare(0,5,"EPSG:") == 0)
-		return (epsg_t) std::stoi(srsString.substr(5, std::string::npos));
-	throw ArgumentException("Unknown CRS specified");
 }

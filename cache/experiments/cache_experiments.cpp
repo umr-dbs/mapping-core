@@ -110,7 +110,7 @@ void PuzzleExperiment::global_setup() {
 }
 
 void PuzzleExperiment::setup() {
-	auto bounds = SpatialReference::extent(query_spec.epsg);
+	auto bounds = SpatialReference::extent(query_spec.crsId);
 	double extend = (bounds.x2 - bounds.x1) * percentage;
 	query = query_spec.random_rectangle(extend,query_resolution);
 
@@ -148,7 +148,7 @@ void PuzzleExperiment::run_once() {
 		double x1 = query.x1 + i*d;
 		double x2 = query.x2 + i*d;
 		QueryRectangle qr(
-			SpatialReference( query.epsg, x1, query.y1, x2, query.y2 ),
+			SpatialReference( query.crsId, x1, query.y1, x2, query.y2 ),
 			query, query
 		);
 
@@ -170,7 +170,7 @@ void PuzzleExperiment::run_once() {
 
 RelevanceExperiment::RelevanceExperiment(const QuerySpec& spec, uint32_t num_runs) :
 	CacheExperimentSingleQuery("Relevance-Functions", spec, num_runs ), capacity(0) {
-//	if ( query_spec.epsg != EPSG_LATLON )
+//	if ( query_spec.crsId != CrsId::from_crsId(4326) )
 //		throw ArgumentException("Only LatLon support for ReorgExperiment");
 }
 
@@ -246,17 +246,18 @@ std::vector<QTriple> RelevanceExperiment::generate_queries() {
 	// [  67.5,  90  ], [ 22,5,  45  ] --> Asien
 	// [ 135  , 157.5], [-45  , -22.5] --> Australien
 
+	CrsId latLon = CrsId::from_crsId(4326);
 	std::vector<SpatialReference> areas{
-		SpatialReference(EPSG_LATLON, -112.5,  22.5, -90.0,  45.0 ), // Nordamerika
-		SpatialReference(EPSG_LATLON,    0.0,  45.0,  22.5,  67.5 ), // Europa
-		SpatialReference(EPSG_LATLON,    0.0,   0.0,  22.5,  22.5 ), // Afrika
-		SpatialReference(EPSG_LATLON,   67.5,  22.5,  90.0,  45.0 ), // Asien
-		SpatialReference(EPSG_LATLON,  135.0, -45.0, 157.5, -22.5 )  // Australien
+		SpatialReference(latLon, -112.5,  22.5, -90.0,  45.0 ), // Nordamerika
+		SpatialReference(latLon,    0.0,  45.0,  22.5,  67.5 ), // Europa
+		SpatialReference(latLon,    0.0,   0.0,  22.5,  22.5 ), // Afrika
+		SpatialReference(latLon,   67.5,  22.5,  90.0,  45.0 ), // Asien
+		SpatialReference(latLon,  135.0, -45.0, 157.5, -22.5 )  // Australien
 	};
 
-	if ( EPSG_LATLON != query_spec.epsg ) {
+	if ( latLon != query_spec.crsId ) {
 		for ( auto &sref : areas ) {
-			GDAL::CRSTransformer trans(EPSG_LATLON,query_spec.epsg);
+			GDAL::CRSTransformer trans(CrsId::from_crsId(4326),query_spec.crsId);
 			trans.transform(sref.x1,sref.y1);
 			trans.transform(sref.x2,sref.y2);
 		}
@@ -280,7 +281,7 @@ std::vector<QTriple> RelevanceExperiment::generate_queries() {
 			   y2 = y1 + extend;
 
 		QueryRectangle qr(
-				SpatialReference(query_spec.epsg, x1,y1,x2,y2),
+				SpatialReference(query_spec.crsId, x1,y1,x2,y2),
 				query_spec.tref,
 				QueryResolution::pixels(256,256)
 		);
@@ -322,7 +323,7 @@ void QueryBatchingExperiment::setup() {
 			double x1 = all.x1 + x*dx;
 			double y1 = all.y1 + y*dy;
 			QueryRectangle qr(
-					SpatialReference(all.epsg,x1,y1,x1+dx,y1+dy ),
+					SpatialReference(all.crsId,x1,y1,x1+dx,y1+dy ),
 					all,
 					QueryResolution::pixels(all.xres/tiles,all.yres/tiles)
 			);
@@ -580,7 +581,7 @@ std::pair<uint64_t, uint64_t>& StrategyExperiment::get_accum(
 //	step2.clear();
 //
 //
-//	auto bounds = SpatialReference::extent(query_spec.epsg);
+//	auto bounds = SpatialReference::extent(query_spec.crsId);
 //	double extend = (bounds.x2 - bounds.x1) / 150;
 //	uint32_t res = 256;
 //
@@ -660,7 +661,7 @@ std::pair<uint64_t, uint64_t>& StrategyExperiment::get_accum(
 //	queries.clear();
 //	int num_trips = 3;
 //	std::vector<QueryRectangle> trip;
-//	SpatialReference ex = SpatialReference::extent(query_spec.epsg);
+//	SpatialReference ex = SpatialReference::extent(query_spec.crsId);
 //
 //	double extend = (ex.y2-ex.y1) / 10;
 //	double x1 = ex.x1, y1 = ex.y1;

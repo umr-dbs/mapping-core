@@ -231,7 +231,7 @@ std::unique_ptr<T> RemoteCacheWrapper<T>::process_puzzle_int( GenericOperator &o
 			parts.push_back(retriever.fetch(request.semantic_id, ref, profiler));
 		} catch ( const NoSuchElementException &nse ) {
 			Log::debug("Puzzle-piece gone, adding to remainders");
-			SpatialReference sref(request.query.epsg,ref.bounds.get_dimension(0).a,ref.bounds.get_dimension(1).a,
+			SpatialReference sref(request.query.crsId,ref.bounds.get_dimension(0).a,ref.bounds.get_dimension(1).a,
 					ref.bounds.get_dimension(0).b,ref.bounds.get_dimension(1).b);
 
 			rems.push_back(ref.bounds);

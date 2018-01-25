@@ -104,7 +104,7 @@ void WFSService::getFeature() {
 	// this parameter is optional in WFS, but we use it here to create the Spatial Reference.
 	if(!params.hasParam("srsname"))
 		throw ArgumentException("WFSService: Parameter srsname is missing");
-	epsg_t queryEpsg = this->parseEPSG(params, "srsname");
+	CrsId queryEpsg = parseEPSG(params, "srsname");
 
 
 	SpatialReference sref(queryEpsg);

@@ -26,8 +26,8 @@
 
 time_t parseIso8601DateTime(std::string dateTimeString);
 
-void parseBBOX(double *bbox, const std::string bbox_str, epsg_t epsg =
-		EPSG_WEBMERCATOR, bool allow_infinite = false);
+void parseBBOX(double *bbox, const std::string bbox_str, CrsId crsId =
+		CrsId::from_crsId(3857), bool allow_infinite = false);
 
 
 //
@@ -151,10 +151,10 @@ private:
 	static std::default_random_engine generator;
 	static std::uniform_real_distribution<double> distrib;
 public:
-	QuerySpec(const std::string &workflow, epsg_t epsg, CacheType type,
+	QuerySpec(const std::string &workflow, CrsId crsId, CacheType type,
 			const TemporalReference &tref, std::string name = "");
 	std::string workflow;
-	epsg_t epsg;
+	CrsId crsId;
 	CacheType type;
 	TemporalReference tref;
 	std::string name;

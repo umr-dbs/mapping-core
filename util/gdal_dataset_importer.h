@@ -40,7 +40,7 @@ private:
 	static Json::Value readCoords(GDALDataset *dataset);
 	static Json::Value readChannels(GDALDataset *dataset, std::string measurement, std::string unit, std::string interpolation);
 	static std::string dataTypeToString(GDALDataType type);
-	static std::string getEpsg(GDALDataset *dataset);
+	static CrsId getCrsId(const std::string &wkt_string);
 
 };
 

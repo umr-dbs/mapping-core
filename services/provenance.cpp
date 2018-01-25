@@ -40,7 +40,7 @@ void ProvenanceService::run() {
 	if(!params.hasParam("crs"))
 		throw ArgumentException("ProvenanceService: crs not specified");
 
-	epsg_t queryEpsg = parseEPSG(params, "crs");
+	CrsId queryEpsg = parseEPSG(params, "crs");
 
 	SpatialReference sref(queryEpsg);
 	if(params.hasParam("bbox")) {

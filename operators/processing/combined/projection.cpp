@@ -19,8 +19,8 @@
  * Operator that projects raster and feature data to a given projection
  *
  * Parameters:
- * - src_epsg: the epsg code of the source projection
- * - dest_epsg: the epsg code of the destination projection
+ * - src_crsId: the crsId of the source projection
+ * - dest_crsId: the crsId of the destination projection
  */
 class ProjectionOperator : public GenericOperator {
 	public:
@@ -37,7 +37,7 @@ class ProjectionOperator : public GenericOperator {
 		void writeSemanticParameters(std::ostringstream &stream);
 	private:
 		QueryRectangle projectQueryRectangle(const QueryRectangle &rect, const GDAL::CRSTransformer &transformer);
-		epsg_t src_epsg, dest_epsg;
+		CrsId src_crsId, dest_crsId;
 };
 
 
@@ -53,10 +53,11 @@ class MeteosatLatLongOperator : public GenericOperator {
 
 
 
-ProjectionOperator::ProjectionOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params) : GenericOperator(sourcecounts, sources) {
-	src_epsg = epsgCodeFromSrsString(params["src_projection"].asString(), EPSG_UNKNOWN);
-	dest_epsg = epsgCodeFromSrsString(params["dest_projection"].asString(), EPSG_UNKNOWN);
-	if (src_epsg == EPSG_UNKNOWN || dest_epsg == EPSG_UNKNOWN)
+ProjectionOperator::ProjectionOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params) :
+		GenericOperator(sourcecounts, sources),
+		src_crsId(CrsId::from_srs_string(params["src_projection"].asString())),
+		dest_crsId(CrsId::from_srs_string(params["dest_projection"].asString())) {
+	if (src_crsId == CrsId::unreferenced() || dest_crsId == CrsId::unreferenced())
 		throw OperatorException("Unknown EPSG");
 	assumeSources(1);
 }
@@ -66,7 +67,7 @@ ProjectionOperator::~ProjectionOperator() {
 REGISTER_OPERATOR(ProjectionOperator, "projection");
 
 void ProjectionOperator::writeSemanticParameters(std::ostringstream &stream) {
-	stream << "{\"src_projection\": \"EPSG:" << (int) src_epsg << "\", \"dest_projection\": \"EPSG:" << (int) dest_epsg << "\"}";
+	stream << "{\"src_projection\":" << src_crsId.to_string() << "\", \"dest_projection\":" << dest_crsId.to_string() << "\"}";
 }
 
 #ifndef MAPPING_OPERATOR_STUBS
@@ -112,16 +113,16 @@ QueryRectangle ProjectionOperator::projectQueryRectangle(const QueryRectangle &r
 	const double MSG_MAX_LAT = 79.0;  // north/south
 	const double MSG_MAX_LONG = 76.0; // east/west
 
-	if (dest_epsg == EPSG_GEOSMSG) {
+	if (dest_crsId == CrsId::from_srs_string("SR-ORG:81")) {
 		// We're loading some points and would like to display them in the msg projection. Why? Well, why not?
-		if (src_epsg == EPSG_WEBMERCATOR) {
+		if (src_crsId == CrsId::from_epsg_code(3857)) {
 			// TODO: this is the whole world. A smaller rectangle would do, we just need to figure out the coordinates.
 			src_x1 = -20037508.34;
 			src_y1 = -20037508.34;
 			src_x2 = 20037508.34;
 			src_y2 = 20037508.34;
 		}
-		else if (src_epsg == EPSG_LATLON) {
+		else if (src_crsId == CrsId::from_epsg_code(4326)) {
 			src_x1 = -MSG_MAX_LONG;
 			src_y1 = -MSG_MAX_LAT;
 			src_x2 = MSG_MAX_LONG;
@@ -130,15 +131,15 @@ QueryRectangle ProjectionOperator::projectQueryRectangle(const QueryRectangle &r
 		else
 			throw OperatorException("Cannot transform to METEOSAT2 projection from this projection");
 	}
-	else if (src_epsg == EPSG_GEOSMSG) {
+	else if (src_crsId == CrsId::from_srs_string("SR-ORG:81")) {
 		/*
 		 * We're loading a msg raster. Since a rectangle in latlon or mercator does not map to
 		 * an exact rectangle in MSG, we need to use some heuristics
 		 */
 		double tlx = rect.x1, tly = rect.y1, brx = rect.x2, bry = rect.y2;
 
-		if (dest_epsg != EPSG_LATLON) {
-			GDAL::CRSTransformer transformer_tolatlon(dest_epsg, EPSG_LATLON);
+		if (dest_crsId != CrsId::from_epsg_code(4326)) {
+			GDAL::CRSTransformer transformer_tolatlon(dest_crsId, CrsId::from_epsg_code(4326));
 			double pz=0;
 			if (!transformer_tolatlon.transform(tlx, tly, pz))
 				throw OperatorException("Transformation of top left corner failed");
@@ -161,7 +162,7 @@ QueryRectangle ProjectionOperator::projectQueryRectangle(const QueryRectangle &r
 
 			// return a very small source rectangle with minimum resolution
 			return QueryRectangle(
-				SpatialReference(src_epsg, 0, 0, 1, 1),
+				SpatialReference(src_crsId, 0, 0, 1, 1),
 				rect,
 				rect.restype == QueryResolution::Type::PIXELS ? QueryResolution::pixels(1, 1) : QueryResolution(rect)
 			);
@@ -202,7 +203,7 @@ QueryRectangle ProjectionOperator::projectQueryRectangle(const QueryRectangle &r
 		src_x2 = px;
 		src_y2 = py;
 
-		SpatialReference ex = SpatialReference::extent(src_epsg);
+		SpatialReference ex = SpatialReference::extent(src_crsId);
 		if ( src_x2 <= src_x1 ) {
 			if ( std::abs(src_x2-ex.x1) < std::abs(src_x1-ex.x2 ) )
 				src_x2 = ex.x2;
@@ -229,7 +230,7 @@ QueryRectangle ProjectionOperator::projectQueryRectangle(const QueryRectangle &r
 	}
 
 	QueryRectangle result(
-		SpatialReference(src_epsg, src_x1, src_y1, src_x2, src_y2),
+		SpatialReference(src_crsId, src_x1, src_y1, src_x2, src_y2),
 		rect,
 		rect.restype == QueryResolution::Type::PIXELS ? QueryResolution::pixels(src_xres, src_yres) : QueryResolution(rect)
 	);
@@ -242,20 +243,20 @@ QueryRectangle ProjectionOperator::projectQueryRectangle(const QueryRectangle &r
 
 //GenericRaster *ProjectionOperator::execute(int timestamp, double x1, double y1, double x2, double y2, int xres, int yres) {
 std::unique_ptr<GenericRaster> ProjectionOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
-	if (dest_epsg != rect.epsg) {
+	if (dest_crsId != rect.crsId) {
 		throw OperatorException("Projection: asked to transform to a different CRS than specified in QueryRectangle");
 	}
-	if (src_epsg == dest_epsg) {
+	if (src_crsId == dest_crsId) {
 		return getRasterFromSource(0, rect, tools);
 	}
 
-	GDAL::CRSTransformer transformer(dest_epsg, src_epsg);
+	GDAL::CRSTransformer transformer(dest_crsId, src_crsId);
 
 	QueryRectangle src_rect = projectQueryRectangle(rect, transformer);
 
 	auto raster_in = getRasterFromSource(0, src_rect, tools);
 
-	if (src_epsg != raster_in->stref.epsg)
+	if (src_crsId != raster_in->stref.crsId)
 		throw OperatorException("ProjectionOperator: Source Raster not in expected projection");
 
 	return callUnaryOperatorFunc<raster_projection>(raster_in.get(), &transformer, rect, rect.xres, rect.yres);
@@ -263,25 +264,25 @@ std::unique_ptr<GenericRaster> ProjectionOperator::getRaster(const QueryRectangl
 
 
 std::unique_ptr<PointCollection> ProjectionOperator::getPointCollection(const QueryRectangle &rect, const QueryTools &tools) {
-	if (dest_epsg != rect.epsg)
+	if (dest_crsId != rect.crsId)
 		throw OperatorException("Projection: asked to transform to a different CRS than specified in QueryRectangle");
-	if (src_epsg == dest_epsg)
+	if (src_crsId == dest_crsId)
 		return getPointCollectionFromSource(0, rect, tools);
 
 
 	// Need to transform "backwards" to project the query rectangle..
-	GDAL::CRSTransformer qrect_transformer(dest_epsg, src_epsg);
+	GDAL::CRSTransformer qrect_transformer(dest_crsId, src_crsId);
 	QueryRectangle src_rect = projectQueryRectangle(rect, qrect_transformer);
 
 	// ..but "forward" to project the points
-	GDAL::CRSTransformer transformer(src_epsg, dest_epsg);
+	GDAL::CRSTransformer transformer(src_crsId, dest_crsId);
 
 
 	auto points_in = getPointCollectionFromSource(0, src_rect, tools);
 
-	if (src_epsg != points_in->stref.epsg) {
+	if (src_crsId != points_in->stref.crsId) {
 		std::ostringstream msg;
-		msg << "ProjectionOperator: Source Points not in expected projection, expected " << (int) src_epsg << " got " << (int) points_in->stref.epsg;
+		msg << "ProjectionOperator: Source Points not in expected projection, expected " << src_crsId.to_string() << " got " << points_in->stref.crsId.to_string();
 		throw OperatorException(msg.str());
 	}
 
@@ -318,19 +319,19 @@ std::unique_ptr<PointCollection> ProjectionOperator::getPointCollection(const Qu
 
 
 std::unique_ptr<LineCollection> ProjectionOperator::getLineCollection(const QueryRectangle &rect, const QueryTools &tools) {
-	if (dest_epsg != rect.epsg)
+	if (dest_crsId != rect.crsId)
 		throw OperatorException("Projection: asked to transform to a different CRS than specified in QueryRectangle");
 
-	GDAL::CRSTransformer qrect_transformer(dest_epsg, src_epsg);
+	GDAL::CRSTransformer qrect_transformer(dest_crsId, src_crsId);
 	QueryRectangle src_rect = projectQueryRectangle(rect, qrect_transformer);
 
-	GDAL::CRSTransformer transformer(src_epsg, dest_epsg);
+	GDAL::CRSTransformer transformer(src_crsId, dest_crsId);
 
 	auto lines_in = getLineCollectionFromSource(0, src_rect, tools);
 
-	if (src_epsg != lines_in->stref.epsg) {
+	if (src_crsId != lines_in->stref.crsId) {
 		std::ostringstream msg;
-		msg << "ProjectionOperator: Source Lines not in expected projection, expected " << (int) src_epsg << " got " << (int) lines_in->stref.epsg;
+		msg << "ProjectionOperator: Source Lines not in expected projection, expected " << src_crsId.to_string() << " got " << lines_in->stref.crsId.to_string();
 		throw OperatorException(msg.str());
 	}
 
@@ -370,20 +371,20 @@ std::unique_ptr<LineCollection> ProjectionOperator::getLineCollection(const Quer
 
 //TODO: why is this in raster folder?
 std::unique_ptr<PolygonCollection> ProjectionOperator::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools) {
-	if (dest_epsg != rect.epsg)
+	if (dest_crsId != rect.crsId)
 		throw OperatorException("Projection: asked to transform to a different CRS than specified in QueryRectangle");
 
-	GDAL::CRSTransformer qrect_transformer(dest_epsg, src_epsg);
+	GDAL::CRSTransformer qrect_transformer(dest_crsId, src_crsId);
 	QueryRectangle src_rect = projectQueryRectangle(rect, qrect_transformer);
 
-	GDAL::CRSTransformer transformer(src_epsg, dest_epsg);
+	GDAL::CRSTransformer transformer(src_crsId, dest_crsId);
 
 
 	auto polygons_in = getPolygonCollectionFromSource(0, src_rect, tools);
 
-	if (src_epsg != polygons_in->stref.epsg) {
+	if (src_crsId != polygons_in->stref.crsId) {
 		std::ostringstream msg;
-		msg << "ProjectionOperator: Source Polygons not in expected projection, expected " << (int) src_epsg << " got " << (int) polygons_in->stref.epsg;
+		msg << "ProjectionOperator: Source Polygons not in expected projection, expected " << src_crsId.to_string() << " got " << polygons_in->stref.crsId.to_string();
 		throw OperatorException(msg.str());
 	}
 
@@ -431,7 +432,7 @@ std::unique_ptr<PolygonCollection> ProjectionOperator::getPolygonCollection(cons
 template<typename T>
 struct meteosat_draw_latlong{
 	static std::unique_ptr<GenericRaster> execute(Raster2D<T> *raster_src) {
-		if (raster_src->lcrs.epsg != EPSG_METEOSAT2)
+		if (raster_src->lcrs.crsId != EPSG_METEOSAT2)
 			throw OperatorException("Source raster not in meteosat projection");
 
 		raster_src->setRepresentation(GenericRaster::Representation::CPU);

@@ -422,7 +422,7 @@ void Raster2D<T>::blit(const GenericRaster *genericraster, int destx, int desty,
 	if (genericraster->dd.datatype != dd.datatype)
 		throw MetadataException("blit with incompatible raster");
 
-	if (genericraster->stref.epsg != stref.epsg && stref.epsg != EPSG_UNREFERENCED && genericraster->stref.epsg != EPSG_UNREFERENCED)
+	if (genericraster->stref.crsId != stref.crsId && stref.crsId != CrsId::unreferenced() && genericraster->stref.crsId != CrsId::unreferenced())
 		throw MetadataException("blit of raster with different coordinate system");
 
 	setRepresentation(GenericRaster::Representation::CPU);
@@ -481,7 +481,7 @@ std::unique_ptr<GenericRaster> Raster2D<T>::cut(int x1, int y1, int z1, int widt
 	double world_x2 = world_x1 + pixel_scale_x * width;
 	double world_y2 = world_y1 + pixel_scale_y * height;
 	SpatioTemporalReference newstref(
-		SpatialReference(stref.epsg, world_x1, world_y1, world_x2, world_y2),
+		SpatialReference(stref.crsId, world_x1, world_y1, world_x2, world_y2),
 		TemporalReference(stref)
 	);
 
@@ -586,8 +586,8 @@ std::unique_ptr<GenericRaster> Raster2D<T>::flip(bool flipx, bool flipy) {
 class GridSpatioTemporalResultProjecter {
 public:
 	GridSpatioTemporalResultProjecter(const GridSpatioTemporalResult &source, const GridSpatioTemporalResult &dest) {
-		if (source.stref.epsg != dest.stref.epsg)
-			throw ArgumentException("Cannot do simple projections between rasters of a different epsg");
+		if (source.stref.crsId != dest.stref.crsId)
+			throw ArgumentException("Cannot do simple projections between rasters of a different crsId");
 		// source_x = WorldToPixelX( PixelToWorldX( dest_x ) );
 		// source_x = WorldToPixelY( dest.stref.x1 + (dest_x+0.5) * dest.pixel_scale_x )
 		// source_x = floor( ( (dest.stref.x1 + (dest_x+0.5) * dest.pixel_scale_x) - source.stref.x1) / source.pixel_scale_x )

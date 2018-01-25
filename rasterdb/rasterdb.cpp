@@ -79,11 +79,11 @@ SpatialReference GDALCRS::toSpatialReference(bool &flipx, bool &flipy) const {
 	double x2 = origin[0] + scale[0] * size[0];
 	double y2 = origin[1] + scale[1] * size[1];
 
-	return SpatialReference(epsg, x1, y1, x2, y2, flipx, flipy);
+	return SpatialReference(crsId, x1, y1, x2, y2, flipx, flipy);
 }
 
 std::ostream& operator<< (std::ostream &out, const GDALCRS &rm) {
-	out << "GDALCRS(epsg=" << (int) rm.epsg << " dim=" << rm.dimensions << " size=["<<rm.size[0]<<","<<rm.size[1]<<"] origin=["<<rm.origin[0]<<","<<rm.origin[1]<<"] scale=["<<rm.scale[0]<<","<<rm.scale[1]<<"])";
+	out << "GDALCRS(crs=" << rm.crsId.to_string() << " dim=" << rm.dimensions << " size=["<<rm.size[0]<<","<<rm.size[1]<<"] origin=["<<rm.origin[0]<<","<<rm.origin[1]<<"] scale=["<<rm.scale[0]<<","<<rm.scale[1]<<"])";
 	return out;
 }
 
@@ -208,11 +208,11 @@ void RasterDB::init() {
 	int dimensions = sizes.size();
 	if (dimensions != (int) origins.size() || dimensions != (int) scales.size())
 		throw SourceException("json invalid, different dimensions in data");
-	epsg_t epsg = (epsg_t) jrm.get("epsg", (int) EPSG_UNKNOWN).asInt();
+	CrsId crsId = CrsId::from_srs_string(jrm["crs"].asString());
 
 	if (dimensions == 2) {
 		crs = new GDALCRS(
-			epsg,
+			crsId,
 			sizes.get((Json::Value::ArrayIndex) 0, -1).asInt(), sizes.get((Json::Value::ArrayIndex) 1, -1).asInt(),
 			origins.get((Json::Value::ArrayIndex) 0, 0).asDouble(), origins.get((Json::Value::ArrayIndex) 1, 0).asDouble(),
 			scales.get((Json::Value::ArrayIndex) 0, 0).asDouble(), scales.get((Json::Value::ArrayIndex) 1, 0).asDouble()
@@ -300,11 +300,11 @@ void RasterDB::import(const char *filename, int sourcechannel, int channelid, do
 	std::lock_guard<std::mutex> guard(mutex);
 
 	bool raster_flipx, raster_flipy;
-	auto raster = GenericRaster::fromGDAL(filename, sourcechannel, raster_flipx, raster_flipy, crs->epsg);
+	auto raster = GenericRaster::fromGDAL(filename, sourcechannel, raster_flipx, raster_flipy, crs->crsId);
 
 	bool crs_flipx, crs_flipy;
 	SpatioTemporalReference stref(
-		SpatialReference(crs->epsg, crs->origin[0], crs->origin[1], crs->origin[0]+crs->scale[0], crs->origin[1]+crs->scale[1], crs_flipx, crs_flipy),
+		SpatialReference(crs->crsId, crs->origin[0], crs->origin[1], crs->origin[0]+crs->scale[0], crs->origin[1]+crs->scale[1], crs_flipx, crs_flipy),
 		TemporalReference::unreferenced()
 	);
 
@@ -465,7 +465,7 @@ std::unique_ptr<GenericRaster> RasterDB::load(int channelid, const TemporalRefer
 	auto scale_y = crs->scale[1]*returned_zoomfactor;
 	auto origin_x = crs->PixelToWorldX(x1);
 	auto origin_y = crs->PixelToWorldY(y1);
-	GDALCRS zoomed_and_cut_crs(crs->epsg, width, height, origin_x, origin_y, scale_x, scale_y);
+	GDALCRS zoomed_and_cut_crs(crs->crsId, width, height, origin_x, origin_y, scale_x, scale_y);
 
 	bool flipx, flipy;
 	SpatioTemporalReference resultstref(
@@ -553,8 +553,8 @@ static inline int round_down_to_multiple(const int i, const int m) {
 }
 
 std::unique_ptr<GenericRaster> RasterDB::query(const QueryRectangle &rect, QueryProfiler &profiler, int channelid, bool transform) {
-	if (crs->epsg != rect.epsg)
-		throw OperatorException(concat("SourceOperator: wrong epsg requested. Source is ", (int) crs->epsg, ", requested ", (int) rect.epsg));
+	if (crs->crsId != rect.crsId)
+		throw OperatorException(concat("SourceOperator: wrong crsId requested. Source is ", crs->crsId.to_string(), ", requested ", rect.crsId.to_string()));
 
 	std::lock_guard<std::mutex> guard(mutex);
 

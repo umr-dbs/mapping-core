@@ -27,7 +27,7 @@ void WMSService::run() {
 	auto user = session->getUser();
 
 	bool debug = params.getBool("debug", Configuration::getBool("global.debug", false));
-	auto query_epsg = parseEPSG(params, "crs");
+	auto query_crsId = parseEPSG(params, "crs");
 	TemporalReference tref = parseTime(params);
 
 	std::string request = params.get("request");
@@ -57,7 +57,7 @@ void WMSService::run() {
 			//if (params["tiled"] != "true")
 			//	send403("only tiled for now");
 
-			SpatialReference sref = parseBBOX(params.get("bbox"), query_epsg, false);
+			SpatialReference sref = parseBBOX(params.get("bbox"), query_crsId, false);
 			auto colorizer = params.get("colors", "");
 			auto format = params.get("format", "image/png");
 
@@ -184,7 +184,7 @@ void WMSService::run() {
 
 		bool flipx, flipy;
 		QueryRectangle qrect(
-			SpatialReference::extent(query_epsg),
+			SpatialReference::extent(query_crsId),
 			tref,
 			QueryResolution::pixels(1, 1)
 		);

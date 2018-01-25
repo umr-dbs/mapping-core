@@ -79,7 +79,7 @@ std::string SimpleFeatureCollection::toGeoJSON(bool displayMetadata) const {
 	std::ostringstream json;
 	json << std::fixed; // std::setprecision(4);
 
-	json << "{\"type\":\"FeatureCollection\",\"crs\":{\"type\":\"name\",\"properties\":{\"name\":\"EPSG:" << (int) stref.epsg <<"\"}},\"features\":[";
+	json << "{\"type\":\"FeatureCollection\",\"crs\":{\"type\":\"name\",\"properties\":{\"name\":\"" << stref.crsId.to_string() <<"\"}},\"features\":[";
 
 	auto value_keys = feature_attributes.getNumericKeys();
 	auto string_keys = feature_attributes.getTextualKeys();
@@ -246,7 +246,7 @@ SpatialReference SimpleFeatureCollection::calculateMBR(size_t coordinateIndexSta
 	if(coordinateIndexStart >= coordinates.size() || coordinateIndexStop > coordinates.size() || coordinateIndexStart >= coordinateIndexStop)
 		throw ArgumentException("Invalid start/stop index for coordinates");
 
-	SpatialReference reference(stref.epsg);
+	SpatialReference reference(stref.crsId);
 
 	const Coordinate& c0 = coordinates[coordinateIndexStart];
 	reference.x1 = c0.x;
@@ -354,8 +354,8 @@ bool SimpleFeatureCollection::featureIntersectsRectangle(size_t featureIndex, co
 
 
 std::vector<bool> SimpleFeatureCollection::getKeepVectorForFilterBySpatioTemporalReferenceIntersection(const SpatioTemporalReference& stref) const {
-	if (stref.epsg != this->stref.epsg)
-		throw ArgumentException("Cannot filter a SimpleFeatureCollection with a SpatialReference in a different epsg.");
+	if (stref.crsId != this->stref.crsId)
+		throw ArgumentException("Cannot filter a SimpleFeatureCollection with a SpatialReference in a different crsId.");
 	if (stref.timetype != this->stref.timetype)
 		throw ArgumentException("Cannot filter a SimpleFeatureCollection with a SpatialReference in a different timetype.");
 
