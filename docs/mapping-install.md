@@ -2,36 +2,6 @@
 
 ## OpenCL
 
-### Ubuntu 14 LTS
-
-Download newest OpenCL runtime from <https://software.intel.com/en-us/articles/opencl-drivers>.
-
-#### CPU-only
-```
-wget http://registrationcenter-download.intel.com/akdlm/irc_nas/9019/opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
-tar -xzf opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
-cd opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25
-
-sudo apt-get install lsb-core
-
-sudo ./install.sh
-```
-
-Install headers
-```
-sudo apt-get install ocl-icd-opencl-dev
-```
-
-Verify that the installation was successful.
-```
-sudo apt-get install clinfo
-clinfo
-```
-
-#### GPU
-**TODO**
-
-
 ### Ubuntu 16 LTS / Ubuntu 17.04
 
 #### Open CL
@@ -51,6 +21,7 @@ sudo ldconfig
 
 sudo apt install clinfo
 sudo apt install opencl-headers
+sudo apt install ocl-icd-opencl-dev
 clinfo
 ```
 
