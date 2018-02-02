@@ -35,14 +35,15 @@ class GDALTimesnap {
 	public:
 		class GDALDataLoadingInfo {
 		public:
-			GDALDataLoadingInfo(std::string fileName, int channel, const TemporalReference &tref,
-                                double nodata, const Unit &unit): fileName(std::move(fileName)), channel(channel),
-                                                                                 tref(tref), nodata(nodata), unit(unit) {}
+			GDALDataLoadingInfo(std::string fileName, int channel, const TemporalReference &tref, const CrsId &crsId,
+                                double nodata, const Unit &unit):
+					fileName(std::move(fileName)), channel(channel), tref(tref), crsId(crsId), nodata(nodata), unit(unit) {}
 
 			std::string fileName;
             int channel;
 			TemporalReference tref;
 
+			CrsId crsId;
             double nodata;
             Unit unit;
 		};

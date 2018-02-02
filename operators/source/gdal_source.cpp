@@ -6,7 +6,8 @@
 
 #include "util/gdal.h"
 
-#include <util/gdal_source_datasets.h>
+#include "util/gdal_source_datasets.h"
+#include "util/gdal_dataset_importer.h"
 
 /**
  * Operator that loads raster data via gdal. Loads them from imported GDAL dataset, import via GDAL dataset importer.
@@ -264,6 +265,10 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(const GDALT
 
 	if (dataset == nullptr)
 		throw OperatorException(concat("GDAL Source: Could not open dataset ", loadingInfo.fileName));
+
+	if (crsId != loadingInfo.crsId) {
+		throw OperatorException("GDAL Source: Requested wrong CrsId");
+	}
 
 	//read GeoTransform to get origin and scale
 	double adfGeoTransform[6];

@@ -209,5 +209,11 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
         nodata = channelJson["nodata"].asDouble();
     }
 
-	return GDALDataLoadingInfo(path + "/" + fileName, channel, TemporalReference(TIMETYPE_UNIX, time_start_mapping, time_end_mapping), nodata, unit);
+    auto coords = channelJson.get("coords", datasetJson["coords"]);
+    CrsId crsId = CrsId::from_srs_string(coords.get("crs", "").asString());
+
+
+	return GDALDataLoadingInfo(path + "/" + fileName, channel,
+                               TemporalReference(TIMETYPE_UNIX, time_start_mapping, time_end_mapping),
+                               crsId, nodata, unit);
 }
