@@ -101,7 +101,7 @@ TEST(PointCollection, toGeoJSON) {
 	points.addCoordinate(3,4);
 	points.finishFeature();
 
-	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"EPSG:1"}},"features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[1.000000,2.000000]}},{"type":"Feature","geometry":{"type":"MultiPoint","coordinates":[[2.000000,3.000000],[3.000000,4.000000]]}}]})";
+	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"UNREFERENCED:0"}},"features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[1.000000,2.000000]}},{"type":"Feature","geometry":{"type":"MultiPoint","coordinates":[[2.000000,3.000000],[3.000000,4.000000]]}}]})";
 	EXPECT_EQ(expected, points.toGeoJSON(false));
 }
 
@@ -109,7 +109,7 @@ TEST(PointCollection, toGeoJSON) {
 TEST(PointCollection, toGeoJSONEmptyCollection) {
 	PointCollection points(SpatioTemporalReference::unreferenced());
 
-	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"EPSG:1"}},"features":[]})";
+	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"UNREFERENCED:0"}},"features":[]})";
 	EXPECT_EQ(expected, points.toGeoJSON(false));
 }
 
@@ -128,7 +128,7 @@ TEST(PointCollection, toGeoJSONWithMetadata) {
 	points.finishFeature();
 	test.set(1, 2.1);
 
-	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"EPSG:1"}},"features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[1.000000,2.000000]},"properties":{"test":5.100000}},{"type":"Feature","geometry":{"type":"MultiPoint","coordinates":[[2.000000,3.000000],[3.000000,4.000000]]},"properties":{"test":2.100000}}]})";
+	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"UNREFERENCED:0"}},"features":[{"type":"Feature","geometry":{"type":"Point","coordinates":[1.000000,2.000000]},"properties":{"test":5.100000}},{"type":"Feature","geometry":{"type":"MultiPoint","coordinates":[[2.000000,3.000000],[3.000000,4.000000]]},"properties":{"test":2.100000}}]})";
 	EXPECT_EQ(expected, points.toGeoJSON(true));
 }
 
@@ -483,7 +483,7 @@ TEST(PointCollection, WKTAddFeatureFail){
 
 
 std::unique_ptr<PointCollection> createPointsForSTRefFilter(){
-	auto stref = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 100, 100),
+	auto stref = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 100, 100),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 100));
 
 	std::string wkt = "GEOMETRYCOLLECTION(POINT(1 2), POINT(2 3), POINT(55 70), MULTIPOINT((1 2), (17 88)), POINT(55 66))";
@@ -497,7 +497,7 @@ std::unique_ptr<PointCollection> createPointsForSTRefFilter(){
 TEST(PointCollection, filterBySTRefIntersection){
 	auto points = createPointsForSTRefFilter();
 
-	auto filter = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 10, 10),
+	auto filter = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 10, 10),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 10));
 
 	auto filtered = points->filterBySpatioTemporalReferenceIntersection(filter);
@@ -515,7 +515,7 @@ TEST(PointCollection, filterBySTRefIntersectionWithTime){
 
 	EXPECT_NO_THROW(points->validate());
 
-	auto filter = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 10, 10),
+	auto filter = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 10, 10),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 10));
 
 	auto filtered = points->filterBySpatioTemporalReferenceIntersection(filter);
@@ -530,7 +530,7 @@ TEST(PointCollection, filterBySTRefIntersectionWithTime){
 TEST(PointCollection, filterBySTRefIntersectionInPlace){
 	auto points = createPointsForSTRefFilter();
 
-	auto filter = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 10, 10),
+	auto filter = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 10, 10),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 10));
 
 	std::vector<bool> keep({true, true, false, true, false});

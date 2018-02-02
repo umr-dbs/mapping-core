@@ -214,7 +214,7 @@ TEST(LineCollection, toGeoJSON){
 
 	lines.addDefaultTimestamps();
 
-	std::string expected = "{\"type\":\"FeatureCollection\",\"crs\":{\"type\":\"name\",\"properties\":{\"name\":\"EPSG:1\"}},\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"LineString\",\"coordinates\":[[1.000000,2.000000],[1.000000,3.000000]]}},{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiLineString\",\"coordinates\":[[[1.000000,2.000000],[2.000000,3.000000]],[[2.000000,4.000000],[5.000000,6.000000]]]}}]}";
+	std::string expected = "{\"type\":\"FeatureCollection\",\"crs\":{\"type\":\"name\",\"properties\":{\"name\":\"UNREFERENCED:0\"}},\"features\":[{\"type\":\"Feature\",\"geometry\":{\"type\":\"LineString\",\"coordinates\":[[1.000000,2.000000],[1.000000,3.000000]]}},{\"type\":\"Feature\",\"geometry\":{\"type\":\"MultiLineString\",\"coordinates\":[[[1.000000,2.000000],[2.000000,3.000000]],[[2.000000,4.000000],[5.000000,6.000000]]]}}]}";
 
 	EXPECT_EQ(expected, lines.toGeoJSON(false));
 }
@@ -222,7 +222,7 @@ TEST(LineCollection, toGeoJSON){
 TEST(LineCollection, toGeoJSONEmptyCollection){
 	LineCollection lines(SpatioTemporalReference::unreferenced());
 
-	std::string expected = "{\"type\":\"FeatureCollection\",\"crs\":{\"type\":\"name\",\"properties\":{\"name\":\"EPSG:1\"}},\"features\":[]}";
+	std::string expected = "{\"type\":\"FeatureCollection\",\"crs\":{\"type\":\"name\",\"properties\":{\"name\":\"UNREFERENCED:0\"}},\"features\":[]}";
 
 	EXPECT_EQ(expected, lines.toGeoJSON(false));
 }
@@ -251,7 +251,7 @@ TEST(LineCollection, toGeoJSONMetadata){
 
 	lines.addDefaultTimestamps();
 
-	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"EPSG:1"}},"features":[{"type":"Feature","geometry":{"type":"LineString","coordinates":[[1.000000,2.000000],[1.000000,3.000000]]},"properties":{"test":"test","test2":5.100000,"time_start":"0001-01-01T00:00:00","time_end":"9999-12-31T23:59:59"}},{"type":"Feature","geometry":{"type":"MultiLineString","coordinates":[[[1.000000,2.000000],[2.000000,3.000000]],[[2.000000,4.000000],[5.000000,6.000000]]]},"properties":{"test":"test123","test2":4.100000,"time_start":"0001-01-01T00:00:00","time_end":"9999-12-31T23:59:59"}}]})";
+	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"UNREFERENCED:0"}},"features":[{"type":"Feature","geometry":{"type":"LineString","coordinates":[[1.000000,2.000000],[1.000000,3.000000]]},"properties":{"test":"test","test2":5.100000,"time_start":"0001-01-01T00:00:00","time_end":"9999-12-31T23:59:59"}},{"type":"Feature","geometry":{"type":"MultiLineString","coordinates":[[[1.000000,2.000000],[2.000000,3.000000]],[[2.000000,4.000000],[5.000000,6.000000]]]},"properties":{"test":"test123","test2":4.100000,"time_start":"0001-01-01T00:00:00","time_end":"9999-12-31T23:59:59"}}]})";
 
 	EXPECT_EQ(expected, lines.toGeoJSON(true));
 }
@@ -475,7 +475,7 @@ TEST(LineCollection, WKTAddFeatureFail){
 
 
 std::unique_ptr<LineCollection> createLinesForSTRefFilter(){
-	auto stref = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 100, 100),
+	auto stref = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 100, 100),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 100));
 
 	std::string wkt = "GEOMETRYCOLLECTION(LINESTRING(1 2, 5 5, 8 9), LINESTRING(9 8, 4 4, 1 9), LINESTRING(6 6, 11 12, 20 30), LINESTRING(0 10, 10 10, 10 0), LINESTRING(33 40, 49 17, 88 65), MULTILINESTRING((9 8, 8 7, 7 6), (0 1, 1 2, 2 3)))";
@@ -489,7 +489,7 @@ std::unique_ptr<LineCollection> createLinesForSTRefFilter(){
 TEST(LineCollection, filterBySTRefIntersection){
 	auto lines = createLinesForSTRefFilter();
 
-	auto filter = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 10, 10),
+	auto filter = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 10, 10),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 10));
 
 	auto filtered = lines->filterBySpatioTemporalReferenceIntersection(filter);
@@ -507,7 +507,7 @@ TEST(LineCollection, filterBySTRefIntersectionWithTime){
 
 	EXPECT_NO_THROW(lines->validate());
 
-	auto filter = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 10, 10),
+	auto filter = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 10, 10),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 10));
 
 	auto filtered = lines->filterBySpatioTemporalReferenceIntersection(filter);
@@ -522,7 +522,7 @@ TEST(LineCollection, filterBySTRefIntersectionWithTime){
 TEST(LineCollection, filterBySTRefIntersectionInPlace){
 	auto lines = createLinesForSTRefFilter();
 
-	auto filter = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 10, 10),
+	auto filter = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 10, 10),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 10));
 
 	std::vector<bool> keep = {true, true, true, true, false, true};

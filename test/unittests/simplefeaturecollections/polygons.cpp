@@ -321,7 +321,7 @@ TEST(PolygonCollection, toGeoJSON) {
 
 	polygons.addDefaultTimestamps();
 
-	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"EPSG:1"}},"features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[1.000000,2.000000],[1.000000,3.000000],[2.000000,3.000000],[1.000000,2.000000]]]}},{"type":"Feature","geometry":{"type":"MultiPolygon","coordinates":[[[[1.000000,2.000000],[1.000000,3.000000],[2.000000,3.000000],[1.000000,2.000000]]],[[[5.000000,8.000000],[2.000000,3.000000],[7.000000,6.000000],[5.000000,8.000000]]]]}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[11.000000,21.000000],[11.000000,31.000000],[21.000000,31.000000],[11.000000,21.000000]],[[51.000000,81.000000],[21.000000,31.000000],[71.000000,61.000000],[51.000000,81.000000]]]}}]})";
+	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"UNREFERENCED:0"}},"features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[1.000000,2.000000],[1.000000,3.000000],[2.000000,3.000000],[1.000000,2.000000]]]}},{"type":"Feature","geometry":{"type":"MultiPolygon","coordinates":[[[[1.000000,2.000000],[1.000000,3.000000],[2.000000,3.000000],[1.000000,2.000000]]],[[[5.000000,8.000000],[2.000000,3.000000],[7.000000,6.000000],[5.000000,8.000000]]]]}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[11.000000,21.000000],[11.000000,31.000000],[21.000000,31.000000],[11.000000,21.000000]],[[51.000000,81.000000],[21.000000,31.000000],[71.000000,61.000000],[51.000000,81.000000]]]}}]})";
 
 	EXPECT_EQ(expected, polygons.toGeoJSON(false));
 }
@@ -330,7 +330,7 @@ TEST(PolygonCollection, toGeoJSONEmptyCollection) {
 	//TODO: test missing metadata value
 	PolygonCollection polygons(SpatioTemporalReference::unreferenced());
 
-	std::string expected = "{\"type\":\"FeatureCollection\",\"crs\":{\"type\":\"name\",\"properties\":{\"name\":\"EPSG:1\"}},\"features\":[]}";
+	std::string expected = "{\"type\":\"FeatureCollection\",\"crs\":{\"type\":\"name\",\"properties\":{\"name\":\"UNREFERENCED:0\"}},\"features\":[]}";
 
 	EXPECT_EQ(expected, polygons.toGeoJSON(false));
 }
@@ -385,7 +385,7 @@ TEST(PolygonCollection, toGeoJSONMetadata) {
 
 	polygons.addDefaultTimestamps();
 
-	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"EPSG:1"}},"features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[1.000000,2.000000],[1.000000,3.000000],[2.000000,3.000000],[1.000000,2.000000]]]},"properties":{"test":"test","test2":5.100000,"time_start":"0001-01-01T00:00:00","time_end":"9999-12-31T23:59:59"}},{"type":"Feature","geometry":{"type":"MultiPolygon","coordinates":[[[[1.000000,2.000000],[1.000000,3.000000],[2.000000,3.000000],[1.000000,2.000000]]],[[[5.000000,8.000000],[2.000000,3.000000],[7.000000,6.000000],[5.000000,8.000000]]]]},"properties":{"test":"test2","test2":4.100000,"time_start":"0001-01-01T00:00:00","time_end":"9999-12-31T23:59:59"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[11.000000,21.000000],[11.000000,31.000000],[21.000000,31.000000],[11.000000,21.000000]],[[51.000000,81.000000],[21.000000,31.000000],[71.000000,61.000000],[51.000000,81.000000]]]},"properties":{"test":"test3","test2":3.100000,"time_start":"0001-01-01T00:00:00","time_end":"9999-12-31T23:59:59"}}]})";
+	std::string expected = R"({"type":"FeatureCollection","crs":{"type":"name","properties":{"name":"UNREFERENCED:0"}},"features":[{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[1.000000,2.000000],[1.000000,3.000000],[2.000000,3.000000],[1.000000,2.000000]]]},"properties":{"test":"test","test2":5.100000,"time_start":"0001-01-01T00:00:00","time_end":"9999-12-31T23:59:59"}},{"type":"Feature","geometry":{"type":"MultiPolygon","coordinates":[[[[1.000000,2.000000],[1.000000,3.000000],[2.000000,3.000000],[1.000000,2.000000]]],[[[5.000000,8.000000],[2.000000,3.000000],[7.000000,6.000000],[5.000000,8.000000]]]]},"properties":{"test":"test2","test2":4.100000,"time_start":"0001-01-01T00:00:00","time_end":"9999-12-31T23:59:59"}},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[11.000000,21.000000],[11.000000,31.000000],[21.000000,31.000000],[11.000000,21.000000]],[[51.000000,81.000000],[21.000000,31.000000],[71.000000,61.000000],[51.000000,81.000000]]]},"properties":{"test":"test3","test2":3.100000,"time_start":"0001-01-01T00:00:00","time_end":"9999-12-31T23:59:59"}}]})";
 
 	EXPECT_EQ(expected, polygons.toGeoJSON(true));
 }
@@ -734,7 +734,7 @@ TEST(PolygonCollection, WKTAddFeatureFail){
 }
 
 std::unique_ptr<PolygonCollection> createPolygonsForSTRefFilter(){
-	auto stref = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 100, 100),
+	auto stref = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 100, 100),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 100));
 
 	std::string wkt = "GEOMETRYCOLLECTION(POLYGON((1 2, 5 5, 8 9, 1 2)), POLYGON((5 5, 10 12, 13 4, 5 5)), POLYGON((10 0, 10 10, 12 14, 10 0)), POLYGON((10 0, 10 10, 12 14, 10 0)), POLYGON((30 30, 33 12, 44 18, 30 30)), POLYGON((-5 -5, 15 -5, 15 15, -5 15, -5 -5), (-1 -1, 11 -1, 11 11, -1 11, -1 -1)), MULTIPOLYGON(((1 1, 1 9, 9 9, 9 9, 1 1)), ((11 11, 11 99, 99 99, 99 11, 11 11))))";
@@ -748,7 +748,7 @@ std::unique_ptr<PolygonCollection> createPolygonsForSTRefFilter(){
 TEST(PolygonCollection, filterBySTRefIntersection){
 	const auto polygons = createPolygonsForSTRefFilter();
 
-	auto filter = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 10, 10),
+	auto filter = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 10, 10),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 10));
 
 	auto filtered = polygons->filterBySpatioTemporalReferenceIntersection(filter);
@@ -764,7 +764,7 @@ TEST(PolygonCollection, filterBySTRefIntersectionWithTime){
 	const auto polygons = createPolygonsForSTRefFilter();
 	polygons->setTimeStamps({1,  5,  9, 15, 30, 1,  1}, {9, 12, 11, 80, 44, 6, 99});
 
-	auto filter = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 10, 10),
+	auto filter = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 10, 10),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 10));
 
 	auto filtered = polygons->filterBySpatioTemporalReferenceIntersection(filter);
@@ -780,7 +780,7 @@ TEST(PolygonCollection, filterBySTRefIntersectionInPlace){
 	const auto polygons = createPolygonsForSTRefFilter();
 
 
-	auto filter = SpatioTemporalReference(SpatialReference(EPSG_UNKNOWN, 0, 0, 10, 10),
+	auto filter = SpatioTemporalReference(SpatialReference(CrsId::unreferenced(), 0, 0, 10, 10),
 					TemporalReference(TIMETYPE_UNKNOWN, 0, 10));
 	std::vector<bool> keep = {true, true, true, true, false, false, true};
 	auto expected = polygons->filter(keep);
