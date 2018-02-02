@@ -2,10 +2,11 @@
 #ifndef MAPPING_CORE_GDAL_SOURCE_DATASETS_H
 #define MAPPING_CORE_GDAL_SOURCE_DATASETS_H
 
+#include "userdb/userdb.h"
 
 #include <vector>
 #include <json/value.h>
-#include <userdb/userdb.h>
+
 
 class GDALSourceDataSets {
 public:

@@ -1,7 +1,7 @@
 
 #include <dirent.h>
 #include <fstream>
-#include <json/json.h>
+#include <json/reader.h>
 
 #include "gdal_source_datasets.h"
 #include "configuration.h"
