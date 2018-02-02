@@ -7,7 +7,7 @@
 
 namespace GDAL {
 	void init();
-	std::string SRSFromCrsId(const CrsId &crsId);
+	std::string WKTFromCrsId(const CrsId &crsId);
 
 	/**
 	 * This class allows the transformation of coordinates between two projections

@@ -3,6 +3,7 @@
 #include "datatypes/raster.h"
 #include "util/gdal.h"
 #include "util/log.h"
+#include "util/CrsDirectory.h"
 
 #include <mutex>
 
@@ -55,47 +56,27 @@ void init() {
 }
 
 
-std::string SRSFromCrsId(const CrsId &crsId) {
-		OGRSpatialReferenceH hSRS;
+std::string WKTFromCrsId(const CrsId &crsId) {
+	OGRSpatialReference ogrRef(nullptr);
+
+	// try if gdal knows crs
+	OGRErr error = ogrRef.SetFromUserInput(crsId.to_string().c_str());
+
+	if(error == OGRERR_NONE) {
 		char *pszResult = nullptr;
-
-		CPLErrorReset();
-
-		hSRS = OSRNewSpatialReference(nullptr);
-		bool success = false;
-
-		if(crsId == CrsId::from_srs_string("SR-ORG:81")) {
-			//MSG handling
-			success = (OSRSetGEOS(hSRS, 0, 35785831, 0, 0) == OGRERR_NONE); //this is valid for meteosat: lon, height, easting, northing (gdal notation)!
-			success = (OSRSetWellKnownGeogCS(hSRS, "WGS84" ) == OGRERR_NONE);
-			/*
-			 * GDAL also uses the following lines:
-			 *     oSRS.SetGeogCS( NULL, NULL, NULL, 6378169, 295.488065897, NULL, 0, NULL, 0 );
-    		 *     oSRS.SetGeogCS( "unnamed ellipse", "unknown", "unnamed", 6378169, 295.488065897, "Greenwich", 0.0);
-			 */
-		}
-		else {
-			//others
-			success = (OSRSetFromUserInput( hSRS, crsId.to_string().c_str() ) == OGRERR_NONE );
-		}
-
-		if(success)
-			//check for success and throw an exception if something went wrong
-			OSRExportToWkt( hSRS, &pszResult );
-		else {
-			throw GDALException(concat("SRS could not be created for crsId ", crsId.to_string()));
-			/*
-				CPLError( CE_Failure, CPLE_AppDefined,
-									"Translating source or target SRS failed:\n%s",
-									pszUserInput );
-				*/
-		}
-
-		OSRDestroySpatialReference(hSRS);
-
-		std::string result(pszResult);
+		ogrRef.exportToWkt(&pszResult);
+		std::string wkt(pszResult);
 		CPLFree(pszResult);
-		return result;
+		return wkt;
+	} else {
+		// check mapping crs directory
+        auto wkt = CrsDirectory::getWKTForCrsId(crsId);
+
+		if(wkt.empty()) {
+			throw ArgumentException("Unknown CrsId specified");
+		}
+		return wkt;
+	}
 }
 
 
@@ -108,7 +89,7 @@ CRSTransformer::CRSTransformer(CrsId in_crsId, CrsId out_crsId) : in_crsId(in_cr
 	if (in_crsId == out_crsId)
 		throw GDALException("Cannot transform when in_crsId == out_crsId");
 
-	transformer = GDALCreateReprojectionTransformer(SRSFromCrsId(in_crsId).c_str(), SRSFromCrsId(out_crsId).c_str());
+	transformer = GDALCreateReprojectionTransformer(WKTFromCrsId(in_crsId).c_str(), WKTFromCrsId(out_crsId).c_str());
 	if (!transformer)
 		throw GDALException("Could not initialize ReprojectionTransformer");
 }

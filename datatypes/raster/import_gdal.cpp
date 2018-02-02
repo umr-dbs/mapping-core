@@ -308,7 +308,7 @@ template<typename T> void Raster2D<T>::toGDAL(const char *filename, const char *
 	double origin_y = flipy ? stref.y2 : stref.y1;
 
 	double adfGeoTransform[6]{ origin_x, scale_x, 0, origin_y, 0, scale_y };
-	std::string srs = GDAL::SRSFromCrsId(stref.crsId);
+	std::string srs = GDAL::WKTFromCrsId(stref.crsId);
 	//set dataset parameters
 	poDstDS->SetGeoTransform(adfGeoTransform);
 	poDstDS->SetProjection(srs.c_str());
