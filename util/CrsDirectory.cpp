@@ -3,7 +3,7 @@
 #include "exceptions.h"
 
 #include <fstream>
-#include <cmake-build-debug/jsoncpp-src/include/json/json.h>
+#include <json/json.h>
 
 std::string CrsDirectory::getWKTForCrsId(const CrsId &crsId) {
     // TODO: load file only once

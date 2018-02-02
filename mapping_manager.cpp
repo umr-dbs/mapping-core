@@ -212,7 +212,7 @@ static SpatialReference sref_from_json(Json::Value &root, bool &flipx, bool &fli
 	if(root.isMember("spatial_reference")){
 		Json::Value& json = root["spatial_reference"];
 
-		CrsId crsId = crsIdCodeFromSrsString(json.get("projection", "EPSG:4326").asString());
+		CrsId crsId = CrsId::from_srs_string(json.get("projection", "EPSG:4326").asString());
 
 		double x1 = json.get("x1", -180).asDouble();
 		double y1 = json.get("y1", -90).asDouble();
