@@ -15,7 +15,7 @@ class OGCService : public HTTPService {
 	protected:
 		using HTTPService::HTTPService;
 
-		CrsId parseEPSG(const Parameters &params, const std::string &key, CrsId def = CrsId::from_epsg_code(3857));
+		CrsId parseCrsId(const Parameters &params, const std::string &key, CrsId def = CrsId::from_epsg_code(3857));
 		TemporalReference parseTime(const Parameters &params) const;
 		SpatialReference parseBBOX(const std::string bbox_str, CrsId crsId = CrsId::from_epsg_code(3857), bool allow_infinite = false);
 

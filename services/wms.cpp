@@ -27,7 +27,7 @@ void WMSService::run() {
 	auto user = session->getUser();
 
 	bool debug = params.getBool("debug", Configuration::getBool("global.debug", false));
-	auto query_crsId = parseEPSG(params, "crs");
+	auto query_crsId = parseCrsId(params, "crs");
 	TemporalReference tref = parseTime(params);
 
 	std::string request = params.get("request");

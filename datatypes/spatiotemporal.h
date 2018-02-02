@@ -19,7 +19,15 @@ public:
 
 	static CrsId from_epsg_code(uint32_t epsg_code);
 
+	/**
+	 * Create CrsId from string `AUTHORITY:CODE`
+	 */
     static CrsId from_srs_string(const std::string &srsString);
+
+	/**
+	 * Create CrsId from wkt string
+	 */
+    static CrsId from_wkt(const std::string &wkt);
 
 	static CrsId unreferenced();
 

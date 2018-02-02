@@ -114,20 +114,12 @@ Json::Value GDALDatasetImporter::readCoords(GDALDataset *dataset){
 	sizeJson.append(dataset->GetRasterXSize());
 	sizeJson.append(dataset->GetRasterYSize());
 
-	coordsJson["crs"] = getCrsId(dataset->GetProjectionRef()).to_string();
+	coordsJson["crs"] = CrsId::from_wkt(dataset->GetProjectionRef()).to_string();
 	coordsJson["origin"] = originJson;
 	coordsJson["scale"] = scaleJson;
 	coordsJson["size"] = sizeJson;
 
 	return coordsJson;
-}
-
-//reads the crsId information from GetProjectionRef String of the GDALDataset
-CrsId GDALDatasetImporter::getCrsId(const std::string &crs_wkt){
-	OGRSpatialReference sref = OGRSpatialReference(crs_wkt.c_str());
-	return CrsId(std::string(sref.GetAuthorityName("GEOGCS")),
-				 static_cast<uint32_t>(std::stoi(sref.GetAuthorityCode("GEOGCS"))));
-
 }
 
 //read channel values from GDALDataset, some from given parameters

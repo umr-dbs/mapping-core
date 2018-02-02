@@ -32,7 +32,7 @@ void PlotService::run() {
 	if(!params.hasParam("crs"))
 		throw ArgumentException("PlotService: crs not specified");
 
-	CrsId queryEpsg = parseEPSG(params, "crs");
+	CrsId queryEpsg = parseCrsId(params, "crs");
 
 	SpatialReference sref(queryEpsg);
 	if(params.hasParam("bbox")) {

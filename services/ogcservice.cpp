@@ -11,7 +11,7 @@
 #include <algorithm>
 
 
-CrsId OGCService::parseEPSG(const Parameters &params, const std::string &key, CrsId defaultValue) {
+CrsId OGCService::parseCrsId(const Parameters &params, const std::string &key, CrsId defaultValue) {
 	if (!params.hasParam(key))
 		return defaultValue;
 	return CrsId::from_srs_string(params.get(key));

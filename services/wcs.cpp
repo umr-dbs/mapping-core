@@ -99,7 +99,7 @@ void WCSService::run() {
 
 	if(params.get("request") == "getcoverage") {
 		//now we will identify the parameters for the QueryRectangle
-		CrsId query_crsId = parseEPSG(params, "srsname");
+		CrsId query_crsId = parseCrsId(params, "srsname");
 
 		/*
 		 *

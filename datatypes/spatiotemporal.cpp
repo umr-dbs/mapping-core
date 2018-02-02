@@ -5,6 +5,7 @@
 
 #include <limits>
 #include <iomanip>
+#include <ogr_spatialref.h>
 
 
 /**
@@ -53,6 +54,12 @@ CrsId CrsId::from_srs_string(const std::string &srsString) {
 	auto code = static_cast<uint32_t>(std::stoi(srsString.substr(pos + 1)));
 
 	return CrsId(authority, code);
+}
+
+CrsId CrsId::from_wkt(const std::string &wkt) {
+    OGRSpatialReference sref = OGRSpatialReference(wkt.c_str());
+    return CrsId(std::string(sref.GetAuthorityName("GEOGCS")),
+                 static_cast<uint32_t>(std::stoi(sref.GetAuthorityCode("GEOGCS"))));
 }
 
 
