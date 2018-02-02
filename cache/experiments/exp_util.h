@@ -27,7 +27,7 @@
 time_t parseIso8601DateTime(std::string dateTimeString);
 
 void parseBBOX(double *bbox, const std::string bbox_str, CrsId crsId =
-		CrsId::from_crsId(3857), bool allow_infinite = false);
+		CrsId::from_epsg_code(3857), bool allow_infinite = false);
 
 
 //

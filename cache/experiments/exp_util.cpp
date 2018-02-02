@@ -51,11 +51,11 @@ void parseBBOX(double *bbox, const std::string bbox_str, CrsId crsId,
 	double extent_msg[4] { -5568748.276, -5568748.276, 5568748.276, 5568748.276 };
 
 	double *extent = nullptr;
-	if (crsId == CrsId::from_crsId(3857))
+	if (crsId == CrsId::from_epsg_code(3857))
 		extent = extent_webmercator;
-	else if (crsId == CrsId::from_crsId(4326))
+	else if (crsId == CrsId::from_epsg_code(4326))
 		extent = extent_latlon;
-	else if (crsId == CrsId::from_crsId(0x9E05))
+	else if (crsId == CrsId::from_epsg_code(0x9E05))
 		extent = extent_msg;
 
 	std::string delimiters = " ,";
@@ -100,7 +100,7 @@ void parseBBOX(double *bbox, const std::string bbox_str, CrsId crsId,
 	 * The simple solution is to swap the x and y coordinates.
 	 * OpenLayers 3 uses the axis orientation of the projection to determine the bbox axis order. https://github.com/openlayers/ol3/blob/master/src/ol/source/imagewmssource.js ~ line 317.
 	 */
-	if (crsId == CrsId::from_crsId(4326)) {
+	if (crsId == CrsId::from_epsg_code(4326)) {
 		std::swap(bbox[0], bbox[1]);
 		std::swap(bbox[2], bbox[3]);
 	}

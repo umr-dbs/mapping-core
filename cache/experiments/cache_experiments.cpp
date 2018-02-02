@@ -170,7 +170,7 @@ void PuzzleExperiment::run_once() {
 
 RelevanceExperiment::RelevanceExperiment(const QuerySpec& spec, uint32_t num_runs) :
 	CacheExperimentSingleQuery("Relevance-Functions", spec, num_runs ), capacity(0) {
-//	if ( query_spec.crsId != CrsId::from_crsId(4326) )
+//	if ( query_spec.crsId != CrsId::from_epsg_code(4326) )
 //		throw ArgumentException("Only LatLon support for ReorgExperiment");
 }
 
@@ -246,7 +246,7 @@ std::vector<QTriple> RelevanceExperiment::generate_queries() {
 	// [  67.5,  90  ], [ 22,5,  45  ] --> Asien
 	// [ 135  , 157.5], [-45  , -22.5] --> Australien
 
-	CrsId latLon = CrsId::from_crsId(4326);
+	CrsId latLon = CrsId::from_epsg_code(4326);
 	std::vector<SpatialReference> areas{
 		SpatialReference(latLon, -112.5,  22.5, -90.0,  45.0 ), // Nordamerika
 		SpatialReference(latLon,    0.0,  45.0,  22.5,  67.5 ), // Europa
@@ -257,7 +257,7 @@ std::vector<QTriple> RelevanceExperiment::generate_queries() {
 
 	if ( latLon != query_spec.crsId ) {
 		for ( auto &sref : areas ) {
-			GDAL::CRSTransformer trans(CrsId::from_crsId(4326),query_spec.crsId);
+			GDAL::CRSTransformer trans(CrsId::from_epsg_code(4326),query_spec.crsId);
 			trans.transform(sref.x1,sref.y1);
 			trans.transform(sref.x2,sref.y2);
 		}

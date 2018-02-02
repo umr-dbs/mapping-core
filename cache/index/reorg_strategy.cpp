@@ -545,8 +545,8 @@ std::vector<std::shared_ptr<GraphReorgStrategy::GNode> > GraphReorgStrategy::bui
 ///////////////////////////////////////////////////////////////
 
 
-const GDAL::CRSTransformer GeographicReorgStrategy::TRANS_GEOSMSG(CrsId::from_crsId(0x9E05),CrsId::from_crsId(4326));
-const GDAL::CRSTransformer GeographicReorgStrategy::TRANS_WEBMERCATOR(CrsId::from_crsId(3857),CrsId::from_crsId(4326));
+const GDAL::CRSTransformer GeographicReorgStrategy::TRANS_GEOSMSG(CrsId::from_epsg_code(0x9E05),CrsId::from_epsg_code(4326));
+const GDAL::CRSTransformer GeographicReorgStrategy::TRANS_WEBMERCATOR(CrsId::from_epsg_code(3857),CrsId::from_epsg_code(4326));
 const uint32_t GeographicReorgStrategy::MAX_Z = 0xFFFFFFFF;
 const uint32_t GeographicReorgStrategy::MASKS[] = {0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF};
 const uint32_t GeographicReorgStrategy::SHIFTS[] = {1, 2, 4, 8};
@@ -558,10 +558,10 @@ uint32_t GeographicReorgStrategy::get_z_value(const BaseCube& c) {
 	double ex = com.get_value(0);
 	double ey = com.get_value(1);
 
-	if ( c.crsId == CrsId::from_crsId(0x9E05) ) {
+	if ( c.crsId == CrsId::from_epsg_code(0x9E05) ) {
 		GeographicReorgStrategy::TRANS_GEOSMSG.transform(ex,ey);
 	}
-	else if ( c.crsId == CrsId::from_crsId(3857) ) {
+	else if ( c.crsId == CrsId::from_epsg_code(3857) ) {
 		GeographicReorgStrategy::TRANS_WEBMERCATOR.transform(ex,ey);
 	}
 
