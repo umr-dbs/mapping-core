@@ -2,6 +2,7 @@
 #define DATATYPES_SPATIOTEMPORALREFERENCE_H
 
 #include "datatypes/attributes.h"
+#include "datatypes/Coordinate.h"
 
 #include <cstdint>
 #include <cmath>
@@ -60,7 +61,7 @@ class SpatialReference {
 		SpatialReference() = delete;
 		/**
 		 * Construct a reference that spans the known universe.
-		 * The actual endpoints are taken from the CrsId t when known;
+		 * The actual endpoints are taken from the CrsId when known;
 		 * if in doubt they're set to extent(crsId)
 		 * @see extent
 		 */
@@ -98,6 +99,11 @@ class SpatialReference {
 		bool contains(double x, double y) const {
 			return x >= x1 && x <= x2 && y >= y1 && y <= y2;
 		}
+
+		/**
+		 * uniformly draw samples from the borders of the query rectancle
+		 */
+		std::vector<Coordinate> sample_borders(size_t numberOfSamples) const;
 
 		/**
 		 * the size of this object in memory (in bytes)

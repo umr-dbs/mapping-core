@@ -105,142 +105,6 @@ struct raster_projection {
 	}
 };
 
-
-QueryRectangle ProjectionOperator::projectQueryRectangle(const QueryRectangle &rect, const GDAL::CRSTransformer &transformer) {
-	double src_x1, src_y1, src_x2, src_y2;
-	int src_xres = rect.xres, src_yres = rect.yres;
-
-	const double MSG_MAX_LAT = 79.0;  // north/south
-	const double MSG_MAX_LONG = 76.0; // east/west
-
-	if (dest_crsId == CrsId::from_srs_string("SR-ORG:81")) {
-		// We're loading some points and would like to display them in the msg projection. Why? Well, why not?
-		if (src_crsId == CrsId::from_epsg_code(3857)) {
-			// TODO: this is the whole world. A smaller rectangle would do, we just need to figure out the coordinates.
-			src_x1 = -20037508.34;
-			src_y1 = -20037508.34;
-			src_x2 = 20037508.34;
-			src_y2 = 20037508.34;
-		}
-		else if (src_crsId == CrsId::from_epsg_code(4326)) {
-			src_x1 = -MSG_MAX_LONG;
-			src_y1 = -MSG_MAX_LAT;
-			src_x2 = MSG_MAX_LONG;
-			src_y2 = MSG_MAX_LAT;
-		}
-		else
-			throw OperatorException("Cannot transform to METEOSAT2 projection from this projection");
-	}
-	else if (src_crsId == CrsId::from_srs_string("SR-ORG:81")) {
-		/*
-		 * We're loading a msg raster. Since a rectangle in latlon or mercator does not map to
-		 * an exact rectangle in MSG, we need to use some heuristics
-		 */
-		double tlx = rect.x1, tly = rect.y1, brx = rect.x2, bry = rect.y2;
-
-		if (dest_crsId != CrsId::from_epsg_code(4326)) {
-			GDAL::CRSTransformer transformer_tolatlon(dest_crsId, CrsId::from_epsg_code(4326));
-			double pz=0;
-			if (!transformer_tolatlon.transform(tlx, tly, pz))
-				throw OperatorException("Transformation of top left corner failed");
-			if (!transformer_tolatlon.transform(brx, bry, pz))
-				throw OperatorException("Transformation of bottom right corner failed");
-		}
-
-		double top = std::max(tly, bry);
-		double bottom = std::min(tly, bry);
-		double left = std::min(tlx, brx);
-		double right = std::max(tlx, brx);
-
-		// First optimization: see if we're on a part of the earth visible by the satellite
-		if (bottom > MSG_MAX_LAT || top < -MSG_MAX_LAT || right < -MSG_MAX_LONG || left > MSG_MAX_LONG) {
-			/*
-			std::ostringstream msg;
-			msg << "Projection: there is no source data here (" << left << "," << top << ") -> (" << right << "," << bottom << ")";
-			throw OperatorException(msg.str());
-			*/
-
-			// return a very small source rectangle with minimum resolution
-			return QueryRectangle(
-				SpatialReference(src_crsId, 0, 0, 1, 1),
-				rect,
-				rect.restype == QueryResolution::Type::PIXELS ? QueryResolution::pixels(1, 1) : QueryResolution(rect)
-			);
-		}
-
-		// By default: pick the whole raster
-		src_x1 = -5568748.276;
-		src_y1 = -5568748.276;
-		src_x2 = 5568748.276;
-		src_y2 = 5568748.276;
-		// Second optimization: see if we can restrict us to a quarter of the globe
-		if (left > 0)
-			src_x1 = 0;
-		if (right < 0)
-			src_x2 = 0;
-		if (top < 0)
-			src_y2 = 0;
-		if (bottom > 0)
-			src_y1 = 0;
-
-
-		src_xres = 3712;
-		src_yres = 3712;
-	}
-	else {
-		// Transform the upper left and bottom right corner, use those as the source bounding box
-		// That'll only work on transformations where rectangles remain rectangles..
-		double px = rect.x1, py = rect.y1, pz=0;
-		if (!transformer.transform(px, py, pz))
-			throw OperatorException("Transformation of top left corner failed");
-		src_x1 = px;
-		src_y1 = py;
-
-		px = rect.x2;
-		py = rect.y2;
-		if (!transformer.transform(px, py, pz))
-			throw OperatorException("Transformation of bottom right corner failed");
-		src_x2 = px;
-		src_y2 = py;
-
-		SpatialReference ex = SpatialReference::extent(src_crsId);
-		if ( src_x2 <= src_x1 ) {
-			if ( std::abs(src_x2-ex.x1) < std::abs(src_x1-ex.x2 ) )
-				src_x2 = ex.x2;
-			else
-				src_x1 = ex.x1;
-		}
-
-		if ( src_y2 <= src_y1 ) {
-			if ( std::abs(src_y2-ex.y1) < std::abs(src_y1-ex.y2 ) )
-				src_y2 = ex.y2;
-			else
-				src_y1 = ex.y1;
-		}
-
-
-
-		// TODO: welche Auflösung der Quelle brauchen wir denn überhaupt?
-/*
-		printf("Content-type: text/plain\r\n\r\n");
-		printf("qrect: %f, %f -> %f, %f\n", rect.x1, rect.y1, rect.x2, rect.y2);
-		printf("src:   %f, %f -> %f, %f\n", src_x1, src_y1, src_x2, src_y2);
-		exit(0);
-*/
-	}
-
-	QueryRectangle result(
-		SpatialReference(src_crsId, src_x1, src_y1, src_x2, src_y2),
-		rect,
-		rect.restype == QueryResolution::Type::PIXELS ? QueryResolution::pixels(src_xres, src_yres) : QueryResolution(rect)
-	);
-	if (result.restype == QueryResolution::Type::PIXELS)
-		result.enlargePixels(2);
-	else
-		result.enlargeFraction(0.01);
-	return result;
-}
-
 //GenericRaster *ProjectionOperator::execute(int timestamp, double x1, double y1, double x2, double y2, int xres, int yres) {
 std::unique_ptr<GenericRaster> ProjectionOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
 	if (dest_crsId != rect.crsId) {
@@ -251,8 +115,7 @@ std::unique_ptr<GenericRaster> ProjectionOperator::getRaster(const QueryRectangl
 	}
 
 	GDAL::CRSTransformer transformer(dest_crsId, src_crsId);
-
-	QueryRectangle src_rect = projectQueryRectangle(rect, transformer);
+    QueryRectangle src_rect = rect.project(src_crsId, transformer);
 
 	auto raster_in = getRasterFromSource(0, src_rect, tools);
 
@@ -272,7 +135,7 @@ std::unique_ptr<PointCollection> ProjectionOperator::getPointCollection(const Qu
 
 	// Need to transform "backwards" to project the query rectangle..
 	GDAL::CRSTransformer qrect_transformer(dest_crsId, src_crsId);
-	QueryRectangle src_rect = projectQueryRectangle(rect, qrect_transformer);
+	QueryRectangle src_rect = rect.project(src_crsId, qrect_transformer);
 
 	// ..but "forward" to project the points
 	GDAL::CRSTransformer transformer(src_crsId, dest_crsId);
@@ -323,7 +186,7 @@ std::unique_ptr<LineCollection> ProjectionOperator::getLineCollection(const Quer
 		throw OperatorException("Projection: asked to transform to a different CRS than specified in QueryRectangle");
 
 	GDAL::CRSTransformer qrect_transformer(dest_crsId, src_crsId);
-	QueryRectangle src_rect = projectQueryRectangle(rect, qrect_transformer);
+	QueryRectangle src_rect = rect.project(src_crsId, qrect_transformer);
 
 	GDAL::CRSTransformer transformer(src_crsId, dest_crsId);
 
@@ -369,13 +232,12 @@ std::unique_ptr<LineCollection> ProjectionOperator::getLineCollection(const Quer
 		return lines_in->filter(keep);
 }
 
-//TODO: why is this in raster folder?
 std::unique_ptr<PolygonCollection> ProjectionOperator::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools) {
 	if (dest_crsId != rect.crsId)
 		throw OperatorException("Projection: asked to transform to a different CRS than specified in QueryRectangle");
 
 	GDAL::CRSTransformer qrect_transformer(dest_crsId, src_crsId);
-	QueryRectangle src_rect = projectQueryRectangle(rect, qrect_transformer);
+	QueryRectangle src_rect = rect.project(src_crsId, qrect_transformer);
 
 	GDAL::CRSTransformer transformer(src_crsId, dest_crsId);
 

@@ -370,6 +370,23 @@ size_t SpatialReference::get_byte_size() const {
 	return sizeof(SpatialReference);
 }
 
+std::vector<Coordinate> SpatialReference::sample_borders(size_t numberOfSamples) const {
+	size_t borderSamples = numberOfSamples / 4;
+	std::vector<Coordinate> samples;
+
+	double dx = (x2 - x1) / borderSamples;
+	double dy = (y2 - y1) / borderSamples;
+
+	for (size_t i = 0; i < borderSamples; ++i) {
+		samples.emplace_back(x1 + i * dx, y1);
+        samples.emplace_back(x2, y1 + i * dy);
+        samples.emplace_back(x2 - i * dx, y2);
+        samples.emplace_back(x1, y2 - i * dy);
+	}
+
+    return samples;
+}
+
 /**
  * SpatioTemporalReference
  */

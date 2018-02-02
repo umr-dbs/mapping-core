@@ -1,6 +1,7 @@
 #ifndef OPERATORS_QUERYRECTANGLE_H
 #define OPERATORS_QUERYRECTANGLE_H
 
+#include "util/gdal.h"
 #include "datatypes/spatiotemporal.h"
 
 class BinaryStream;
@@ -46,6 +47,11 @@ class QueryRectangle : public SpatialReference, public TemporalReference, public
 		QueryRectangle(BinaryReadBuffer &buffer);
 
 		void serialize(BinaryWriteBuffer &buffer, bool is_persistent_memory) const;
+
+		/**
+		 * Project the query rectangle using gdal transformer
+		 */
+		QueryRectangle project(const CrsId &targetCrs, const GDAL::CRSTransformer &transformer) const;
 
 		void enlargePixels(int pixels);
 		void enlargeFraction(double fraction);

@@ -125,7 +125,7 @@ static void createsource(int argc, char *argv[]) {
 				origins[d] = lcrs->origin[d];
 				scales[d] = lcrs->scale[d];
 			}
-			coords["crsId"] = lcrs->crsId.;
+			coords["crs"] = lcrs->crsId.to_string();
 			coords["size"] = sizes;
 			coords["origin"] = origins;
 			coords["scale"] = scales;
