@@ -3,7 +3,7 @@
 #include "util/exceptions.h"
 #include "util/make_unique.h"
 #include "datatypes/simplefeaturecollections/wkbutil.h"
-#include "test/unittests/simplefeaturecollections/util.h"
+#include "unittests/simplefeaturecollections/util.h"
 
 #include <gtest/gtest.h>
 #include <vector>

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-directory=test/systemtests/data/ndvi/
+directory=systemtests/data/ndvi/
 compression=RAW
 
 source_name=ndvi

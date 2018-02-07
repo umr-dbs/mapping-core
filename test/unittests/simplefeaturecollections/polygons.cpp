@@ -11,7 +11,7 @@
 #include "datatypes/pointcollection.h"
 #include "datatypes/polygoncollection.h"
 #include "raster/opencl.h"
-#include "test/unittests/simplefeaturecollections/util.h"
+#include "unittests/simplefeaturecollections/util.h"
 
 std::unique_ptr<PolygonCollection> createPolygonsWithAttributesAndTime(){
 	std::string wkt = "GEOMETRYCOLLECTION(POLYGON((10 10, 10 30, 25 20, 10 10)), POLYGON((15 70, 25 90, 45 90, 40 80, 50 70, 15 70), (30 75, 25 80, 30 85, 35 80, 30 75)), POLYGON((50 30, 65 60, 100 25, 50 30), (55 35, 65 45, 65 35, 55 35), (75 30, 75 35, 85 35, 85 30, 75 30)), MULTIPOLYGON(((15 50, 15 60, 30 65, 35 60 25 50, 15 50)), ((30 35, 35 45, 40 34, 30 35))))";

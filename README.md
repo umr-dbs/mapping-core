@@ -51,7 +51,7 @@ make
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DUSE_OPENCL=ON \
-  -DMAPPING_MODULES="mapping-gfbio;mapping-r" \ 
+  -DMAPPING_MODULES="mapping-gfbio;mapping-r" \
   .
   
 make -j20

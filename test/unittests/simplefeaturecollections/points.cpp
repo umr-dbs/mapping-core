@@ -12,7 +12,7 @@
 #include "datatypes/pointcollection.h"
 #include "datatypes/polygoncollection.h"
 #include "raster/opencl.h"
-#include "test/unittests/simplefeaturecollections/util.h"
+#include "unittests/simplefeaturecollections/util.h"
 
 #include <geos/io/WKTReader.h>
 #include <geos/geom/GeometryFactory.h>

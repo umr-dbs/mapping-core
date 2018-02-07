@@ -13,7 +13,7 @@
 #include "raster/opencl.h"
 #include "datatypes/simplefeaturecollections/wkbutil.h"
 #include "datatypes/simplefeaturecollections/geosgeomutil.h"
-#include "test/unittests/simplefeaturecollections/util.h"
+#include "unittests/simplefeaturecollections/util.h"
 
 std::unique_ptr<LineCollection> createLinesWithAttributesAndTime(){
 	std::string wkt = "GEOMETRYCOLLECTION(LINESTRING(1 1, 2 3, 14 8), LINESTRING(14 10, 45 7, 26 3), MULTILINESTRING((8 6, 8 9, 88 99), (47 11, 47 8, 99 3)), LINESTRING(68 59, 11 15, 77 44, 84 13), LINESTRING(78 65, 32 14, 36 63))";
