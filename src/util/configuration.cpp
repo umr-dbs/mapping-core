@@ -204,7 +204,7 @@ void Configuration::loadFromEnvironment() {
 		auto line = environ[i];
 		if (strncmp(line, "MAPPING_", 8) == 0 || strncmp(line, "mapping_", 8) == 0) {
 			std::string linestr(&line[8]);
-			if (strncmp(linestr.c_str(), "CONFIGURATION=", 14) || strncmp(linestr.c_str(), "configuration=", 14))
+			if (strncmp(linestr.c_str(), "CONFIGURATION=", 14) == 0 || strncmp(linestr.c_str(), "configuration=", 14) == 0)
 				configuration_file = linestr.substr(14);
 			else
 				relevant_vars.push_back(linestr);
