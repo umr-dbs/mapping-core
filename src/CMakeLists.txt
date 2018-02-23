@@ -140,6 +140,7 @@ add_library(mapping_core_operators_lib
         operators/source/wkt_source.cpp
         operators/source/gdal_source.cpp
         operators/source/ogr_source.cpp
+        operators/source/natur40.cpp
         util/ogr_source_util.cpp
         util/gdal_timesnap.cpp
         util/csv_source_util.cpp

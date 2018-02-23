@@ -26,7 +26,7 @@ add_library(mapping_core_unittests_lib
         unittests/util/formula.cpp
         unittests/util/sha1.cpp
         unittests/gdal_source.cpp
-        )
+        unittests/operators/source/natur40.cpp)
 
 target_include_directories(mapping_core_unittests_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
