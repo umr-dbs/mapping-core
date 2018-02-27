@@ -1,128 +1,16 @@
-
 #include "util/exceptions.h"
 #include "util/configuration.h"
-#include <map>
+
 #include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <algorithm>
-#include <cstdlib>
-#include <vector>
-
 #include <unistd.h>
-#include <sys/types.h>
 #include <pwd.h>
-
 #include <unistd.h>
 #include <string.h>
+
 extern char **environ;
 
-
 /*
- * Parameters
- */
-bool Parameters::hasParam(const std::string& key) const {
-	return find(key) != end();
-}
-
-const std::string &Parameters::get(const std::string &name) const {
-	auto it = find(name);
-	if (it == end())
-		throw ArgumentException(concat("No configuration found for key ", name));
-	return it->second;
-}
-
-const std::string &Parameters::get(const std::string &name, const std::string &defaultValue) const {
-	auto it = find(name);
-	if (it == end())
-		return defaultValue;
-	return it->second;
-}
-
-int Parameters::getInt(const std::string &name) const {
-	auto it = find(name);
-	if (it == end())
-		throw ArgumentException(concat("No configuration found for key ", name));
-	return parseInt(it->second);
-}
-
-int Parameters::getInt(const std::string &name, const int defaultValue) const {
-	auto it = find(name);
-	if (it == end())
-		return defaultValue;
-	return parseInt(it->second);
-}
-
-long Parameters::getLong(const std::string &name) const {
-	auto it = find(name);
-	if (it == end())
-		throw ArgumentException(concat("No configuration found for key ", name));
-	return parseLong(it->second);
-}
-
-long Parameters::getLong(const std::string &name, const long defaultValue) const {
-	auto it = find(name);
-	if (it == end())
-		return defaultValue;
-	return parseLong(it->second);
-}
-
-bool Parameters::getBool(const std::string &name) const {
-	auto it = find(name);
-	if (it == end())
-		throw ArgumentException(concat("No configuration found for key ", name));
-	return parseBool(it->second);
-}
-
-bool Parameters::getBool(const std::string &name, const bool defaultValue) const {
-	auto it = find(name);
-	if (it == end())
-		return defaultValue;
-	return parseBool(it->second);
-}
-
-Parameters Parameters::getPrefixedParameters(const std::string &prefix) {
-	Parameters result;
-	for (auto &it : *this) {
-		auto &key = it.first;
-		if (key.length() > prefix.length() && key.substr(0, prefix.length()) == prefix) {
-			result[ key.substr(prefix.length()) ] = it.second;
-		}
-	}
-	return result;
-}
-
-
-int Parameters::parseInt(const std::string &str) {
-	return std::stoi(str); // stoi throws if no conversion could be performed
-}
-
-long Parameters::parseLong(const std::string &str) {
-	return std::stol(str); // stol throws if no conversion could be performed
-}
-
-
-bool Parameters::parseBool(const std::string &str) {
-	if (str == "1")
-		return true;
-	if (str == "0")
-		return false;
-	std::string strtl;
-	strtl.resize( str.length() );
-	std::transform(str.cbegin(), str.cend(), strtl.begin(), ::tolower);
-
-	if (strtl == "true" || strtl == "yes")
-		return true;
-	if (strtl == "false" || strtl == "no")
-		return false;
-
-	throw ArgumentException(concat("'", str, "' is not a boolean value (try setting 0/1, yes/no or true/false)"));
-}
-
-
-/*
- * Helpers for Configuration
+ * Helpers for Configuration. Only needed for parsing the parameters from enviroment variables.
  */
 static std::string stripWhitespace(const std::string &str) {
 	const char *whitespace = " \t\r\n";
@@ -158,11 +46,12 @@ static std::string normalizeKey(const std::string &_key) {
 	return key;
 }
 
-/*
- * Configuration
- */
-Parameters Configuration::parameters;
+///*
+// * Configuration
+// */
+std::shared_ptr<cpptoml::table> Configuration::table;
 
+//parseLine is needed for manually reading parameters from the enviroment variables.
 void Configuration::parseLine(const std::string &_line) {
 	auto line = stripWhitespace(_line);
 	if (line.length() == 0 || line[0] == '#')
@@ -179,43 +68,50 @@ void Configuration::parseLine(const std::string &_line) {
 		return;
 	std::string value = stripWhitespace(line.substr(pos+1));
 
-	parameters[key] = value;
+    table->insert(key, value);
+    //TODO: Try parsing the values to the possible types. Else all environment parameters will be saved as strings.
 }
 
 
 void Configuration::load(const std::string &filename) {
-	std::ifstream file(filename);
-	if (!file.good())
-		return;
-	std::string line;
-	while (std::getline(file, line))
-		parseLine(line);
+    try {
+        //Load toml file and insert every key-value-pair into table.
+        auto config = cpptoml::parse_file(filename);
+
+        //it is iterator for a map<string, shared_ptr<base>>
+        for(auto it = config->begin(); it != config->end(); ++it){
+            table->insert(it->first, it->second);
+        }
+    } catch(cpptoml::parse_exception& e){
+        std::cerr << "Configuration file load exception: " << e.what() << std::endl;
+    }
 }
 
 
 void Configuration::loadFromEnvironment() {
-	if (environ == nullptr)
-		return;
+    if (environ == nullptr)
+        return;
+    std::string configuration_file;
+    std::vector<std::string> relevant_vars;
 
-	std::string configuration_file;
-	std::vector<std::string> relevant_vars;
+    for(int i=0;environ[i] != nullptr;i++) {
+        auto line = environ[i];
+        if (strncmp(line, "MAPPING_", 8) == 0 || strncmp(line, "mapping_", 8) == 0) {
+            std::string linestr(&line[8]);
+            if (linestr.length() >= 14 && (strncmp(linestr.c_str(), "CONFIGURATION=", 14) || strncmp(linestr.c_str(), "configuration=", 14)))
+                configuration_file = linestr.substr(14);
+            else
+                relevant_vars.push_back(linestr);
+        }
+    }
 
-	for(int i=0;environ[i] != nullptr;i++) {
-		auto line = environ[i];
-		if (strncmp(line, "MAPPING_", 8) == 0 || strncmp(line, "mapping_", 8) == 0) {
-			std::string linestr(&line[8]);
-			if (strncmp(linestr.c_str(), "CONFIGURATION=", 14) || strncmp(linestr.c_str(), "configuration=", 14))
-				configuration_file = linestr.substr(14);
-			else
-				relevant_vars.push_back(linestr);
-		}
-	}
+    // The file must be loaded before we parse the variables, to guarantee a repeatable priority when multiple settings overlap
+    if (configuration_file != "")
+        load(configuration_file);
+    for (auto &linestr : relevant_vars){
 
-	// The file must be loaded before we parse the variables, to guarantee a repeatable priority when multiple settings overlap
-	if (configuration_file != "")
-		load(configuration_file);
-	for (auto &linestr : relevant_vars)
-		parseLine(linestr);
+        parseLine(linestr);
+    }
 }
 
 static const char* getHomeDirectory() {
@@ -235,6 +131,8 @@ void Configuration::loadFromDefaultPaths() {
 	if (loaded_from_default_paths)
 		return;
 	loaded_from_default_paths = true;
+
+	table = cpptoml::make_table();
 
 	load("/etc/mapping.conf");
 
