@@ -29,7 +29,19 @@ class Natur40SourceOperator : public GenericOperator {
         std::unique_ptr<pqxx::connection> connection;
         std::vector<std::string> sensor_types;
 
-        auto get_columns_for_sensor_type(const std::string &sensor_type) -> const std::vector<std::string>;
+        /**
+         * Retrieve the table name for a sensor type
+         * @param sensor_type
+         * @return
+         */
+        auto get_table_name(const std::string &sensor_type) -> const std::string;
+
+        /**
+         * Retrieve columns for table
+         * @param table_name
+         * @return
+         */
+        auto get_columns_for_table(const std::string &table_name) -> const std::vector<std::string>;
 
     public:
         // TODO: must be private, but it is untestable then

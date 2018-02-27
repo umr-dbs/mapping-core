@@ -17,7 +17,7 @@
     "type": "natur40_source",
     "params": {
       "sensorTypes": [
-        "temperatures"
+        "temperature"
       ]
     }
   },

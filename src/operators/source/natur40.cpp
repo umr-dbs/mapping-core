@@ -33,8 +33,8 @@ Natur40SourceOperator::Natur40SourceOperator(int sourcecounts[], GenericOperator
 
     // add locations if missing
     if (std::none_of(this->sensor_types.begin(), this->sensor_types.end(),
-                     [&](const std::string &t) { return t == "locations"; })) {
-        this->sensor_types.emplace_back("locations");
+                     [&](const std::string &t) { return t == "location"; })) {
+        this->sensor_types.emplace_back("location");
     }
 }
 
@@ -192,9 +192,6 @@ auto add_to_collection(PointCollection &collection, std::string &node,
     if (time_start > qrect.t2 || time_end < qrect.t1) {
         return; // time is out of bounds
     }
-//    if (time_start == time_end) {
-//        time_end += qrect.epsilon(); // add epsilon due to time semantics
-//    }
 
     auto feature_id = collection.addSinglePointFeature(Coordinate(longitude, latitude));
 
@@ -218,18 +215,24 @@ auto Natur40SourceOperator::getPointCollection(const QueryRectangle &rect,
 
     pqxx::read_transaction transaction{*this->connection, "natur40_query"};
 
+    // map sensor types to table names
+    std::vector<table_t> tables;
+    for (const auto &sensor_type : this->sensor_types) {
+        tables.emplace_back(this->get_table_name(sensor_type));
+    }
+
     std::map<table_t, std::vector<Row>> results;
     std::vector<column_t> measurement_columns;
 
     // create query
-    for (const auto &sensor_type : this->sensor_types) {
-        const auto columns = get_columns_for_sensor_type(sensor_type);
+    for (const auto &table : tables) {
+        const auto columns = get_columns_for_table(table);
 
-        std::string query = table_query(sensor_type, columns, rect.t1, rect.t2);
-        results[sensor_type] = std::vector<Row>{};
+        std::string query = table_query(table, columns, rect.t1, rect.t2);
+        results[table] = std::vector<Row>{};
         pqxx::result result = transaction.exec(query);
         for (const auto &row : result) {
-            results[sensor_type].emplace_back(row, columns);
+            results[table].emplace_back(row, columns);
         }
 
         for (const auto &column : columns) {
@@ -365,21 +368,36 @@ auto Natur40SourceOperator::parse_query(const std::string &query_template,
 }
 
 auto
-Natur40SourceOperator::get_columns_for_sensor_type(const std::string &sensor_type) -> const std::vector<std::string> {
+Natur40SourceOperator::get_table_name(const std::string &sensor_type) -> const std::string {
+    // TODO: grab from postgres?
+
+    if (sensor_type == "location") {
+        return "locations";
+    } else if (sensor_type == "temperature") {
+        return "temperatures";
+    } else if (sensor_type == "image") {
+        return "images";
+    } else {
+        throw OperatorException {"natur40_source: Unkown sensor type `" + sensor_type + "`"};
+    }
+}
+
+auto
+Natur40SourceOperator::get_columns_for_table(const std::string &table_name) -> const std::vector<std::string> {
     std::vector<std::string> columns;
 
     // TODO: grab from postgres?
 
-    if (sensor_type == "locations") {
+    if (table_name == "locations") {
         columns.emplace_back("longitude");
         columns.emplace_back("latitude");
         columns.emplace_back("altitude");
-    } else if (sensor_type == "temperatures") {
+    } else if (table_name == "temperatures") {
         columns.emplace_back("temperature");
-    } else if (sensor_type == "images") {
+    } else if (table_name == "images") {
         columns.emplace_back("file");
     } else {
-        throw OperatorException {"natur40_source: Unkown sensor type `" + sensor_type + "`"};
+        throw OperatorException {"natur40_source: Unkown sensor type `" + table_name + "`"};
     }
 
     assert(!columns.empty());
