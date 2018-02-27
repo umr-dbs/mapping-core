@@ -1,0 +1,25 @@
+{
+  "name": "Natur 4.0",
+  "query_result": "points",
+  "temporal_reference": {
+    "type": "UNIX",
+    "start": 0,
+    "end": 1000000
+  },
+  "spatial_reference": {
+    "projection": "EPSG:4326",
+    "x1": -180,
+    "x2": 180,
+    "y1": -90,
+    "y2": 90
+  },
+  "query": {
+    "type": "natur40_source",
+    "params": {
+      "sensorTypes": [
+        "temperatures"
+      ]
+    }
+  },
+  "query_expected_hash": ""
+}

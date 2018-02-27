@@ -35,7 +35,7 @@ class Natur40SourceOperator : public GenericOperator {
         // TODO: must be private, but it is untestable then
 
         /**
-         * Create view creation string for a event table.
+         * Create a sorted table query for a table and its columns.
          *
          * @param stream
          * @param table
@@ -43,48 +43,18 @@ class Natur40SourceOperator : public GenericOperator {
          * @param time_start
          * @param time_end
          */
-        static auto add_view(std::stringstream &stream,
-                             const std::string &table,
-                             const std::vector<std::string> &columns,
-                             double time_start,
-                             double time_end) -> void;
+        static auto table_query(const std::string &table,
+                                const std::vector<std::string> &columns,
+                                double time_start,
+                                double time_end) -> std::string;
 
         /**
-         * Create the query for retrieving the sensor events.
+         * Replace markers in a query template and output it into a string stream.
          *
-         * @param stream
-         * @param tables
-         * @param columns
-         * @param time_start
-         * @param time_end
-         */
-        static auto add_main_query(std::stringstream &stream,
-                                   const std::vector<std::string> &tables,
-                                   const std::vector<std::string> &columns,
-                                   double time_start,
-                                   double time_end) -> void;
-
-        /**
-         * Replace markers in a query template and output it into a string stream
          * @param stream
          * @param query_template
          * @param replacements
          */
-        static void parse_query(std::stringstream &stream,
-                                const std::string &query_template,
-                                const std::map<std::string, std::string> &replacements);
-
-        /**
-         * Create the whole query
-         * @param stream
-         * @param tables
-         * @param column_getter
-         * @param time_start
-         * @param time_end
-         */
-        static auto add_query(std::stringstream &stream,
-                              const std::vector<std::string> &tables,
-                              std::function<const std::vector<std::string>(const std::string &)>,
-                              double time_start,
-                              double time_end) -> void;
+        static auto parse_query(const std::string &query_template,
+                                const std::map<std::string, std::string> &replacements) -> std::string;
 };
