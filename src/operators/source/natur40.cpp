@@ -71,7 +71,9 @@ class Row {
                 node(tuple[NODE_COLUMN_NAME].as<std::string>()),
                 time(tuple[TIME_START_COLUMN_NAME].as<double>()) {
             for (const auto &column_name : columns) {
-                this->measurements[column_name] = tuple[column_name].as<double>();
+                this->measurements[column_name] = tuple[column_name].is_null()
+                                                  ? std::numeric_limits<double>::quiet_NaN()
+                                                  : tuple[column_name].as<double>();
             }
         }
 
@@ -373,6 +375,10 @@ Natur40SourceOperator::get_table_name(const std::string &sensor_type) -> const s
 
     if (sensor_type == "location") {
         return "locations";
+    } else if (sensor_type == "light") {
+        return "lights";
+    } else if (sensor_type == "pressure") {
+        return "pressures";
     } else if (sensor_type == "temperature") {
         return "temperatures";
     } else if (sensor_type == "image") {
@@ -392,10 +398,15 @@ Natur40SourceOperator::get_columns_for_table(const std::string &table_name) -> c
         columns.emplace_back("longitude");
         columns.emplace_back("latitude");
         columns.emplace_back("altitude");
+        columns.emplace_back("satellites");
+    } else if (table_name == "lights") {
+        columns.emplace_back("light");
+    } else if (table_name == "pressures") {
+        columns.emplace_back("pressure");
     } else if (table_name == "temperatures") {
         columns.emplace_back("temperature");
     } else if (table_name == "images") {
-        columns.emplace_back("file");
+        columns.emplace_back("image");
     } else {
         throw OperatorException {"natur40_source: Unkown sensor type `" + table_name + "`"};
     }
