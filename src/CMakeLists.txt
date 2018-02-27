@@ -210,6 +210,9 @@ endif (USE_OPENCL)
 target_link_libraries_internal(mapping_core_base_lib jsoncpp_lib_static)
 target_include_directories(mapping_core_base_lib PRIVATE ${JSONCPP_INCLUDE_DIRS})
 
+target_link_libraries_internal(mapping_core_base_lib cpptoml)
+target_include_directories(mapping_core_base_lib PRIVATE ${CPPTOML_SOURCE_DIRS})
+
 find_package(Threads REQUIRED)
 target_link_libraries(mapping_core_base_lib Threads::Threads)
 
