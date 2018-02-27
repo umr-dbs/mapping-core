@@ -37,11 +37,18 @@ class Natur40SourceOperator : public GenericOperator {
         auto get_table_name(const std::string &sensor_type) -> const std::string;
 
         /**
-         * Retrieve columns for table
+         * Retrieve numeric columns for table
          * @param table_name
          * @return
          */
-        auto get_columns_for_table(const std::string &table_name) -> const std::vector<std::string>;
+        auto get_numeric_columns_for_table(const std::string &table_name) -> const std::vector<std::string>;
+
+        /**
+         * Retrieve textual columns for table
+         * @param table_name
+         * @return
+         */
+        auto get_textual_columns_for_table(const std::string &table_name) -> const std::vector<std::string>;
 
     public:
         // TODO: must be private, but it is untestable then
@@ -51,14 +58,14 @@ class Natur40SourceOperator : public GenericOperator {
          *
          * @param stream
          * @param table
-         * @param columns
+         * @param numeric_columns
          * @param time_start
          * @param time_end
          */
         static auto table_query(const std::string &table,
-                                const std::vector<std::string> &columns,
-                                double time_start,
-                                double time_end) -> std::string;
+                                const std::vector<std::string> &numeric_columns,
+                                const std::vector<std::string> &textual_columns,
+                                double time_start, double time_end) -> std::string;
 
         /**
          * Replace markers in a query template and output it into a string stream.

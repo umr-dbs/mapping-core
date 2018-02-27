@@ -67,19 +67,27 @@ using column_t = std::string;
  */
 class Row {
     public:
-        Row(const pqxx::tuple &tuple, const std::vector<column_t> &columns) :
+        Row(const pqxx::tuple &tuple,
+            const std::vector<column_t> &numeric_columns,
+            const std::vector<column_t> &textual_columns) :
                 node(tuple[NODE_COLUMN_NAME].as<std::string>()),
                 time(tuple[TIME_START_COLUMN_NAME].as<double>()) {
-            for (const auto &column_name : columns) {
-                this->measurements[column_name] = tuple[column_name].is_null()
-                                                  ? std::numeric_limits<double>::quiet_NaN()
-                                                  : tuple[column_name].as<double>();
+            for (const auto &numeric_column : numeric_columns) {
+                this->numeric_values[numeric_column] = tuple[numeric_column].is_null()
+                                                       ? std::numeric_limits<double>::quiet_NaN()
+                                                       : tuple[numeric_column].as<double>();
+            }
+            for (const auto &textual_column : textual_columns) {
+                this->textual_values[textual_column] = tuple[textual_column].is_null()
+                                                       ? ""
+                                                       : tuple[textual_column].as<std::string>();
             }
         }
 
         std::string node;
         double time;
-        std::map<std::string, double> measurements;
+        std::map<std::string, double> numeric_values;
+        std::map<std::string, std::string> textual_values;
 };
 
 /**
@@ -90,9 +98,7 @@ class IterWrap {
         using iter_t = container_t::const_iterator;
 
     public:
-        explicit IterWrap(container_t &container) :
-                current(std::begin(container)),
-                end(std::end(container)) {}
+        explicit IterWrap(container_t &container) : current(std::begin(container)), end(std::end(container)) {}
 
         auto node() const -> const std::string & {
             return this->current->node;
@@ -178,15 +184,16 @@ auto merge_results(std::map<table_t, std::vector<Row>> results, const std::funct
  * @param node
  * @param time_start
  * @param time_end
- * @param values
+ * @param numeric_values
  * @param qrect
  */
 auto add_to_collection(PointCollection &collection, std::string &node,
                        double time_start, double time_end,
-                       std::map<column_t, double> &values,
+                       std::map<column_t, double> &numeric_values,
+                       std::map<column_t, std::string> &textual_values,
                        const QueryRectangle &qrect) -> void {
-    double longitude = values[LON_COLUMN_NAME];
-    double latitude = values[LAT_COLUMN_NAME];
+    double longitude = numeric_values[LON_COLUMN_NAME];
+    double latitude = numeric_values[LAT_COLUMN_NAME];
 
     if (std::isnan(longitude) || std::isnan(latitude)) {
         return; // geo information is missing
@@ -201,10 +208,26 @@ auto add_to_collection(PointCollection &collection, std::string &node,
 
     collection.feature_attributes.textual(NODE_COLUMN_NAME).set(feature_id, node);
 
-    for (const auto &value : values) {
+    for (const auto &value : numeric_values) {
         if (value.first != LON_COLUMN_NAME && value.first != LAT_COLUMN_NAME) {
             collection.feature_attributes.numeric(value.first).set(feature_id, value.second);
         }
+    }
+
+    for (const auto &value : textual_values) {
+        collection.feature_attributes.textual(value.first).set(feature_id, value.second);
+    }
+}
+
+auto reset_numeric_map(std::map<column_t, double> &map) -> void {
+    for (auto &kv : map) {
+        kv.second = std::numeric_limits<double>::quiet_NaN();
+    }
+}
+
+auto reset_textual_map(std::map<column_t, std::string> &map) -> void {
+    for (auto &kv : map) {
+        kv.second = "";
     }
 }
 
@@ -224,37 +247,53 @@ auto Natur40SourceOperator::getPointCollection(const QueryRectangle &rect,
     }
 
     std::map<table_t, std::vector<Row>> results;
-    std::vector<column_t> measurement_columns;
+    std::vector<column_t> numeric_columns;
+    std::vector<column_t> textual_columns;
 
     // create query
     for (const auto &table : tables) {
-        const auto columns = get_columns_for_table(table);
+        const auto table_numeric_columns = get_numeric_columns_for_table(table);
+        const auto table_textual_columns = get_textual_columns_for_table(table);
 
-        std::string query = table_query(table, columns, rect.t1, rect.t2);
+        std::string query = table_query(table, table_numeric_columns, table_textual_columns, rect.t1, rect.t2);
+
         results[table] = std::vector<Row>{};
         pqxx::result result = transaction.exec(query);
+
         for (const auto &row : result) {
-            results[table].emplace_back(row, columns);
+            results[table].emplace_back(row, table_numeric_columns, table_textual_columns);
         }
 
-        for (const auto &column : columns) {
-            measurement_columns.emplace_back(column);
+        for (const auto &column : table_numeric_columns) {
+            numeric_columns.emplace_back(column);
+        }
+
+        for (const auto &column : table_textual_columns) {
+            textual_columns.emplace_back(column);
         }
     }
 
     // initialize feature collection
     auto point_collection = make_unique<PointCollection>(rect);
     point_collection->feature_attributes.addTextualAttribute(NODE_COLUMN_NAME, Unit::unknown());
-    for (const auto &column : measurement_columns) {
+    for (const auto &column : numeric_columns) {
         if (column == LON_COLUMN_NAME || column == LAT_COLUMN_NAME) {
             continue; // do not save lon/lat in numeric attributes
         }
         point_collection->feature_attributes.addNumericAttribute(column, Unit::unknown());
     }
+    for (const auto &column : textual_columns) {
+        point_collection->feature_attributes.addTextualAttribute(column, Unit::unknown());
+    }
 
-    std::map<column_t, double> current_values;
-    for (const auto &column : measurement_columns) {
-        current_values[column] = std::numeric_limits<double>::quiet_NaN();
+    // initialize row values
+    std::map<column_t, double> numeric_values;
+    for (const auto &column : numeric_columns) {
+        numeric_values[column] = std::numeric_limits<double>::quiet_NaN();
+    }
+    std::map<column_t, std::string> textual_values;
+    for (const auto &column : textual_columns) {
+        textual_values[column] = std::numeric_limits<double>::quiet_NaN();
     }
     std::string current_node;
     double current_time = rect.beginning_of_time();
@@ -262,33 +301,53 @@ auto Natur40SourceOperator::getPointCollection(const QueryRectangle &rect,
     merge_results(results, [&](const Row &row) {
         if (row.node != current_node) {
             // finish node
-            add_to_collection(*point_collection, current_node, current_time, rect.end_of_time(), current_values, rect);
+            add_to_collection(*point_collection,
+                              current_node,
+                              current_time, rect.end_of_time(),
+                              numeric_values, textual_values,
+                              rect);
 
-            // reset values
-            for (const auto &column : measurement_columns) {
-                current_values[column] = std::numeric_limits<double>::quiet_NaN();
-            }
+            reset_numeric_map(numeric_values);
+            reset_textual_map(textual_values);
         } else if (row.time > current_time) {
-            add_to_collection(*point_collection, current_node, current_time, row.time, current_values, rect);
+            add_to_collection(*point_collection,
+                              current_node,
+                              current_time, row.time,
+                              numeric_values, textual_values,
+                              rect);
         }
 
-        for (const auto &value : row.measurements) {
-            current_values[value.first] = value.second;
+        for (const auto &value : row.numeric_values) {
+            numeric_values[value.first] = value.second;
+        }
+        for (const auto &value : row.textual_values) {
+            textual_values[value.first] = value.second;
         }
 
         current_node = row.node;
         current_time = row.time;
     });
 
-    add_to_collection(*point_collection, current_node, current_time, rect.end_of_time(), current_values, rect);
+    add_to_collection(*point_collection,
+                      current_node,
+                      current_time, rect.end_of_time(),
+                      numeric_values, textual_values,
+                      rect);
 
     return point_collection;
 }
 
 auto Natur40SourceOperator::table_query(const std::string &table,
-                                        const std::vector<std::string> &columns,
-                                        double time_start,
-                                        double time_end) -> std::string {
+                                        const std::vector<std::string> &numeric_columns,
+                                        const std::vector<std::string> &textual_columns,
+                                        double time_start, double time_end) -> std::string {
+    std::vector<std::string> columns;
+    std::merge(
+            std::begin(numeric_columns), std::end(numeric_columns),
+            std::begin(textual_columns), std::end(textual_columns),
+            std::back_inserter(columns)
+    );
+
     assert(!columns.empty());
 
     std::map<std::string, std::string> replacements{
@@ -389,7 +448,7 @@ Natur40SourceOperator::get_table_name(const std::string &sensor_type) -> const s
 }
 
 auto
-Natur40SourceOperator::get_columns_for_table(const std::string &table_name) -> const std::vector<std::string> {
+Natur40SourceOperator::get_numeric_columns_for_table(const std::string &table_name) -> const std::vector<std::string> {
     std::vector<std::string> columns;
 
     // TODO: grab from postgres?
@@ -397,7 +456,6 @@ Natur40SourceOperator::get_columns_for_table(const std::string &table_name) -> c
     if (table_name == "locations") {
         columns.emplace_back("longitude");
         columns.emplace_back("latitude");
-        columns.emplace_back("altitude");
         columns.emplace_back("satellites");
     } else if (table_name == "lights") {
         columns.emplace_back("light");
@@ -406,12 +464,33 @@ Natur40SourceOperator::get_columns_for_table(const std::string &table_name) -> c
     } else if (table_name == "temperatures") {
         columns.emplace_back("temperature");
     } else if (table_name == "images") {
-        columns.emplace_back("image");
+        // NONE
     } else {
         throw OperatorException {"natur40_source: Unkown sensor type `" + table_name + "`"};
     }
 
-    assert(!columns.empty());
+    return columns;
+}
+
+auto
+Natur40SourceOperator::get_textual_columns_for_table(const std::string &table_name) -> const std::vector<std::string> {
+    std::vector<std::string> columns;
+
+    // TODO: grab from postgres?
+
+    if (table_name == "locations") {
+        // NONE
+    } else if (table_name == "lights") {
+        // NONE
+    } else if (table_name == "pressures") {
+        // NONE
+    } else if (table_name == "temperatures") {
+        // NONE
+    } else if (table_name == "images") {
+        columns.emplace_back("image");
+    } else {
+        throw OperatorException {"natur40_source: Unkown sensor type `" + table_name + "`"};
+    }
 
     return columns;
 }
