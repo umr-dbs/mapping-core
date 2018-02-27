@@ -27,6 +27,7 @@ TEST(Natur40, sqlQuery) {
         std::string query = Natur40SourceOperator::table_query(
                 "locations",
                 {"longitude", "latitude", "altitude"},
+                {},
                 1514764800, 1514851200
         );
 
