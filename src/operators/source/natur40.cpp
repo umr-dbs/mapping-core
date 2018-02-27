@@ -397,7 +397,6 @@ Natur40SourceOperator::get_columns_for_table(const std::string &table_name) -> c
     if (table_name == "locations") {
         columns.emplace_back("longitude");
         columns.emplace_back("latitude");
-        columns.emplace_back("altitude");
         columns.emplace_back("satellites");
     } else if (table_name == "lights") {
         columns.emplace_back("light");
