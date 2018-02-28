@@ -1,17 +1,13 @@
+# ide files
 .project
 .cproject
 .settings
 .idea
 *.tmp.*
-_*
 datasources
-*.o
-*.cl.h
 
 # compiled binaries
-mapping_manager
 mapping_manager.san
-mapping_cgi
 r_server
 /gtest
 tileserver
@@ -22,6 +18,8 @@ cluster_experiment
 local_setup
 test_client
 test/systemtests/parse_logs
+/target
+*.cl.h
 
 # CMake
 cmake-build-debug
@@ -32,3 +30,6 @@ Makefile.local
 
 # generated documentation
 docs/mappingDoc/*
+
+# mapping configuration
+mapping.conf
