@@ -32,7 +32,6 @@ class Configuration {
 	private:
         static void load(const std::string &filename);
         static void loadFromEnvironment();
-		static void parseLine(const std::string &line);
 };
 
 #endif
