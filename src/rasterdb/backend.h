@@ -45,7 +45,7 @@ class RasterDBBackend {
 				double time_end;
 		};
 
-		static std::unique_ptr<RasterDBBackend> create(const std::string &backend, const std::string &location);
+		static std::unique_ptr<RasterDBBackend> create(const std::string &backend, const std::string &location, const std::shared_ptr<cpptoml::table> params);
 
 		virtual ~RasterDBBackend() {};
 
@@ -77,10 +77,10 @@ class RasterDBBackend {
 
 class RasterDBBackendRegistration {
 	public:
-		RasterDBBackendRegistration(const char *name, std::unique_ptr<RasterDBBackend> (*constructor)(const std::string &));
+		RasterDBBackendRegistration(const char *name, std::unique_ptr<RasterDBBackend> (*constructor)(const std::string &, const std::shared_ptr<cpptoml::table> params));
 };
 
-#define REGISTER_RASTERDB_BACKEND(classname, name) static std::unique_ptr<RasterDBBackend> create##classname(const std::string &location) { return make_unique<classname>(location); } static RasterDBBackendRegistration register_##classname(name, create##classname)
+#define REGISTER_RASTERDB_BACKEND(classname, name) static std::unique_ptr<RasterDBBackend> create##classname(const std::string &location, const std::shared_ptr<cpptoml::table> params) { return make_unique<classname>(location, params); } static RasterDBBackendRegistration register_##classname(name, create##classname)
 
 
 #endif

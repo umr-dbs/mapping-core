@@ -3,9 +3,8 @@
 
 #include "processing/query.h"
 #include "operators/provenance.h"
-class Parameters; // util/configuration.h
-
 #include <memory>
+#include <cpptoml.h>
 
 
 class GenericRaster;
@@ -74,7 +73,7 @@ class QueryProcessor {
 		/**
 		 * Instantiate a new processor with the given configuration
 		 */
-		static std::unique_ptr<QueryProcessor> create(const std::string &backend);
+		static std::unique_ptr<QueryProcessor> create(const std::string &backend, const std::shared_ptr<cpptoml::table> params);
 
 
 		/**

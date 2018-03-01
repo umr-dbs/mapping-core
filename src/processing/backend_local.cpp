@@ -1,17 +1,18 @@
 
+#include <cpptoml.h>
 #include "processing/queryprocessor_backend.h"
 #include "util/make_unique.h"
 
 class LocalQueryProcessor : public QueryProcessor::QueryProcessorBackend {
 	public:
-		LocalQueryProcessor();
+		LocalQueryProcessor(const std::shared_ptr<cpptoml::table> params);
 		virtual ~LocalQueryProcessor();
 		virtual std::unique_ptr<QueryProcessor::QueryResult> process(const Query &q, bool includeProvenance);
 		virtual std::unique_ptr<QueryProcessor::QueryProgress> processAsync(const Query &q, bool includeProvenance);
 };
 REGISTER_QUERYPROCESSOR_BACKEND(LocalQueryProcessor, "local");
 
-LocalQueryProcessor::LocalQueryProcessor() {
+LocalQueryProcessor::LocalQueryProcessor(const std::shared_ptr<cpptoml::table> params) {
 
 }
 
