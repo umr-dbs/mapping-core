@@ -430,7 +430,7 @@ auto Natur40SourceOperator::parse_query(const std::string &query_template,
 
 auto
 Natur40SourceOperator::get_table_name(const std::string &sensor_type) -> const std::string {
-    // TODO: grab from postgres?
+    // TODO: grab from postgres or file
 
     if (sensor_type == "location") {
         return "locations";
@@ -440,57 +440,59 @@ Natur40SourceOperator::get_table_name(const std::string &sensor_type) -> const s
         return "pressures";
     } else if (sensor_type == "temperature") {
         return "temperatures";
+    } else if (sensor_type == "co2") {
+        return {"co2"};
+    } else if (sensor_type == "tvoc") {
+        return {"tvoc"};
     } else if (sensor_type == "image") {
         return "images";
     } else {
-        throw OperatorException {"natur40_source: Unkown sensor type `" + sensor_type + "`"};
+        throw OperatorException {"natur40_source: Unknown sensor type `" + sensor_type + "`"};
     }
 }
 
 auto
 Natur40SourceOperator::get_numeric_columns_for_table(const std::string &table_name) -> const std::vector<std::string> {
-    std::vector<std::string> columns;
-
-    // TODO: grab from postgres?
+    // TODO: grab from postgres or file
 
     if (table_name == "locations") {
-        columns.emplace_back("longitude");
-        columns.emplace_back("latitude");
-        columns.emplace_back("satellites");
+        return {"longitude", "latitude", "satellites"};
     } else if (table_name == "lights") {
-        columns.emplace_back("light");
+        return {"light"};
     } else if (table_name == "pressures") {
-        columns.emplace_back("pressure");
+        return {"pressure"};
     } else if (table_name == "temperatures") {
-        columns.emplace_back("temperature");
+        return {"temperature"};
+    } else if (table_name == "co2") {
+        return {"co2"};
+    } else if (table_name == "tvoc") {
+        return {"tvoc"};
     } else if (table_name == "images") {
-        // NONE
+        return {};
     } else {
-        throw OperatorException {"natur40_source: Unkown sensor type `" + table_name + "`"};
+        throw OperatorException {"natur40_source: Unknown table name `" + table_name + "`"};
     }
-
-    return columns;
 }
 
 auto
 Natur40SourceOperator::get_textual_columns_for_table(const std::string &table_name) -> const std::vector<std::string> {
-    std::vector<std::string> columns;
-
-    // TODO: grab from postgres?
+    // TODO: grab from postgres or file
 
     if (table_name == "locations") {
-        // NONE
+        return {};
     } else if (table_name == "lights") {
-        // NONE
+        return {};
     } else if (table_name == "pressures") {
-        // NONE
+        return {};
     } else if (table_name == "temperatures") {
-        // NONE
+        return {};
+    } else if (table_name == "co2") {
+        return {};
+    } else if (table_name == "tvoc") {
+        return {};
     } else if (table_name == "images") {
-        columns.emplace_back("image");
+        return {"image"};
     } else {
-        throw OperatorException {"natur40_source: Unkown sensor type `" + table_name + "`"};
+        throw OperatorException {"natur40_source: Unknown table name `" + table_name + "`"};
     }
-
-    return columns;
 }
