@@ -12,20 +12,21 @@
 
 NodeConfig NodeConfig::fromConfiguration() {
 	NodeConfig result;
-	result.index_host = Configuration::get("indexserver.host");
-	result.index_port = Configuration::getInt("indexserver.port");
-	result.delivery_port = Configuration::getInt("nodeserver.port");
-	result.num_workers = Configuration::getInt("nodeserver.threads",4);
-	result.mgr_impl = Configuration::get("nodeserver.cache.manager");
+	result.index_host = Configuration::get<std::string>("indexserver.host");
+	result.index_port = Configuration::get<int>("indexserver.port");
+	result.delivery_port = Configuration::get<int>("nodeserver.port");
+	result.num_workers = Configuration::get<int>("nodeserver.threads",4);
+	result.mgr_impl = Configuration::get<std::string>("nodeserver.cache.manager");
 
-	result.caching_strategy = Configuration::get("nodeserver.cache.strategy");
-	result.local_replacement = Configuration::get("nodeserver.cache.local.replacement", "lru");
+	result.caching_strategy = Configuration::get<std::string>("nodeserver.cache.strategy");
+	result.local_replacement = Configuration::get<std::string>("nodeserver.cache.local.replacement", "lru");
 
-	result.raster_size = Configuration::getLong("nodeserver.cache.raster.size");
-	result.point_size = Configuration::getLong("nodeserver.cache.points.size");
-	result.line_size = Configuration::getLong("nodeserver.cache.lines.size");
-	result.polygon_size = Configuration::getLong("nodeserver.cache.polygons.size");
-	result.plot_size = Configuration::getLong("nodeserver.cache.plots.size");
+	//TODO: cpptoml can access int64_t but not long. Old method was getting a long, data field is of type size_t.
+	result.raster_size = Configuration::get<int64_t>("nodeserver.cache.raster.size");
+	result.point_size = Configuration::get<int64_t>("nodeserver.cache.points.size");
+	result.line_size = Configuration::get<int64_t>("nodeserver.cache.lines.size");
+	result.polygon_size = Configuration::get<int64_t>("nodeserver.cache.polygons.size");
+	result.plot_size = Configuration::get<int64_t>("nodeserver.cache.plots.size");
 	return result;
 }
 

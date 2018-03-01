@@ -1,5 +1,4 @@
 someFlag=false
-
 [data]
 location="Some/Where"
 size=512

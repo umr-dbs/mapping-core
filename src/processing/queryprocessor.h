@@ -74,7 +74,7 @@ class QueryProcessor {
 		/**
 		 * Instantiate a new processor with the given configuration
 		 */
-		static std::unique_ptr<QueryProcessor> create(const std::string &backend, const Parameters &params);
+		static std::unique_ptr<QueryProcessor> create(const std::string &backend);
 
 
 		/**

@@ -19,10 +19,10 @@ class QueryProcessor::QueryProcessorBackend {
 
 class QueryProcessorBackendRegistration {
 	public:
-		QueryProcessorBackendRegistration(const char *name, std::unique_ptr<QueryProcessor::QueryProcessorBackend> (*constructor)(const Parameters &params));
+		QueryProcessorBackendRegistration(const char *name, std::unique_ptr<QueryProcessor::QueryProcessorBackend> (*constructor)());
 };
 
-#define REGISTER_QUERYPROCESSOR_BACKEND(classname, name) static std::unique_ptr<QueryProcessor::QueryProcessorBackend> create##classname(const Parameters &params) { return make_unique<classname>(params); } static QueryProcessorBackendRegistration register_##classname(name, create##classname)
+#define REGISTER_QUERYPROCESSOR_BACKEND(classname, name) static std::unique_ptr<QueryProcessor::QueryProcessorBackend> create##classname() { return make_unique<classname>(); } static QueryProcessorBackendRegistration register_##classname(name, create##classname)
 
 
 #endif

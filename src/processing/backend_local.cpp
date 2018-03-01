@@ -4,14 +4,14 @@
 
 class LocalQueryProcessor : public QueryProcessor::QueryProcessorBackend {
 	public:
-		LocalQueryProcessor(const Parameters &params);
+		LocalQueryProcessor();
 		virtual ~LocalQueryProcessor();
 		virtual std::unique_ptr<QueryProcessor::QueryResult> process(const Query &q, bool includeProvenance);
 		virtual std::unique_ptr<QueryProcessor::QueryProgress> processAsync(const Query &q, bool includeProvenance);
 };
 REGISTER_QUERYPROCESSOR_BACKEND(LocalQueryProcessor, "local");
 
-LocalQueryProcessor::LocalQueryProcessor(const Parameters &params) {
+LocalQueryProcessor::LocalQueryProcessor() {
 
 }
 

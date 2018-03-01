@@ -33,12 +33,12 @@ FeatureCollectionDBBackendRegistration::FeatureCollectionDBBackendRegistration(c
 void FeatureCollectionDB::initFromConfiguration() {
 	std::string backend;
 	try {
-		backend = Configuration::get("featurecollectiondb.backend");
+		backend = Configuration::get<std::string>("featurecollectiondb.backend");
 	} catch (const ArgumentException &e) {
 		Log::info("No configuration found for key featurecollectiondb.backend. Leave FeatureCollectionDB uninitialized.");
 		return;
 	}
-	auto location = Configuration::get("featurecollectiondb." + backend + ".location");
+	auto location = Configuration::get<std::string>("featurecollectiondb." + backend + ".location");
 	init(backend, location);
 }
 
