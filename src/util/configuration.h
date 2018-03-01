@@ -38,6 +38,43 @@ public:
 	static bool parseBool(const std::string &str);
 };
 
+/**
+ * Wrapping cpptoml::table for smaller consistent access to the main configuration table via Configuration::get<T>(...)
+ * and the subtables with:
+ * 		ConfigurationTable subtable = Configuration::getSubTable(...);
+ * 		subtable.get<T>(...)
+ *
+ * If more functionality is needed getTomlTable will give access to the underlying cpptoml::table.
+ *
+ */
+class ConfigurationTable {
+	public:
+		ConfigurationTable(std::shared_ptr<cpptoml::table> table) : table(table) { }
+
+	template <class T>
+	T get(const std::string& name);
+
+	template <class T>
+	T get(const std::string& name, const T& alternative){
+		return table->get_qualified_as<T>(name).value_or(alternative);
+	}
+
+	ConfigurationTable getSubTable(const std::string& name){
+		return ConfigurationTable(table->get_table_qualified(name));
+	}
+
+	bool contains(const std::string& key){
+		return table->contains(key);
+	}
+
+	std::shared_ptr<cpptoml::table> getTomlTable(){
+		return table;
+	}
+
+	private:
+		std::shared_ptr<cpptoml::table> table;
+
+};
 
 /**
  * Class for loading the configuration of the application.
@@ -54,26 +91,29 @@ class Configuration {
         static void loadFromString(const std::string &content);
         static void loadFromFile(const std::string &filename);
     private:
-        static std::shared_ptr<cpptoml::table> table;
+        static ConfigurationTable table;
         static void loadFromEnvironment();
         static void insertIntoMainTable(std::shared_ptr<cpptoml::table> other);
 	public:
 		template <class T>
-        static T get(std::string name){
-            auto item = table->get_qualified_as<T>(name);
-            if(item)
-                return *item;
-            else{
-                throw ArgumentException("Configuration: \'" + name + "\' not found.");
-            }
-        }
+        static T get(const std::string& name){
+            return table.get<T>(name);
+		}
         template <class T>
-        static T get(std::string name, T alternative){
-            return table->get_qualified_as<T>(name).value_or(alternative);
+        static T get(const std::string& name, T alternative){
+            return table.get<T>(name, alternative);
         }
 
-		static std::shared_ptr<cpptoml::table> getSubTable(const std::string name){
-			return table->get_table_qualified(name);
+		static ConfigurationTable getSubTable(const std::string& name){
+			return table.getSubTable(name);
+		}
+
+		static bool contains(const std::string& key){
+			return table.contains(key);
+		}
+
+		static std::shared_ptr<cpptoml::table> getTomlTable(){
+			return table.getTomlTable();
 		}
 };
 

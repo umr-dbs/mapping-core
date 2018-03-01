@@ -5,7 +5,6 @@
 TEST(Configuration, mergeTest){
 
     Configuration::loadFromDefaultPaths();
-
     Configuration::loadFromString("test=123\ntest2=true\ntest3=1.56\n[test4]\nsubTest=true");
     Configuration::loadFromFile("../../test/unittests/util/test_config.toml");
 
@@ -17,7 +16,7 @@ TEST(Configuration, mergeTest){
 
     //Variables from file :
     EXPECT_EQ(Configuration::get<bool>("someFlag"), false);
-    //test subtable access:
+    //test subtable access :
     EXPECT_EQ(Configuration::get<std::string>("data.location"), "Some/Where");
     EXPECT_EQ(Configuration::get<int>("data.size"), 512);
 }

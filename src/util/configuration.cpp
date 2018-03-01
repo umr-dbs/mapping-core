@@ -117,7 +117,17 @@ bool Parameters::parseBool(const std::string &str) {
 /*
  * Configuration
  */
-std::shared_ptr<cpptoml::table> Configuration::table = cpptoml::make_table();
+ConfigurationTable Configuration::table(cpptoml::make_table());
+
+template <class T>
+T ConfigurationTable::get(const std::string& name){
+    auto item = table->get_qualified_as<T>(name);
+    if(item)
+        return *item;
+    else
+        throw ArgumentException("Configuration: \'" + name + "\' not found in subtable.");
+}
+
 
 /*
  * Insert another TOML table into the main Configuration table
@@ -125,7 +135,7 @@ std::shared_ptr<cpptoml::table> Configuration::table = cpptoml::make_table();
 void Configuration::insertIntoMainTable(std::shared_ptr<cpptoml::table> other) {
     //it is iterator for a map<string, shared_ptr<base>>
     for(auto it = other->begin(); it != other->end(); ++it){
-        table->insert(it->first, it->second);
+        table.getTomlTable()->insert(it->first, it->second);
     }
 }
 
