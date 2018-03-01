@@ -52,7 +52,13 @@ class ConfigurationTable {
 		ConfigurationTable(std::shared_ptr<cpptoml::table> table) : table(table) { }
 
 	template <class T>
-	T get(const std::string& name);
+	T get(const std::string& name){
+        auto item = table->get_qualified_as<T>(name);
+        if(item)
+            return *item;
+        else
+            throw ArgumentException("Configuration: \'" + name + "\' not found in subtable.");
+    }
 
 	template <class T>
 	T get(const std::string& name, const T& alternative){

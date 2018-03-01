@@ -119,16 +119,6 @@ bool Parameters::parseBool(const std::string &str) {
  */
 ConfigurationTable Configuration::table(cpptoml::make_table());
 
-template <class T>
-T ConfigurationTable::get(const std::string& name){
-    auto item = table->get_qualified_as<T>(name);
-    if(item)
-        return *item;
-    else
-        throw ArgumentException("Configuration: \'" + name + "\' not found in subtable.");
-}
-
-
 /*
  * Insert another TOML table into the main Configuration table
  */
