@@ -21,11 +21,11 @@ Natur40SourceOperator::Natur40SourceOperator(int sourcecounts[], GenericOperator
     for (const auto &sensor_type_field : sensor_types) {
         const auto sensor_type = sensor_type_field.asString();
         const bool only_allowed_types = std::all_of(sensor_type.begin(), sensor_type.end(), [](char c) {
-            return std::isalpha(c) || c == '_';
+            return std::isalnum(c) || c == '_';
         });
         if (!only_allowed_types) {
             throw OperatorException {
-                    "natur40_source: sensor types are only allowed to have alphanumerical values or underscore"
+                    "natur40_source: sensor types are only allowed to have alphanumerical values or underscores"
             };
         }
         this->sensor_types.push_back(sensor_type);
@@ -40,7 +40,7 @@ Natur40SourceOperator::Natur40SourceOperator(int sourcecounts[], GenericOperator
 
 Natur40SourceOperator::~Natur40SourceOperator() = default;
 
-REGISTER_OPERATOR(Natur40SourceOperator, "natur40_source");
+REGISTER_OPERATOR(Natur40SourceOperator, "natur40_source"); /* NOLINT */
 
 auto Natur40SourceOperator::writeSemanticParameters(std::ostringstream &stream) -> void {
     Json::Value semantic_parameters{Json::objectValue};
