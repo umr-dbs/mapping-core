@@ -56,39 +56,40 @@ auto Natur40SourceOperator::writeSemanticParameters(std::ostringstream &stream) 
 const std::string LAT_COLUMN_NAME{"latitude"}; /* NOLINT */
 const std::string LON_COLUMN_NAME{"longitude"}; /* NOLINT */
 const std::string TIME_START_COLUMN_NAME{"time_start"}; /* NOLINT */
-//const std::string TIME_END_COLUMN_NAME{"time_end"}; /* NOLINT */
+const std::string TIME_END_COLUMN_NAME{"time_end"}; /* NOLINT */
 const std::string NODE_COLUMN_NAME{"node"}; /* NOLINT */
 
-using table_t = std::string;
-using column_t = std::string;
+Natur40SourceOperator::Row::Row(const pqxx::tuple &tuple,
+                                const std::vector<column_t> &numeric_columns,
+                                const std::vector<column_t> &textual_columns) :
+        node(tuple[NODE_COLUMN_NAME].as<std::string>()),
+        time_start(tuple[TIME_START_COLUMN_NAME].as<double>()),
+        time_end(tuple[TIME_END_COLUMN_NAME].as<double>()) {
+    for (const auto &numeric_column : numeric_columns) {
+        const_cast<std::map<std::string, double> &>(this->numeric_values)[numeric_column] = tuple[numeric_column].is_null()
+                                                                                            ? std::numeric_limits<double>::quiet_NaN()
+                                                                                            : tuple[numeric_column].as<double>();
+    }
+    for (const auto &textual_column : textual_columns) {
+        const_cast<std::map<std::string, std::string> &>(this->textual_values)[textual_column] = tuple[textual_column].is_null()
+                                                                                                 ? ""
+                                                                                                 : tuple[textual_column].as<std::string>();
+    }
+}
 
-/**
- * Table row with extracted information
- */
-class Row {
-    public:
-        Row(const pqxx::tuple &tuple,
-            const std::vector<column_t> &numeric_columns,
-            const std::vector<column_t> &textual_columns) :
-                node(tuple[NODE_COLUMN_NAME].as<std::string>()),
-                time(tuple[TIME_START_COLUMN_NAME].as<double>()) {
-            for (const auto &numeric_column : numeric_columns) {
-                this->numeric_values[numeric_column] = tuple[numeric_column].is_null()
-                                                       ? std::numeric_limits<double>::quiet_NaN()
-                                                       : tuple[numeric_column].as<double>();
-            }
-            for (const auto &textual_column : textual_columns) {
-                this->textual_values[textual_column] = tuple[textual_column].is_null()
-                                                       ? ""
-                                                       : tuple[textual_column].as<std::string>();
-            }
-        }
+Natur40SourceOperator::Row::Row(const std::string node,
+                                double time_start,
+                                double time_end,
+                                const std::map<std::string, double> numeric_values,
+                                const std::map<std::string, std::string> textual_values) :
+        node(node),
+        time_start(time_start), time_end(time_end),
+        numeric_values(numeric_values),
+        textual_values(textual_values) {}
 
-        std::string node;
-        double time;
-        std::map<std::string, double> numeric_values;
-        std::map<std::string, std::string> textual_values;
-};
+using Row = Natur40SourceOperator::Row;
+using table_t = Natur40SourceOperator::table_t;
+using column_t = Natur40SourceOperator::column_t;
 
 /**
  * Wrapper Class for an `Row` iterator and its end.
@@ -105,7 +106,7 @@ class IterWrap {
         }
 
         auto time() const -> double {
-            return this->current->time;
+            return this->current->time_start;
         }
 
         auto row() const -> Row {
@@ -153,11 +154,12 @@ class IterWrapComparator {
  * @param results
  * @param f
  */
-auto merge_results(std::map<table_t, std::vector<Row>> results, const std::function<void(const Row &)> &f) -> void {
+auto Natur40SourceOperator::merge_results(std::map<table_t, std::vector<Row>> results,
+                                          const std::function<void(const Row &)> &f) -> void {
     using iter = std::vector<Row>::const_iterator;
 
     std::priority_queue<IterWrap, std::vector<IterWrap>, IterWrapComparator> heap;
-    for (auto &result : results) {
+    for (auto &result :            results) {
         heap.emplace(result.second);
     }
 
@@ -198,7 +200,7 @@ auto add_to_collection(PointCollection &collection, std::string &node,
     if (std::isnan(longitude) || std::isnan(latitude)) {
         return; // geo information is missing
     }
-    if (time_start > qrect.t2 || time_end < qrect.t1) {
+    if (time_start > qrect.t2 || time_end <= qrect.t1) {
         return; // time is out of bounds
     }
 
@@ -272,7 +274,13 @@ auto Natur40SourceOperator::getPointCollection(const QueryRectangle &rect,
             textual_columns.emplace_back(column);
         }
     }
+    return create_feature_collection(results, numeric_columns, textual_columns, rect);
+}
 
+auto Natur40SourceOperator::create_feature_collection(const std::map<table_t, std::vector<Row>> &results,
+                                                      const std::vector<column_t> &numeric_columns,
+                                                      const std::vector<column_t> &textual_columns,
+                                                      const QueryRectangle &rect) -> std::unique_ptr<PointCollection> {
     // initialize feature collection
     auto point_collection = make_unique<PointCollection>(rect);
     point_collection->feature_attributes.addTextualAttribute(NODE_COLUMN_NAME, Unit::unknown());
@@ -289,30 +297,31 @@ auto Natur40SourceOperator::getPointCollection(const QueryRectangle &rect,
     // initialize row values
     std::map<column_t, double> numeric_values;
     for (const auto &column : numeric_columns) {
-        numeric_values[column] = std::numeric_limits<double>::quiet_NaN();
+        numeric_values[column] = ::std::numeric_limits<double>::quiet_NaN();
     }
-    std::map<column_t, std::string> textual_values;
+    std::map<column_t, std::__cxx11::string> textual_values;
     for (const auto &column : textual_columns) {
-        textual_values[column] = std::numeric_limits<double>::quiet_NaN();
+        textual_values[column] = ::std::numeric_limits<double>::quiet_NaN();
     }
-    std::string current_node;
+    std::__cxx11::string current_node;
     double current_time = rect.beginning_of_time();
+    double current_time_end = rect.beginning_of_time();
 
     merge_results(results, [&](const Row &row) {
         if (row.node != current_node) {
             // finish node
             add_to_collection(*point_collection,
                               current_node,
-                              current_time, rect.end_of_time(),
+                              current_time, current_time_end,
                               numeric_values, textual_values,
                               rect);
 
             reset_numeric_map(numeric_values);
             reset_textual_map(textual_values);
-        } else if (row.time > current_time) {
+        } else if (row.time_start > current_time) {
             add_to_collection(*point_collection,
                               current_node,
-                              current_time, row.time,
+                              current_time, row.time_start,
                               numeric_values, textual_values,
                               rect);
         }
@@ -325,15 +334,15 @@ auto Natur40SourceOperator::getPointCollection(const QueryRectangle &rect,
         }
 
         current_node = row.node;
-        current_time = row.time;
+        current_time = row.time_start;
+        current_time_end = row.time_end;
     });
 
     add_to_collection(*point_collection,
                       current_node,
-                      current_time, rect.end_of_time(),
+                      current_time, current_time_end <= rect.end_of_time() ? current_time_end : rect.end_of_time(),
                       numeric_values, textual_values,
                       rect);
-
     return point_collection;
 }
 

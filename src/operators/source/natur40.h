@@ -22,6 +22,31 @@ class Natur40SourceOperator : public GenericOperator {
         auto getPointCollection(const QueryRectangle &rect,
                                 const QueryTools &tools) -> std::unique_ptr<PointCollection> override;
 
+        using table_t = std::string;
+        using column_t = std::string;
+
+        /**
+         * Table row with extracted information
+         */
+        class Row {
+            public:
+                Row(const pqxx::tuple &tuple,
+                    const std::vector<column_t> &numeric_columns,
+                    const std::vector<column_t> &textual_columns);
+
+                Row(std::string node,
+                    double time_start,
+                    double time_end,
+                    std::map<std::string, double> numeric_values,
+                    std::map<std::string, std::string> textual_values);
+
+                const std::string node;
+                double time_start;
+                double time_end;
+                const std::map<std::string, double> numeric_values;
+                const std::map<std::string, std::string> textual_values;
+        };
+
     protected:
         auto writeSemanticParameters(std::ostringstream &stream) -> void override;
 
@@ -76,4 +101,25 @@ class Natur40SourceOperator : public GenericOperator {
          */
         static auto parse_query(const std::string &query_template,
                                 const std::map<std::string, std::string> &replacements) -> std::string;
+
+        /**
+         * Merge multiple row vectors
+         * @param results
+         * @param f
+         */
+        static auto
+        merge_results(std::map<table_t, std::vector<Row>> results, const std::function<void(const Row &)> &f) -> void;
+
+        /**
+         * Create a feature collection out of query results
+         * @param results
+         * @param numeric_columns
+         * @param textual_columns
+         * @param rect
+         * @return
+         */
+        static auto create_feature_collection(const std::map<table_t, std::vector<Row>> &results,
+                                              const std::vector<column_t> &numeric_columns,
+                                              const std::vector<column_t> &textual_columns,
+                                              const QueryRectangle &rect) -> std::unique_ptr<PointCollection>;
 };
