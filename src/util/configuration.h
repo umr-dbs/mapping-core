@@ -1,10 +1,42 @@
-
 #ifndef UTIL_CONFIGURATION_H_
 #define UTIL_CONFIGURATION_H_
 
 #include <string>
 #include <map>
 #include "cpptoml.h"
+#include "util/exceptions.h"
+
+class Parameters : public std::map<std::string, std::string> {
+public:
+	bool hasParam(const std::string& key) const;
+
+	const std::string &get(const std::string &name) const;
+	const std::string &get(const std::string &name, const std::string &defaultValue) const;
+	int getInt(const std::string &name) const;
+	int getInt(const std::string &name, int defaultValue) const;
+	long getLong(const std::string &name) const;
+	long getLong(const std::string &name, long defaultValue) const;
+	bool getBool(const std::string &name) const;
+	bool getBool(const std::string &name, bool defaultValue) const;
+
+	/**
+     * Returns all parameters with a given prefix, with the prefix stripped.
+     * For example, if you have the configurations
+     *  my.module.paramA = 50
+     *  my.module.paramB = 20
+     * then parameters.getPrefixedParameters("my.module.") will return a Parameters object with
+     *  paramA = 50
+     *  paramB = 20
+     *
+     * @param prefix the prefix of the interesting parameter names. Usually, this should end with a dot.
+     */
+	Parameters getPrefixedParameters(const std::string &prefix);
+
+	// These do throw exceptions when the string cannot be parsed.
+	static int parseInt(const std::string &str);
+	static long parseLong(const std::string &str);
+	static bool parseBool(const std::string &str);
+};
 
 
 /**
@@ -14,24 +46,35 @@
  * 2. working directory mapping.conf
  * 3. environment variables starting with MAPPING_ and mapping_
  *
- * New usage:
- *  *Configuration::table->get_qualified_as<int>("someTable.someParameter")
- *  *Configuration::table->get_as<int>("someValue")
- *
- *   the first example is a value from a nested table someTable, to get the
- *   value directly you have to use get_qualified_as<T>.
- *   sub-tables can be directly accessed via Configuration->table->get_table("someTable").
- *   Also possible: get_table_qualified.
- *
  */
 
 class Configuration {
 	public:
-        static std::shared_ptr<cpptoml::table> table;
         static void loadFromDefaultPaths();
-	private:
-        static void load(const std::string &filename);
+        static void loadFromString(const std::string &content);
+        static void loadFromFile(const std::string &filename);
+    private:
+        static std::shared_ptr<cpptoml::table> table;
         static void loadFromEnvironment();
+        static void insertIntoMainTable(std::shared_ptr<cpptoml::table> other);
+	public:
+		template <class T>
+        static T get(std::string name){
+            auto item = table->get_qualified_as<T>(name);
+            if(item)
+                return *item;
+            else{
+                throw ArgumentException("Configuration: \'" + name + "\' not found.");
+            }
+        }
+        template <class T>
+        static T get(std::string name, T alternative){
+            return table->get_qualified_as<T>(name).value_or(alternative);
+        }
+
+		static std::shared_ptr<cpptoml::table> getSubTable(const std::string name){
+			return table->get_table_qualified(name);
+		}
 };
 
 #endif
