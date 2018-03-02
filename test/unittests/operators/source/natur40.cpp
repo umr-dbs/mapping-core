@@ -37,8 +37,14 @@ TEST(Natur40, sqlQuery) {
 
         std::string expected = R"(
  SELECT
- EXTRACT(EPOCH FROM time_start) AS time_start,
- EXTRACT(EPOCH FROM time_end) AS time_end,
+ CASE time_start
+ WHEN '-infinity' THEN '-infinity'::FLOAT8
+ ELSE EXTRACT(EPOCH FROM time_start)
+ END AS time_start,
+ CASE time_end
+ WHEN 'infinity' THEN 'infinity'::FLOAT8
+ ELSE EXTRACT(EPOCH FROM time_end)
+ END AS time_end,
  node,
  longitude, latitude, altitude
  FROM (
@@ -54,7 +60,7 @@ TEST(Natur40, sqlQuery) {
  longitude, latitude, altitude
  FROM locations
  ) t
- WHERE (time_start, time_end) OVERLAPS (to_timestamp(1514764800.000000), to_timestamp(1514851200.000000))
+ WHERE (time_start, time_end) OVERLAPS (to_timestamp(1514764800.000000)::TIMESTAMP WITHOUT TIME ZONE, to_timestamp(1514851200.000000)::TIMESTAMP WITHOUT TIME ZONE)
  ORDER BY node, time_start ASC;
  )";
 

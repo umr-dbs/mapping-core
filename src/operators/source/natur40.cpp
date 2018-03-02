@@ -463,14 +463,20 @@ auto Natur40SourceOperator::table_query(const std::string &table,
                         return a + ", " + b;
                     })
             },
-            {"@time_start@", "to_timestamp(" + std::to_string(time_start) + ")"},
-            {"@time_end@",   "to_timestamp(" + std::to_string(time_end) + ")"},
+            {"@time_start@", "to_timestamp(" + std::to_string(time_start) + ")::TIMESTAMP WITHOUT TIME ZONE"},
+            {"@time_end@",   "to_timestamp(" + std::to_string(time_end) + ")::TIMESTAMP WITHOUT TIME ZONE"},
     };
 
     const std::string query_template = R"(
         SELECT
-            EXTRACT(EPOCH FROM time_start) AS time_start,
-            EXTRACT(EPOCH FROM time_end) AS time_end,
+            CASE time_start
+                WHEN '-infinity' THEN '-infinity'::FLOAT8
+                ELSE EXTRACT(EPOCH FROM time_start)
+            END AS time_start,
+            CASE time_end
+                WHEN 'infinity' THEN 'infinity'::FLOAT8
+                ELSE EXTRACT(EPOCH FROM time_end)
+            END AS time_end,
             node,
             @columns@
         FROM (
