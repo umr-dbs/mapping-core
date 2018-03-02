@@ -22,11 +22,11 @@ NodeConfig NodeConfig::fromConfiguration() {
 	result.local_replacement = Configuration::get<std::string>("nodeserver.cache.local.replacement", "lru");
 
 	//TODO: cpptoml can access int64_t but not long. Old method was getting a long, data field is of type size_t.
-	result.raster_size = Configuration::get<int64_t>("nodeserver.cache.raster.size");
-	result.point_size = Configuration::get<int64_t>("nodeserver.cache.points.size");
-	result.line_size = Configuration::get<int64_t>("nodeserver.cache.lines.size");
-	result.polygon_size = Configuration::get<int64_t>("nodeserver.cache.polygons.size");
-	result.plot_size = Configuration::get<int64_t>("nodeserver.cache.plots.size");
+	result.raster_size = Configuration::get<size_t>("nodeserver.cache.raster.size");
+	result.point_size = Configuration::get<size_t>("nodeserver.cache.points.size");
+	result.line_size = Configuration::get<size_t>("nodeserver.cache.lines.size");
+	result.polygon_size = Configuration::get<size_t>("nodeserver.cache.polygons.size");
+	result.plot_size = Configuration::get<size_t>("nodeserver.cache.plots.size");
 	return result;
 }
 
