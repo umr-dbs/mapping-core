@@ -32,7 +32,8 @@ class Natur40SourceOperator : public GenericOperator {
             public:
                 Row(const pqxx::tuple &tuple,
                     const std::vector<column_t> &numeric_columns,
-                    const std::vector<column_t> &textual_columns);
+                    const std::vector<column_t> &textual_columns,
+                    const TemporalReference &tref);
 
                 Row(std::string node,
                     double time_start,
@@ -41,8 +42,8 @@ class Natur40SourceOperator : public GenericOperator {
                     std::map<std::string, std::string> textual_values);
 
                 const std::string node;
-                double time_start;
-                double time_end;
+                const double time_start;
+                const double time_end;
                 const std::map<std::string, double> numeric_values;
                 const std::map<std::string, std::string> textual_values;
         };

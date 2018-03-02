@@ -64,19 +64,29 @@ const std::string NODE_COLUMN_NAME{"node"}; /* NOLINT */
 
 Natur40SourceOperator::Row::Row(const pqxx::tuple &tuple,
                                 const std::vector<column_t> &numeric_columns,
-                                const std::vector<column_t> &textual_columns) :
+                                const std::vector<column_t> &textual_columns,
+                                const TemporalReference &tref) :
         node(tuple[NODE_COLUMN_NAME].as<std::string>()),
         time_start(tuple[TIME_START_COLUMN_NAME].as<double>()),
         time_end(tuple[TIME_END_COLUMN_NAME].as<double>()) {
-    for (const auto &numeric_column : numeric_columns) {
-        const_cast<std::map<std::string, double> &>(this->numeric_values)[numeric_column] = tuple[numeric_column].is_null()
-                                                                                            ? std::numeric_limits<double>::quiet_NaN()
-                                                                                            : tuple[numeric_column].as<double>();
+    if (this->time_start < tref.beginning_of_time()) {
+        const_cast<double &>(this->time_start) = tref.beginning_of_time();
     }
+    if (this->time_end > tref.end_of_time()) {
+        const_cast<double &>(this->time_end) = tref.end_of_time();
+    }
+
+    auto &numeric_map = const_cast<std::map<std::string, double> &>(this->numeric_values);
+    for (const auto &numeric_column : numeric_columns) {
+        numeric_map[numeric_column] = tuple[numeric_column].is_null()
+                                      ? std::numeric_limits<double>::quiet_NaN()
+                                      : tuple[numeric_column].as<double>();
+    }
+    auto &textual_map = const_cast<std::map<std::string, std::string> &>(this->textual_values);
     for (const auto &textual_column : textual_columns) {
-        const_cast<std::map<std::string, std::string> &>(this->textual_values)[textual_column] = tuple[textual_column].is_null()
-                                                                                                 ? ""
-                                                                                                 : tuple[textual_column].as<std::string>();
+        textual_map[textual_column] = tuple[textual_column].is_null()
+                                      ? ""
+                                      : tuple[textual_column].as<std::string>();
     }
 }
 
@@ -322,7 +332,7 @@ auto Natur40SourceOperator::getPointCollection(const QueryRectangle &rect,
                 );
             }
 #endif
-            results[table].emplace_back(row, table_numeric_columns, table_textual_columns);
+            results[table].emplace_back(row, table_numeric_columns, table_textual_columns, rect);
         }
 
         for (const auto &column : table_numeric_columns) {
@@ -385,10 +395,8 @@ auto Natur40SourceOperator::create_feature_collection(const std::map<table_t, st
             v2 << "}";
             printf("ROW: %s %s %s %s %s\n\n",
                    row.node.c_str(),
-                   tref.toIsoString(row.time_start > rect.beginning_of_time() ? row.time_start
-                                                                              : rect.beginning_of_time()).c_str(),
-                   tref.toIsoString(row.time_end < rect.end_of_time() ? row.time_end
-                                                                      : rect.end_of_time()).c_str(),
+                   tref.toIsoString(row.time_start).c_str(),
+                   tref.toIsoString(row.time_end).c_str(),
                    v1.str().c_str(), v2.str().c_str()
             );
         }
