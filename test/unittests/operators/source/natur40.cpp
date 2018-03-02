@@ -96,7 +96,7 @@ TEST(Natur40, merge) {
     }
 }
 
-TEST(Natur40, feature_collection) {
+TEST(Natur40, feature_collection1) {
     const auto time_parser = TimeParser::create(TimeParser::Format::ISO);
 
     std::vector<Natur40SourceOperator::Row> locations{
@@ -147,6 +147,61 @@ TEST(Natur40, feature_collection) {
     expected->feature_attributes.addNumericAttribute("temperature", Unit::unknown(), {23.86});
 //    expected->feature_attributes.addNumericAttribute("time_start", Unit::unknown(), {1519762314});
 //    expected->feature_attributes.addNumericAttribute("time_end", Unit::unknown(), {1519814984});
+
+    CollectionTestUtil::checkEquality(*expected, *feature_collection);
+}
+
+TEST(Natur40, feature_collection2) {
+    const auto time_parser = TimeParser::create(TimeParser::Format::ISO);
+
+    std::vector<Natur40SourceOperator::Row> locations{
+            {
+                    "bb00",
+                    time_parser->parse("2018-02-28T16:43:24"),
+                    time_parser->parse("9999-12-31T23:59:59"),
+                    {{"longitude", 8.81065333333333}, {"latitude", 50.80978}, {"satellites", 4}},
+                    {}
+            },
+            {
+                    "sb00",
+                    time_parser->parse("2018-03-01T12:47:04"),
+                    time_parser->parse("2018-03-01T13:44:27"),
+                    {{"longitude", 8.8108},           {"latitude", 50.80932}, {"satellites", 4}},
+                    {}
+            },
+    };
+
+    QueryRectangle qrect{
+            SpatialReference{CrsId::wgs84()},
+            TemporalReference{
+                    TIMETYPE_UNIX,
+                    time_parser->parse("2018-03-01T12:49:12"),
+                    time_parser->parse("2018-03-01T12:49:12") + 0.0001,
+            },
+            QueryResolution::none()
+    };
+
+    const auto feature_collection = Natur40SourceOperator::create_feature_collection(
+            {{"locations", locations}},
+            {"longitude", "latitude", "satellites"},
+            {},
+            qrect
+    );
+
+//    printf("%s\n", feature_collection->toCSV().c_str());
+
+    std::unique_ptr<PointCollection> expected = make_unique<PointCollection>(qrect);
+
+    expected->addSinglePointFeature(Coordinate{8.81065333333333, 50.80978});
+    expected->addSinglePointFeature(Coordinate{8.8108, 50.80932});
+
+    expected->setTimeStamps(
+            {time_parser->parse("2018-02-28T16:43:24"), time_parser->parse("2018-03-01T12:47:04")},
+            {time_parser->parse("9999-12-31T23:59:59"), time_parser->parse("2018-03-01T13:44:27")}
+    );
+
+    expected->feature_attributes.addTextualAttribute("node", Unit::unknown(), {"bb00", "sb00"});
+    expected->feature_attributes.addNumericAttribute("satellites", Unit::unknown(), {4, 4});
 
     CollectionTestUtil::checkEquality(*expected, *feature_collection);
 }
