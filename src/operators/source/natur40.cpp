@@ -5,9 +5,12 @@
 #include <numeric>
 #include <future>
 #include <queue>
+#include <util/timeparser.h>
 
 #include "operators/source/natur40.h"
 #include "util/configuration.h"
+
+#define NATUR40_DEBUG 0
 
 Natur40SourceOperator::Natur40SourceOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params)
         : GenericOperator(sourcecounts, sources) {
@@ -194,15 +197,49 @@ auto add_to_collection(PointCollection &collection, std::string &node,
                        std::map<column_t, double> &numeric_values,
                        std::map<column_t, std::string> &textual_values,
                        const QueryRectangle &qrect) -> void {
+#if NATUR40_DEBUG
+    {
+        TemporalReference tref{TIMETYPE_UNIX};
+        std::ostringstream v1;
+        v1 << "{";
+        for (const auto &value : numeric_values) {
+            v1 << value.first << ": " << value.second << ", ";
+        }
+        v1 << "}";
+        std::ostringstream v2;
+        v2 << "{";
+        for (const auto &value : textual_values) {
+            v2 << value.first << ": " << value.second << ", ";
+        }
+        v2 << "}";
+        printf("ENTRY: %s %s %s %s %s\n",
+               node.c_str(),
+               tref.toIsoString(time_start).c_str(), tref.toIsoString(time_end).c_str(),
+               v1.str().c_str(),
+               v2.str().c_str()
+        );
+    }
+#endif
+
     double longitude = numeric_values[LON_COLUMN_NAME];
     double latitude = numeric_values[LAT_COLUMN_NAME];
 
     if (std::isnan(longitude) || std::isnan(latitude)) {
+#if NATUR40_DEBUG
+        printf("REJECTED! geo\n\n");
+#endif
         return; // geo information is missing
     }
     if (time_start > qrect.t2 || time_end <= qrect.t1) {
+#if NATUR40_DEBUG
+        printf("REJECTED! time\n\n");
+#endif
         return; // time is out of bounds
     }
+
+#if NATUR40_DEBUG
+    printf("ACCEPTED!\n\n");
+#endif
 
     auto feature_id = collection.addSinglePointFeature(Coordinate(longitude, latitude));
 
@@ -241,6 +278,7 @@ auto Natur40SourceOperator::getPointCollection(const QueryRectangle &rect,
     }
 
     pqxx::read_transaction transaction{*this->connection, "natur40_query"};
+    transaction.exec("SET TIME ZONE 0"); // set TIME ZONE to UTC
 
     // map sensor types to table names
     std::vector<table_t> tables;
@@ -258,11 +296,32 @@ auto Natur40SourceOperator::getPointCollection(const QueryRectangle &rect,
         const auto table_textual_columns = get_textual_columns_for_table(table);
 
         std::string query = table_query(table, table_numeric_columns, table_textual_columns, rect.t1, rect.t2);
+#if NATUR40_DEBUG
+        printf("%s\n\n", query.c_str());
+#endif
 
         results[table] = std::vector<Row>{};
         pqxx::result result = transaction.exec(query);
 
         for (const auto &row : result) {
+#if NATUR40_DEBUG
+            {
+                TemporalReference tref{TIMETYPE_UNIX};
+                auto time_start = row[TIME_START_COLUMN_NAME].as<double>();
+                auto time_end = row[TIME_END_COLUMN_NAME].as<double>();
+                printf(
+                        "DB: %s -> %s -> %s %s \t\t %f %f\n",
+                        table.c_str(),
+                        row[NODE_COLUMN_NAME].as<std::string>().c_str(),
+                        tref.toIsoString(time_start > rect.beginning_of_time() ? time_start
+                                                                               : rect.beginning_of_time()).c_str(),
+                        tref.toIsoString(time_end < rect.end_of_time() ? time_end
+                                                                       : rect.end_of_time()).c_str(),
+                        time_start,
+                        time_end
+                );
+            }
+#endif
             results[table].emplace_back(row, table_numeric_columns, table_textual_columns);
         }
 
@@ -274,6 +333,7 @@ auto Natur40SourceOperator::getPointCollection(const QueryRectangle &rect,
             textual_columns.emplace_back(column);
         }
     }
+
     return create_feature_collection(results, numeric_columns, textual_columns, rect);
 }
 
@@ -308,6 +368,32 @@ auto Natur40SourceOperator::create_feature_collection(const std::map<table_t, st
     double current_time_end = rect.beginning_of_time();
 
     merge_results(results, [&](const Row &row) {
+#if NATUR40_DEBUG
+        {
+            TemporalReference tref{TIMETYPE_UNIX};
+            std::ostringstream v1;
+            v1 << "{";
+            for (const auto &value : row.numeric_values) {
+                v1 << value.first << ": " << value.second << ", ";
+            }
+            v1 << "}";
+            std::ostringstream v2;
+            v2 << "{";
+            for (const auto &value : row.textual_values) {
+                v2 << value.first << ": " << value.second << ", ";
+            }
+            v2 << "}";
+            printf("ROW: %s %s %s %s %s\n\n",
+                   row.node.c_str(),
+                   tref.toIsoString(row.time_start > rect.beginning_of_time() ? row.time_start
+                                                                              : rect.beginning_of_time()).c_str(),
+                   tref.toIsoString(row.time_end < rect.end_of_time() ? row.time_end
+                                                                      : rect.end_of_time()).c_str(),
+                   v1.str().c_str(), v2.str().c_str()
+            );
+        }
+#endif
+
         if (row.node != current_node) {
             // finish node
             add_to_collection(*point_collection,

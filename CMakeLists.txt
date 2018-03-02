@@ -5,6 +5,7 @@ project(mapping_core
 
 # CMake Settings
 cmake_minimum_required(VERSION 3.7)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 ## Debug
