@@ -123,9 +123,10 @@ ConfigurationTable Configuration::table(cpptoml::make_table());
  * Insert another TOML table into the main Configuration table
  */
 void Configuration::insertIntoMainTable(std::shared_ptr<cpptoml::table> other) {
+    auto tomlTable = table.getTomlTable();
     //it is iterator for a map<string, shared_ptr<base>>
     for(auto it = other->begin(); it != other->end(); ++it){
-        table.getTomlTable()->insert(it->first, it->second);
+        tomlTable->insert(it->first, it->second);
     }
 }
 
@@ -133,10 +134,14 @@ void Configuration::insertIntoMainTable(std::shared_ptr<cpptoml::table> other) {
  * Parsing a string as it were a TOML file.
  */
 void Configuration::loadFromString(const std::string &content) {
-    std::istringstream stream(content);
-    cpptoml::parser p(stream);
-    auto config = p.parse();
-    insertIntoMainTable(config);
+    try {
+        std::istringstream stream(content);
+        cpptoml::parser p(stream);
+        auto config = p.parse();
+        insertIntoMainTable(config);
+    } catch(cpptoml::parse_exception& e){
+        std::cerr << "Configuration: string load exception: " << e.what() << std::endl;
+    }
 }
 
 void Configuration::loadFromFile(const std::string &filename) {
@@ -146,7 +151,7 @@ void Configuration::loadFromFile(const std::string &filename) {
         insertIntoMainTable(config);
 
     } catch(cpptoml::parse_exception& e){
-        std::cerr << "Configuration file load exception: " << e.what() << std::endl;
+        std::cerr << "Configuration: file load exception: " << e.what() << std::endl;
     }
 }
 
@@ -170,7 +175,7 @@ void Configuration::loadFromEnvironment() {
     }
 
     // The file must be loaded before we parse the variables, to guarantee a repeatable priority when multiple settings overlap
-    if (configuration_file != "")
+    if (configuration_file.empty())
         loadFromFile(configuration_file);
 
     loadFromString(relevant_vars);
@@ -191,20 +196,20 @@ static const char* getHomeDirectory() {
 static bool loaded_from_default_paths = false;
 
 void Configuration::loadFromDefaultPaths() {
-	if (loaded_from_default_paths)
-		return;
-	loaded_from_default_paths = true;
+    if (loaded_from_default_paths)
+        return;
+    loaded_from_default_paths = true;
 
-	loadFromFile("/etc/mapping.conf");
+    loadFromFile("/etc/mapping.conf");
 
-	auto homedir = getHomeDirectory();
-	if (homedir && strlen(homedir) > 0) {
-		std::string path = "";
-		path += homedir;
-		path += "/mapping.conf";
+    auto homedir = getHomeDirectory();
+    if (homedir && strlen(homedir) > 0) {
+        std::string path = "";
+        path += homedir;
+        path += "/mapping.conf";
         loadFromFile(path.c_str());
-	}
+    }
 
     loadFromFile("./mapping.conf");
-	loadFromEnvironment();
+    loadFromEnvironment();
 }
