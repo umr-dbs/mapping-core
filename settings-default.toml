@@ -1,0 +1,47 @@
+[fcgi]
+threads=1
+
+[userdb]
+backend="sqlite"
+
+[userdb.sqlite]
+location="" #some path in project
+
+[cache]
+type="local"
+replacement="lru"
+strategy="always"
+
+[cache.raster]
+size=512 #what is a good standard value?
+[cache.points]
+size=512
+[cache.lines]
+size=512
+[cache.polygons]
+size=512
+[cache.plots]
+size=512
+[cache.provenance]
+size=512
+
+[global]
+debug=1 #could be changed to true/false instead of 1/0
+[global.opencl]
+preferredplatform="??"
+forcecpu=0
+
+[rasterdb]
+backend="local"
+[rasterdb.local]
+location="" #somepath in project
+
+[featurecollectiondb]
+backend="postgres"
+[featurecollectiondb.postgres]
+location="" #some path in project
+
+[wms]
+norasterforgiventimeexception=1
+[gdalsource.datasets]
+path="" #some path in project
