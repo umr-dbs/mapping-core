@@ -88,27 +88,12 @@ add_library(mapping_core_base_lib
         cache/node/manager/remote_manager.cpp
         cache/node/manager/hybrid_manager.cpp
         util/gdal_source_datasets.cpp
-        datatypes/Coordinate.cpp)
+        datatypes/Coordinate.cpp
+        datatypes/raster/raster.cpp
+        raster/opencl.cpp)
 target_include_directories(mapping_core_base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi mapping_core_base_lib)
 target_link_libraries_internal(mapping_manager mapping_core_base_lib)
-
-if (USE_OPENCL)
-    target_sources(mapping_core_base_lib
-            PRIVATE
-            datatypes/raster/raster.cpp
-            raster/opencl.cpp
-            )
-else (USE_OPENCL)
-    target_sources(mapping_core_base_lib
-            PRIVATE
-            datatypes/raster/raster_nocl.cpp
-            )
-    target_compile_options(mapping_core_base_lib
-            PUBLIC
-            -DMAPPING_NO_OPENCL=1
-            )
-endif (USE_OPENCL)
 
 add_library(mapping_core_services_lib
         services/httpservice.cpp
@@ -172,39 +157,37 @@ target_link_libraries_internal(mapping_core_operators_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_operators_lib)
 target_link_libraries_internal(mapping_manager mapping_core_operators_lib)
 
-if (USE_OPENCL)
-    # Generate OpenCL headers
-    add_custom_target(mapping_cl_header_generator)
-    add_dependencies(mapping_core_operators_lib mapping_cl_header_generator)
-    # TODO: make this generic for OS?
-    foreach(cl_file IN ITEMS
-            operators/processing/combined/points2raster_frequency.cl
-            operators/processing/combined/points2raster_value.cl
-            operators/processing/combined/raster_value_extraction.cl
-            operators/processing/features/difference.cl
-            operators/processing/meteosat/co2correction.cl
-            operators/processing/meteosat/pansharpening_degenerate.cl
-            operators/processing/meteosat/pansharpening_interpolate.cl
-            operators/processing/meteosat/pansharpening_regression.cl
-            operators/processing/meteosat/radiance.cl
-            operators/processing/meteosat/reflectance.cl
-            operators/processing/meteosat/solarangle.cl
-            operators/processing/meteosat/temperature.cl
-            operators/processing/raster/classification_kernels.cl
-            operators/processing/raster/matrixkernel.cl
+# Generate OpenCL headers
+add_custom_target(mapping_cl_header_generator)
+add_dependencies(mapping_core_operators_lib mapping_cl_header_generator)
+# TODO: make this generic for OS?
+foreach(cl_file IN ITEMS
+        operators/processing/combined/points2raster_frequency.cl
+        operators/processing/combined/points2raster_value.cl
+        operators/processing/combined/raster_value_extraction.cl
+        operators/processing/features/difference.cl
+        operators/processing/meteosat/co2correction.cl
+        operators/processing/meteosat/pansharpening_degenerate.cl
+        operators/processing/meteosat/pansharpening_interpolate.cl
+        operators/processing/meteosat/pansharpening_regression.cl
+        operators/processing/meteosat/radiance.cl
+        operators/processing/meteosat/reflectance.cl
+        operators/processing/meteosat/solarangle.cl
+        operators/processing/meteosat/temperature.cl
+        operators/processing/raster/classification_kernels.cl
+        operators/processing/raster/matrixkernel.cl
+        )
+    add_custom_command(TARGET mapping_cl_header_generator
+            POST_BUILD
+            # remove existing header file
+            COMMAND rm -f ${cl_file}.h
+            # create hexadecimal representation, surround it with an array declaration and a size variable
+            COMMAND xxd -i ${cl_file} | sed 's/unsigned /static const /g' > ${cl_file}.h
+            # create a static string of the previously created array and length
+            COMMAND echo ${cl_file} | sed -e 's/\\.cl$$//' -e 's:/:_:g' -e 's/\\\(^.*$$\\\)/static const std::string \\1\(\\1_cl, \\1_cl_len\)\;/' >> ${cl_file}.h
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             )
-        add_custom_command(TARGET mapping_cl_header_generator
-                POST_BUILD
-                # remove existing header file
-                COMMAND rm -f ${cl_file}.h
-                # create hexadecimal representation, surround it with an array declaration and a size variable
-                COMMAND xxd -i ${cl_file} | sed 's/unsigned /static const /g' > ${cl_file}.h
-                # create a static string of the previously created array and length
-                COMMAND echo ${cl_file} | sed -e 's/\\.cl$$//' -e 's:/:_:g' -e 's/\\\(^.*$$\\\)/static const std::string \\1\(\\1_cl, \\1_cl_len\)\;/' >> ${cl_file}.h
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                )
-    endforeach(cl_file)
-endif (USE_OPENCL)
+endforeach(cl_file)
 
 
 target_link_libraries_internal(mapping_core_base_lib jsoncpp_lib_static)
@@ -260,12 +243,10 @@ target_link_libraries(mapping_core_base_lib ${LibArchive_LIBRARIES})
 target_include_directories(mapping_core_base_lib PRIVATE ${LibArchive_INCLUDE_DIRS})
 
 ## OpenCl
-if (USE_OPENCL)
-    find_package(OpenCL REQUIRED)
-    # target_link_libraries(mapping_core_base_lib OpenCL::OpenCL) # works only with CMAKE 3.7
-    target_link_libraries(mapping_core_base_lib ${OpenCL_LIBRARIES})
-    target_include_directories(mapping_core_base_lib PRIVATE ${OPENCL_INCLUDE_DIRS})
-endif (USE_OPENCL)
+find_package(OpenCL REQUIRED)
+# target_link_libraries(mapping_core_base_lib OpenCL::OpenCL) # works only with CMAKE 3.7
+target_link_libraries(mapping_core_base_lib ${OpenCL_LIBRARIES})
+target_include_directories(mapping_core_base_lib PRIVATE ${OPENCL_INCLUDE_DIRS})
 
 ## CGI
 find_package(Fcgi REQUIRED)
