@@ -1,12 +1,40 @@
 # MAPPING Installation
 
+## Supported Operating Systems
+ * Ubuntu 16.04 LTS
+ * Ubuntu 17.04
+ * Ubuntu 17.10
+
 ## OpenCL
 
-### Ubuntu 16 LTS / Ubuntu 17.04
+### Intel CPU only
 
-#### Open CL
+#### Ubuntu 16.04 LTS
+```
+apt-get install --yes \
+    tar \
+    wget \
+    lsb-core
 
-##### Intel CPU only
+wget --no-verbose http://registrationcenter-download.intel.com/akdlm/irc_nas/9019/opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
+tar -xzf opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
+cd opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25
+
+./install.sh --silent ../scripts/opencl-silent.cfg
+
+apt-get install --yes \
+    ocl-icd-opencl-dev \
+    opencl-headers \
+    clinfo
+
+wget --no-verbose \
+    --output-document=/usr/include/CL/cl.hpp \
+    https://www.khronos.org/registry/OpenCL/api/2.1/cl.hpp
+
+clinfo
+```
+
+#### Others
 download intel driver:
 https://software.intel.com/en-us/articles/opencl-drivers#latest_linux_driver
 ```
@@ -22,100 +50,84 @@ sudo ldconfig
 sudo apt install clinfo
 sudo apt install opencl-headers
 sudo apt install ocl-icd-opencl-dev
+
 clinfo
 ```
 
 
 ## MAPPING Dependencies
-For Ubuntu <= 16:
-Repository for GDAL:
+### For Ubuntu ≤ 16
+Add repository for GDAL:
 ```
 sudo add-apt-repository ppa:ubuntugis/ppa
 sudo apt-get update
 ```
 
-For Ubuntu <= 16 also do
+Add repository for CMAKE
 ```
 sudo add-apt-repository ppa:adrozdoff/cmake
 sudo apt-get update
 ```
 
 
-Install Packages:
+### Install Packages:
 ```
-MAPPING_LIBS=""
+# Programs
+apt-get install --yes \
+    clang \
+    cmake \
+    curl \
+    git \
+    make \
+    sqlite3 \
+    xxdiff
 
-MAPPING_LIBS+=" clang"
-MAPPING_LIBS+=" g++"
-MAPPING_LIBS+=" make"
-MAPPING_LIBS+=" cmake"
-
-MAPPING_LIBS+=" libpng-dev"
-MAPPING_LIBS+=" libjpeg-dev"
-MAPPING_LIBS+=" libturbojpeg0-dev"
-MAPPING_LIBS+=" libgeos-dev"
-MAPPING_LIBS+=" libgeos++-dev"
-MAPPING_LIBS+=" libbz2-dev"
-MAPPING_LIBS+=" libcurl3-dev"
-MAPPING_LIBS+=" libboost-all-dev"
-MAPPING_LIBS+=" libsqlite3-dev"
-MAPPING_LIBS+=" liburiparser-dev"
-MAPPING_LIBS+=" libgtest-dev"
-MAPPING_LIBS+=" libfcgi-dev"
-MAPPING_LIBS+=" libxerces-c-dev"
-MAPPING_LIBS+=" libarchive-dev"
-
-MAPPING_LIBS+=" libproj-dev"
-MAPPING_LIBS+=" git"
-MAPPING_LIBS+=" valgrind"
-
-MAPPING_LIBS+=" r-cran-rcpp"
-MAPPING_LIBS+=" libpqxx-dev"
-
-MAPPING_LIBS+=" libgdal-dev"
-
-sudo apt-get install $MAPPING_LIBS
+# Dependencies
+apt-get install --yes \
+    libpng-dev \
+    libjpeg-dev \
+    libgeos-dev \
+    libgeos++-dev \
+    libbz2-dev \
+    libcurl3-dev \
+    libboost-all-dev \
+    libsqlite3-dev \
+    liburiparser-dev \
+    libgtest-dev \
+    libfcgi-dev \
+    libxerces-c-dev \
+    libarchive-dev \
+    libproj-dev \
+    valgrind \
+    r-cran-rcpp \
+    libpqxx-dev \
+    libgdal-dev
 ```
 
 ## Checkout MAPPING
-Generate SSH key and add it to Phabricator. Use HTTP alternatively.
+Generate SSH key and add it to GitHub. Use HTTPS alternatively.
 ```
 ssh-keygen -t rsa
 ```
 
 Checkout Mapping
 ```
-git clone ssh://phabricator-vcs@dbs-projects.mathematik.uni-marburg.de:91/diffusion/MAPPINGCORE/mapping-core.git
-cd mapping-core
-vim Makefile.local
+# Mandatory
+git clone git@github.com:umr-dbs/mapping-core.git
+# Optional Modules
+git clone git@github.com:umr-dbs/mapping-gfbio.git
+git clone git@github.com:umr-dbs/mapping-r.git
 ```
-
-Add the following lines to add the necessary modules:
-```
-MODULES_PATH=..
-MODULES_LIST+=mapping-gfbio mapping-distributed mapping-r
-```
-This requires the modules to be checked out into the same folder as mapping-core.
-
 
 Build the project:
 ```
-make -j8
+cmake -DCMAKE_BUILD_TYPE=Release .
+# add -DMAPPING_MODULES="mapping-r" for adding module R
+
+make -j$(cat /proc/cpuinfo | grep processor | wc -l)
 ```
 
-#Tests
-
-## Unit tests
-Run via `make unittest`
-
-## Systemtests
-Run via `make systemtest`
-
-Configure llvm-symbolizer path in Makefile.local it or create link at /usr/lib/llvm-symbolizer
-
-e.g.
+## Run Tests
 ```
-LLVM_SYMBOLIZER=/usr/lib/llvm-3.8/bin/llvm-symbolizer
+make test
 ```
-
- 
