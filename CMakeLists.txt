@@ -20,7 +20,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/target/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/target/lib)
 
 # User Options
-option(USE_OPENCL "Use OpenCL in MAPPING" ON)
 set(MAPPING_MODULE_PATH .. CACHE PATH "A list of mapping modules to include in the build process")
 set(MAPPING_MODULES "" CACHE STRING "A list of mapping modules to include in the build process")
 
