@@ -2,7 +2,6 @@
 #include "services/httpservice.h"
 #include "services/httpparsing.h"
 #include "util/exceptions.h"
-#include "util/configuration.h"
 #include "util/log.h"
 
 #include <map>
