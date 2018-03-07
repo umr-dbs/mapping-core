@@ -95,6 +95,8 @@ void Configuration::loadFromDefaultPaths() {
         return;
     loaded_from_default_paths = true;
 
+    loadFromFile("./settings-default.toml");
+
     loadFromFile("/etc/mapping.conf");
 
     auto homedir = getHomeDirectory();
@@ -105,6 +107,6 @@ void Configuration::loadFromDefaultPaths() {
         loadFromFile(path.c_str());
     }
 
-    loadFromFile("./mapping.conf");
+    loadFromFile("./settings.toml");
     loadFromEnvironment();
 }

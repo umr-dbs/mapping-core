@@ -24,6 +24,9 @@ option(USE_OPENCL "Use OpenCL in MAPPING" ON)
 set(MAPPING_MODULE_PATH .. CACHE PATH "A list of mapping modules to include in the build process")
 set(MAPPING_MODULES "" CACHE STRING "A list of mapping modules to include in the build process")
 
+# Copy default settings file to binary directory
+configure_file(${CMAKE_SOURCE_DIR}/settings-default.toml ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ COPYONLY)
+
 # External Dependencies
 include(DownloadProject)
 
@@ -42,7 +45,6 @@ download_project(PROJ       cpptoml
         UPDATE_DISCONNECTED 1
         PREFIX CMakeFiles/Download
         )
-
 add_subdirectory(${cpptoml_SOURCE_DIR} ${cpptoml_BINARY_DIR} EXCLUDE_FROM_ALL)
 
 add_subdirectory(src)
