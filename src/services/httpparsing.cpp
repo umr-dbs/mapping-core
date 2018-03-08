@@ -8,6 +8,7 @@
 #include <fstream>
 #include "util/make_unique.h"
 #include "util/base64.h"
+#include <Poco/URI.h>
 
 
 /**
@@ -133,31 +134,15 @@ void parseQuery(const std::string& query, Parameters &params) {
 	if (query.length() == 0)
 		return;
 
-	// see RFC 3986 ch. 3.4
-
-	/*
-	 // query string is already extracted, no need for this part.
-	 auto beg = q.find_first_of("?");
-	 if(beg == std::string::npos) // No query string present
-	 return;
-	 auto end = q.find_first_of("#", beg);
-	 if(end == std::string::npos) // No fragment
-	 end = q.length() - 1;
-	 */
-
-	std::string::size_type last = 0;
-	std::string::size_type cur;
-
-	while ((cur = query.find_first_of("&", last)) != std::string::npos) {
-		std::string sub = query.substr(last, cur - last);
-		parseKeyValuePair(sub, params);
-		last = cur + 1;
+	Poco::URI uri;
+    //setRawQuery instead of setQuery because setQuery will encode the given string, but here it is already encoded.
+	uri.setRawQuery(query);
+	auto queryParameters = uri.getQueryParameters();
+	for(auto &parameter : queryParameters){
+        std::transform(parameter.first.begin(), parameter.first.end(), parameter.first.begin(), ::tolower);
+		params[parameter.first] = parameter.second;
 	}
 
-	if (last < query.length()) {
-		std::string sub = query.substr(last, query.length() - last);
-		parseKeyValuePair(sub, params);
-	}
 }
 
 /**
@@ -451,7 +436,6 @@ void parsePostData(Parameters &params, std::istream &in) {
  */
 void parseGetData(Parameters &params) {
 	std::string query_string = getenv_str("QUERY_STRING");
-
 	parseQuery(query_string, params);
 }
 
