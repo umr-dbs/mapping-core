@@ -248,6 +248,11 @@ find_package(LibArchive REQUIRED)
 target_link_libraries(mapping_core_base_lib ${LibArchive_LIBRARIES})
 target_include_directories(mapping_core_base_lib PRIVATE ${LibArchive_INCLUDE_DIRS})
 
+#Poco
+include_directories(/usr/include/Poco/)
+link_directories(/usr/lib/)
+target_link_libraries(mapping_core_base_lib PocoFoundation)
+
 ## OpenCl
 find_package(OpenCL REQUIRED)
 # target_link_libraries(mapping_core_base_lib OpenCL::OpenCL) # works only with CMAKE 3.7
