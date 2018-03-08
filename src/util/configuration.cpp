@@ -95,7 +95,7 @@ void Configuration::loadFromDefaultPaths() {
         return;
     loaded_from_default_paths = true;
 
-    loadFromFile("./settings-default.toml");
+    loadFromFile("./conf/settings-default.toml");
 
     loadFromFile("/etc/mapping.conf");
 
@@ -107,6 +107,6 @@ void Configuration::loadFromDefaultPaths() {
         loadFromFile(path.c_str());
     }
 
-    loadFromFile("./settings.toml");
+    loadFromFile("./conf/settings.toml");
     loadFromEnvironment();
 }
