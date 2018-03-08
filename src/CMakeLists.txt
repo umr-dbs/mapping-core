@@ -249,9 +249,8 @@ target_link_libraries(mapping_core_base_lib ${LibArchive_LIBRARIES})
 target_include_directories(mapping_core_base_lib PRIVATE ${LibArchive_INCLUDE_DIRS})
 
 #Poco
-include_directories(/usr/include/Poco/)
-link_directories(/usr/lib/)
 target_link_libraries(mapping_core_base_lib PocoFoundation)
+target_link_libraries(mapping_core_base_lib PocoNet)
 
 ## OpenCl
 find_package(OpenCL REQUIRED)

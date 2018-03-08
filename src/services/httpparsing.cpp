@@ -9,6 +9,7 @@
 #include "util/make_unique.h"
 #include "util/base64.h"
 #include <Poco/URI.h>
+#include <Poco/Net/MultipartReader.h>
 
 
 /**
@@ -103,12 +104,12 @@ static void parseKeyValuePair(const std::string& q, std::map<std::string, std::s
 	std::string key, val;
 
 	if (sep == std::string::npos) {
-		key = q;
+        Poco::URI::decode(q, key, true);
 		val = ""; // Empty value
 	} else {
-		key = urldecode(q.substr(0, sep));
-		val = urldecode(q.substr(sep + 1, q.length() - (sep + 1)));
-		trim(val);
+		Poco::URI::decode(q.substr(0, sep), key, true);
+        Poco::URI::decode(q.substr(sep + 1, q.length() - (sep + 1)), val, true);
+        trim(val);
 	}
 
 	trim(key);
@@ -154,7 +155,7 @@ static void parsePostUrlEncoded(Parameters &params, std::istream &in, int conten
 }
 
 bool parseMultipartParameter(const std::string& line, std::map<std::string, std::string>& params) {
-	std::string::size_type delim = line.find_first_of(":");
+	std::string::size_type delim = line.find_first_of(':');
 	if (delim != std::string::npos) {
 		std::string param = line.substr(0, delim);
 		trim(param);
