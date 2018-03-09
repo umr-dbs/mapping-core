@@ -36,7 +36,7 @@ __kernel void blur_value(__global const IN_TYPE0 *in_count_data, __global const 
 	}
 
 	if (weight > 0)
-		value = max(out_info->min, min(out_info->max, value / weight));
+		value = max((float) out_info->min, min((float) out_info->max, value / weight));
 	else
 		value = out_info->no_data;
 

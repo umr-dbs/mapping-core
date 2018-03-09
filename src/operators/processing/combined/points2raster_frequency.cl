@@ -47,6 +47,6 @@ __kernel void blur_frequency(__global const IN_TYPE0 *in_data, __global const Ra
 	float maxvalue = (1-mindist/radius) * out_info->max;
 	value = max(0.0f, min(maxvalue, value));
 
-	R(out, posx, posy) = min(out_info->max, value);
+	R(out, posx, posy) = min((float) out_info->max, value);
 }
 

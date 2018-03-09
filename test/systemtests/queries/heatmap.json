@@ -1,0 +1,39 @@
+{
+  "name": "Heatmap of Points",
+  "query_result": "raster",
+  "temporal_reference": {
+    "type": "UNIX",
+    "start": 0
+  },
+  "spatial_reference": {
+    "projection": "EPSG:4326",
+    "x1": -180,
+    "x2": 180,
+    "y1": -90,
+    "y2": 90
+  },
+  "resolution": {
+    "type": "pixels",
+    "x": 512,
+    "y": 512
+  },
+  "query": {
+    "type": "rasterization",
+    "params": {
+      "attribute": "",
+      "radius": 10
+    },
+    "sources": {
+      "points": [
+        {
+          "type": "wkt_source",
+          "params": {
+            "type": "points",
+            "wkt": "GEOMETRYCOLLECTION(POINT(5.625000000000013 21.125497636606298),POINT(31.992187499999993 21.125497636606298),POINT(18.984375000000018 6.839169626342809))"
+          }
+        }
+      ]
+    }
+  },
+  "query_expected_hash": ""
+}
