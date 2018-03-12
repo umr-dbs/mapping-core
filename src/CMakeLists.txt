@@ -89,8 +89,11 @@ add_library(mapping_core_base_lib
         cache/node/manager/hybrid_manager.cpp
         util/gdal_source_datasets.cpp
         datatypes/Coordinate.cpp
+        util/parameters.cpp
+        util/parameters.h
         datatypes/raster/raster.cpp
         raster/opencl.cpp)
+
 target_include_directories(mapping_core_base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi mapping_core_base_lib)
 target_link_libraries_internal(mapping_manager mapping_core_base_lib)
@@ -193,6 +196,9 @@ endforeach(cl_file)
 target_link_libraries_internal(mapping_core_base_lib jsoncpp_lib_static)
 target_include_directories(mapping_core_base_lib PRIVATE ${JSONCPP_INCLUDE_DIRS})
 
+target_link_libraries_internal(mapping_core_base_lib cpptoml)
+target_include_directories(mapping_core_base_lib PRIVATE ${CPPTOML_SOURCE_DIRS})
+
 find_package(Threads REQUIRED)
 target_link_libraries(mapping_core_base_lib Threads::Threads)
 
@@ -290,3 +296,25 @@ foreach (mapping_services_addition IN ITEMS ${MAPPING_ADD_TO_SERVICES_LIBRARIES}
     message(STATUS "Adding ${mapping_services_addition} to services.")
     target_link_libraries(mapping_core_services_lib ${mapping_services_addition})
 endforeach(mapping_services_addition)
+
+
+#copy mapping-core/conf directory to target/bin
+add_custom_target(mapping_conf_copy)
+add_dependencies(mapping_core_base_lib mapping_conf_copy)
+file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/)
+add_custom_command(TARGET mapping_conf_copy POST_BUILD
+        #remove old files first because later we want to append the files
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../conf/ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/
+        )
+
+#copy module conf files or append already copied files with same name by module conf files
+foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
+    file(GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/../${MAPPING_MODULE_PATH}/${mapping_module}/conf/ ../${MAPPING_MODULE_PATH}/${mapping_module}/conf/*)
+    foreach(file ${files})
+        add_custom_command(TARGET mapping_conf_copy POST_BUILD
+                COMMAND echo "" >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${file} #adds a line break
+                COMMAND cat ../../${MAPPING_MODULE_PATH}/${mapping_module}/conf/${file} >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${file}
+                )
+    endforeach(file)
+endforeach (mapping_module)

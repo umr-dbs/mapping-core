@@ -66,7 +66,7 @@ int main() {
 	/*
 	 * Initialize Cache
 	 */
-	bool cache_enabled = Configuration::getBool("cache.enabled",false);
+	bool cache_enabled = Configuration::get<bool>("cache.enabled",false);
 
 	std::unique_ptr<CacheManager> cm;
 
@@ -75,20 +75,20 @@ int main() {
 		cm = make_unique<NopCacheManager>();
 	}
 	else {
-		std::string cacheType = Configuration::get("cache.type");
+		std::string cacheType = Configuration::get<std::string>("cache.type");
 
 		if(cacheType == "local") {
-			cm = make_unique<LocalCacheManager>(Configuration::get("cache.strategy"), Configuration::get("cache.replacement"),
-					Configuration::getInt("cache.raster.size"),
-					Configuration::getInt("cache.points.size"),
-					Configuration::getInt("cache.lines.size"),
-					Configuration::getInt("cache.polygons.size"),
-					Configuration::getInt("cache.plots.size"),
-					Configuration::getInt("cache.provenance.size")
+			cm = make_unique<LocalCacheManager>(Configuration::get<std::string>("cache.strategy"), Configuration::get<std::string>("cache.replacement"),
+					Configuration::get<int>("cache.raster.size"),
+					Configuration::get<int>("cache.points.size"),
+					Configuration::get<int>("cache.lines.size"),
+					Configuration::get<int>("cache.polygons.size"),
+					Configuration::get<int>("cache.plots.size"),
+					Configuration::get<int>("cache.provenance.size")
 			);
 		} else if(cacheType == "remote") {
-			std::string host = Configuration::get("indexserver.host");
-			int port = atoi( Configuration::get("indexserver.port").c_str() );
+			std::string host = Configuration::get<std::string>("indexserver.host");
+			int port = Configuration::get<int>("indexserver.port");
 			cm = make_unique<ClientCacheManager>(host,port);
 		} else {
 			throw ArgumentException("Invalid cache.type");
@@ -116,7 +116,7 @@ int main() {
 		// save stdin fd because of OpenCL Bug
 		int fd = dup(0);
 
-		size_t numberOfThreads = Configuration::getInt("fcgi.threads", 1);
+		size_t numberOfThreads = Configuration::get<size_t>("fcgi.threads", 1);
 
 		// spawn threads
 		std::vector<std::thread> threads;

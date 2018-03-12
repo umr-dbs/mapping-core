@@ -325,9 +325,9 @@ void UserDB::init(const std::string &backend, const std::string &location, std::
 }
 
 void UserDB::initFromConfiguration() {
-	auto backend = Configuration::get("userdb.backend");
-	auto location = Configuration::get("userdb." + backend + ".location");
-	auto sessioncache_timeout = Configuration::getInt("userdb.sessioncache.timeout", 0);
+	auto backend = Configuration::get<std::string>("userdb.backend");
+	auto location = Configuration::get<std::string>("userdb." + backend + ".location");
+	auto sessioncache_timeout = Configuration::get<int>("userdb.sessioncache.timeout", 0);
 	init(backend, location, nullptr, sessioncache_timeout);
 }
 

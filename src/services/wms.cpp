@@ -26,7 +26,7 @@ void WMSService::run() {
 	auto session = UserDB::loadSession(params.get("sessiontoken"));
 	auto user = session->getUser();
 
-	bool debug = params.getBool("debug", Configuration::getBool("global.debug", false));
+	bool debug = params.getBool("debug", Configuration::get<bool>("global.debug", false));
 	auto query_crsId = parseCrsId(params, "crs");
 	TemporalReference tref = parseTime(params);
 
@@ -134,7 +134,7 @@ void WMSService::run() {
 			if (msg.find("NoRasterForGivenTimeException") != std::string::npos) {
 				// no raster for given time: it's application dependent whether this is an error
 				// dpeneding on config, output the error or just output a blank tile
-				if (Configuration::getBool("wms.norasterforgiventimeexception",	true)) {
+				if (Configuration::get<bool>("wms.norasterforgiventimeexception", true)) {
 					errorraster->printCentered(1, msg.c_str());
 				}
 			} else {

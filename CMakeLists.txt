@@ -35,6 +35,13 @@ download_project(PROJ       jsoncpp
         )
 add_subdirectory(${jsoncpp_SOURCE_DIR} ${jsoncpp_BINARY_DIR} EXCLUDE_FROM_ALL)
 
+download_project(PROJ       cpptoml
+        GIT_REPOSITORY      https://github.com/skystrife/cpptoml.git
+        GIT_TAG             master
+        UPDATE_DISCONNECTED 1
+        PREFIX CMakeFiles/Download
+        )
+add_subdirectory(${cpptoml_SOURCE_DIR} ${cpptoml_BINARY_DIR} EXCLUDE_FROM_ALL)
 
 add_subdirectory(src)
 

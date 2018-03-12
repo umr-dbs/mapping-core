@@ -28,7 +28,7 @@ static std::unique_ptr<PointCollection> createPointsWithAttributesAndTime(){
 
 TEST(FeatureCollectionDB, testALL) {
 	Configuration::loadFromDefaultPaths();
-	FeatureCollectionDB::init("postgres", Configuration::get("test.featurecollectiondb.postgres.dbcredentials"));
+	FeatureCollectionDB::init("postgres", Configuration::get<std::string>("test.featurecollectiondb.postgres.dbcredentials"));
 
 	UserDB::init("sqlite", ":memory:");
 

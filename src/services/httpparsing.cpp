@@ -8,7 +8,6 @@
 #include <fstream>
 #include "util/make_unique.h"
 #include "util/base64.h"
-#include "util/configuration.h"
 
 
 /**
