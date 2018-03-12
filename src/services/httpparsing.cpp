@@ -10,6 +10,7 @@
 #include "util/base64.h"
 #include <Poco/URI.h>
 #include <Poco/Net/MultipartReader.h>
+#include <Poco/Net/MessageHeader.h>
 
 
 /**
@@ -141,7 +142,7 @@ void parseQuery(const std::string& query, Parameters &params) {
 	auto queryParameters = uri.getQueryParameters();
 	for(auto &parameter : queryParameters){
         std::transform(parameter.first.begin(), parameter.first.end(), parameter.first.begin(), ::tolower);
-		params[parameter.first] = parameter.second;
+		params.insert(std::make_pair(parameter.first, parameter.second));
 	}
 
 }
@@ -373,7 +374,7 @@ static void parseMultipartSubBoundary(Parameters &params, std::istream& in, std:
 			}
 			else */{
 				// Store file in memory (string encoded into HTTPService::Params? What about binary data?)
-				params[name] = body;
+				params.insert(std::make_pair(name, body));
 
 			}
 
@@ -385,10 +386,13 @@ static void parseMultipartSubBoundary(Parameters &params, std::istream& in, std:
 
 }
 
+
+
+
 /**
  * Parses a multipart POST request
  */
-static void parsePostMultipart(Parameters &params, std::istream &in) {
+void parseMultipartPostData(Parameters &params, std::istream &in) {
 
 	// This is merely a wrapper around parseMultipartSubBoundary() that will forward the
 	// content type provided in the system environment variables.
@@ -399,11 +403,41 @@ static void parsePostMultipart(Parameters &params, std::istream &in) {
 	// Ultimately, this method will supersede parsePostData() at some time.
 
 	// const std::streamsize max_message_length = 1024 * 1024 * 24; // Restrict the maximum message size
-	std::map<std::string, std::string> pars;
+	//std::map<std::string, std::string> pars;
 
 	// HTTP header fields are always case-insensitive (RFC 2616 ch. 4.2)
-	pars["content-type"] = getenv_str("CONTENT_TYPE", true);
-	parseMultipartSubBoundary(params, in, pars);
+	//pars["content-type"] = getenv_str("CONTENT_TYPE", true);
+	//parseMultipartSubBoundary(params, in, pars);
+
+
+	Poco::Net::MultipartReader mr(in);
+
+	while(mr.hasNextPart()){
+		Poco::Net::MessageHeader header;
+		mr.nextPart(header);
+
+        //the stream has to completely read (Poco docs)
+        std::ostringstream os;
+        mr.stream() >> os.rdbuf();
+        std::string s = os.str();
+        trim(s);
+
+        if(!header.has("Content-Disposition"))
+            continue;
+
+		std::string value;
+		Poco::Net::NameValueCollection parameters;
+		header.splitParameters(header["Content-Disposition"], value, parameters);
+
+
+		if(value == "form-data") {
+            if(parameters.has("name"))
+			    params.insert(std::make_pair(parameters["name"], s));
+            else
+                throw ArgumentException("form-data is missing name.");
+		}
+	}
+
 	return;
 }
 
@@ -427,7 +461,7 @@ void parsePostData(Parameters &params, std::istream &in) {
 	if (content_type == "application/x-www-form-urlencoded") {
 		parsePostUrlEncoded(params, in, content_length);
 	} else if (content_type.find("multipart/form-data") != std::string::npos || content_type.find("multipart/mixed") != std::string::npos) {
-		parsePostMultipart(params, in);
+        throw ArgumentException("For multipart POST request call the special function.");
 	} else
 		throw ArgumentException("Unknown content type in POST request.");
 }
@@ -463,7 +497,7 @@ void parsePostData(Parameters &params, std::istream &in, FCGX_Request &request) 
 	if (content_type == "application/x-www-form-urlencoded") {
 		parsePostUrlEncoded(params, in, content_length);
 	} else if (content_type.find("multipart/form-data") != std::string::npos || content_type.find("multipart/mixed") != std::string::npos) {
-		parsePostMultipart(params, in);
+        throw ArgumentException("For multipart POST request call the special function.");
 	} else
 		throw ArgumentException("Unknown content type in POST request.");
 }

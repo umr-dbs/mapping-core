@@ -71,7 +71,8 @@ Parameters Parameters::getPrefixedParameters(const std::string &prefix) {
     for (auto &it : *this) {
         auto &key = it.first;
         if (key.length() > prefix.length() && key.substr(0, prefix.length()) == prefix) {
-            result[ key.substr(prefix.length()) ] = it.second;
+            result.insert(std::make_pair(key.substr(prefix.length()), it.second));
+            //result[ key.substr(prefix.length()) ] = it.second;
         }
     }
     return result;

@@ -10,5 +10,6 @@ void parsePostData(Parameters &params, std::istream &in);
 
 void parseGetData(Parameters &params, FCGX_Request &request);
 void parsePostData(Parameters &params, std::istream &in, FCGX_Request &request);
+void parseMultipartPostData(Parameters &params, std::istream &in);
 
 #endif

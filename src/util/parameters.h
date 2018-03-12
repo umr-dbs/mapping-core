@@ -4,7 +4,7 @@
 #include <string>
 #include <map>
 
-class Parameters : public std::map<std::string, std::string> {
+class Parameters : public std::multimap<std::string, std::string> {
 public:
     bool hasParam(const std::string& key) const;
 
