@@ -23,9 +23,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/target/lib)
 set(MAPPING_MODULE_PATH .. CACHE PATH "A list of mapping modules to include in the build process")
 set(MAPPING_MODULES "" CACHE STRING "A list of mapping modules to include in the build process")
 
-# Copies conf directory into binary directory on CMake reload
-file(COPY ${CMAKE_CURRENT_LIST_DIR}/conf/ DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/)
-
 # External Dependencies
 include(DownloadProject)
 
