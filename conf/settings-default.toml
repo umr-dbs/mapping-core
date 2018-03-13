@@ -1,18 +1,19 @@
 [fcgi]
-threads=1 #the number of threads to spawn in FCGI mode
+threads=4 # The number of threads to spawn in FCGI mode
 
 [userdb]
-backend="sqlite" #The backend to use for the user db
+backend="sqlite" # The backend to use for the user db
 
 [userdb.sqlite]
-location="userdb.sqlite" #The file path where the sqlite database is stored
+location="userdb.sqlite" # The file path where the sqlite database is stored
 
 [cache]
-type="local" #Cache either inside (F)CGI process or use remote cache
-replacement="lru" #The replacement strategy of the cache
-strategy="always" #When to cache (always|never)
+enabled=false
+type="local" # Cache either inside (F)CGI process or use remote cache
+replacement="lru" # The replacement strategy of the cache
+strategy="always" # When to cache (always|never)
 
-#Size of <type> in bytes. <type> can be raster, points, lines, polygons, plots, provenance
+# Size of <type> in bytes. <type> can be raster, points, lines, polygons, plots, provenance
 [cache.raster]
 size=262144
 [cache.points]
@@ -27,32 +28,32 @@ size=262144
 size=262144
 
 [global]
-debug=true #Global debug flag e.g. used in services
+debug=true # Global debug flag e.g. used in services
 [global.opencl]
-preferredplatform="0" #The preferred platform for OpenCL
-forcecpu=false #Force OpenCL to use the CPU instead of GPU
+preferredplatform="0" # The preferred platform for OpenCL
+forcecpu=false # Force OpenCL to use the CPU instead of GPU
 
 [rasterdb]
-backend="local" #Remote specifies to use a tileserver to fetch raster tiles instead of loading them from disk (local|remote)
+backend="local" # Remote specifies to use a tileserver to fetch raster tiles instead of loading them from disk (local|remote)
 
 #[rasterdb.tileserver]
-#port=0 #Specify the port for starting the tileserver.
+#port=0 # Specify the port for starting the tileserver.
 #[rasterdb.remote]
-#host="" #Specify the host of the tileserver to connect to.
-#port=0 #Specify the port of the tileserver to connect to.
+#host="" # Specify the host of the tileserver to connect to.
+#port=0 # Specify the port of the tileserver to connect to.
 #[rasterdb.local]
-#location="" #Specify the location for the local rasterdb to use for storing data.
+#location="" # Specify the location for the local rasterdb to use for storing data.
 
-[featurecollectiondb]
-backend="postgres" #The backend for the featurecollectiondb
-[featurecollectiondb.postgres]
-location="postgresql://localhost/featurecollectiondb_test?user=user&password=pass&" #The SQL connection string e.g. user = 'user' host = 'localhost' password = 'pass' dbname = 'featurecollectiondb_test'. Note that the corresponding database needs to have the POSTGIS extension installed
+#[featurecollectiondb]
+#backend="postgres" # The backend for the featurecollectiondb
+#[featurecollectiondb.postgres]
+#location="postgresql://localhost/featurecollectiondb_test?user=user&password=pass&" # The SQL connection string e.g. user = 'user' host = 'localhost' password = 'pass' dbname = 'featurecollectiondb_test'. Note that the corresponding database needs to have the POSTGIS extension installed
 
 [wms]
-norasterforgiventimeexception=true #Configures the handling of NoRasterForGivenTimeException in WMS. If set to 0, a requested tile for a raster where there is no data for the given time results in a blank tile. If it is set to 1, the Exception is thrown.
+norasterforgiventimeexception=false # Configures the handling of NoRasterForGivenTimeException in WMS. If set to 0, a requested tile for a raster where there is no data for the given time results in a blank tile. If it is set to 1, the Exception is thrown.
 
 #[gdalsource.datasets]
-#path="" #The path to the JSON data set descriptions for the GDALSource
+#path="" # The path to the JSON data set descriptions for the GDALSource
 
 [crsdirectory]
-location="conf/crs.json" #The location of the file containing the definitions of the supported CRS
+location="conf/crs.json" # The location of the file containing the definitions of the supported CRS
