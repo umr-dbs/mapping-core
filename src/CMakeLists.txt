@@ -267,7 +267,7 @@ target_include_directories(mapping_core_services_lib PRIVATE ${Fcgi++_INCLUDE_DI
 set(MAPPING_CORE_PATH ${CMAKE_SOURCE_DIR} CACHE PATH "This is the mapping-core directory." FORCE)
 foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
     message(STATUS "Loading Module `${mapping_module}`")
-    add_subdirectory(../${MAPPING_MODULE_PATH}/${mapping_module} ${CMAKE_SOURCE_DIR}/target/modules/${mapping_module})
+    add_subdirectory(../${MAPPING_MODULE_PATH}/${mapping_module} target/modules/${mapping_module})
 endforeach (mapping_module)
 ## Base
 foreach (mapping_core_addition IN ITEMS ${MAPPING_ADD_TO_BASE_OBJECTS})
@@ -310,6 +310,7 @@ add_custom_command(TARGET mapping_conf_copy POST_BUILD
 
 #copy module conf files or append already copied files with same name by module conf files
 foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
+    # TODO: remove GLOBing
     file(GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/../${MAPPING_MODULE_PATH}/${mapping_module}/conf/ ../${MAPPING_MODULE_PATH}/${mapping_module}/conf/*)
     foreach(file ${files})
         add_custom_command(TARGET mapping_conf_copy POST_BUILD
