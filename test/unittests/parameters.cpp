@@ -1,4 +1,4 @@
-#include "util/configuration.h"
+#include "util/parameters.h"
 
 #include <gtest/gtest.h>
 

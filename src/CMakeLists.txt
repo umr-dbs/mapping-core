@@ -88,27 +88,15 @@ add_library(mapping_core_base_lib
         cache/node/manager/remote_manager.cpp
         cache/node/manager/hybrid_manager.cpp
         util/gdal_source_datasets.cpp
-        datatypes/Coordinate.cpp)
+        datatypes/Coordinate.cpp
+        util/parameters.cpp
+        util/parameters.h
+        datatypes/raster/raster.cpp
+        raster/opencl.cpp)
+
 target_include_directories(mapping_core_base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi mapping_core_base_lib)
 target_link_libraries_internal(mapping_manager mapping_core_base_lib)
-
-if (USE_OPENCL)
-    target_sources(mapping_core_base_lib
-            PRIVATE
-            datatypes/raster/raster.cpp
-            raster/opencl.cpp
-            )
-else (USE_OPENCL)
-    target_sources(mapping_core_base_lib
-            PRIVATE
-            datatypes/raster/raster_nocl.cpp
-            )
-    target_compile_options(mapping_core_base_lib
-            PUBLIC
-            -DMAPPING_NO_OPENCL=1
-            )
-endif (USE_OPENCL)
 
 add_library(mapping_core_services_lib
         services/httpservice.cpp
@@ -173,43 +161,44 @@ target_link_libraries_internal(mapping_core_operators_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_operators_lib)
 target_link_libraries_internal(mapping_manager mapping_core_operators_lib)
 
-if (USE_OPENCL)
-    # Generate OpenCL headers
-    add_custom_target(mapping_cl_header_generator)
-    add_dependencies(mapping_core_operators_lib mapping_cl_header_generator)
-    # TODO: make this generic for OS?
-    foreach(cl_file IN ITEMS
-            operators/processing/combined/points2raster_frequency.cl
-            operators/processing/combined/points2raster_value.cl
-            operators/processing/combined/raster_value_extraction.cl
-            operators/processing/features/difference.cl
-            operators/processing/meteosat/co2correction.cl
-            operators/processing/meteosat/pansharpening_degenerate.cl
-            operators/processing/meteosat/pansharpening_interpolate.cl
-            operators/processing/meteosat/pansharpening_regression.cl
-            operators/processing/meteosat/radiance.cl
-            operators/processing/meteosat/reflectance.cl
-            operators/processing/meteosat/solarangle.cl
-            operators/processing/meteosat/temperature.cl
-            operators/processing/raster/classification_kernels.cl
-            operators/processing/raster/matrixkernel.cl
+# Generate OpenCL headers
+add_custom_target(mapping_cl_header_generator)
+add_dependencies(mapping_core_operators_lib mapping_cl_header_generator)
+# TODO: make this generic for OS?
+foreach(cl_file IN ITEMS
+        operators/processing/combined/points2raster_frequency.cl
+        operators/processing/combined/points2raster_value.cl
+        operators/processing/combined/raster_value_extraction.cl
+        operators/processing/features/difference.cl
+        operators/processing/meteosat/co2correction.cl
+        operators/processing/meteosat/pansharpening_degenerate.cl
+        operators/processing/meteosat/pansharpening_interpolate.cl
+        operators/processing/meteosat/pansharpening_regression.cl
+        operators/processing/meteosat/radiance.cl
+        operators/processing/meteosat/reflectance.cl
+        operators/processing/meteosat/solarangle.cl
+        operators/processing/meteosat/temperature.cl
+        operators/processing/raster/classification_kernels.cl
+        operators/processing/raster/matrixkernel.cl
+        )
+    add_custom_command(TARGET mapping_cl_header_generator
+            POST_BUILD
+            # remove existing header file
+            COMMAND rm -f ${cl_file}.h
+            # create hexadecimal representation, surround it with an array declaration and a size variable
+            COMMAND xxd -i ${cl_file} | sed 's/unsigned /static const /g' > ${cl_file}.h
+            # create a static string of the previously created array and length
+            COMMAND echo ${cl_file} | sed -e 's/\\.cl$$//' -e 's:/:_:g' -e 's/\\\(^.*$$\\\)/static const std::string \\1\(\\1_cl, \\1_cl_len\)\;/' >> ${cl_file}.h
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             )
-        add_custom_command(TARGET mapping_cl_header_generator
-                POST_BUILD
-                # remove existing header file
-                COMMAND rm -f ${cl_file}.h
-                # create hexadecimal representation, surround it with an array declaration and a size variable
-                COMMAND xxd -i ${cl_file} | sed 's/unsigned /static const /g' > ${cl_file}.h
-                # create a static string of the previously created array and length
-                COMMAND echo ${cl_file} | sed -e 's/\\.cl$$//' -e 's:/:_:g' -e 's/\\\(^.*$$\\\)/static const std::string \\1\(\\1_cl, \\1_cl_len\)\;/' >> ${cl_file}.h
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                )
-    endforeach(cl_file)
-endif (USE_OPENCL)
+endforeach(cl_file)
 
 
 target_link_libraries_internal(mapping_core_base_lib jsoncpp_lib_static)
 target_include_directories(mapping_core_base_lib PRIVATE ${JSONCPP_INCLUDE_DIRS})
+
+target_link_libraries_internal(mapping_core_base_lib cpptoml)
+target_include_directories(mapping_core_base_lib PRIVATE ${CPPTOML_SOURCE_DIRS})
 
 find_package(Threads REQUIRED)
 target_link_libraries(mapping_core_base_lib Threads::Threads)
@@ -261,12 +250,10 @@ target_link_libraries(mapping_core_base_lib ${LibArchive_LIBRARIES})
 target_include_directories(mapping_core_base_lib PRIVATE ${LibArchive_INCLUDE_DIRS})
 
 ## OpenCl
-if (USE_OPENCL)
-    find_package(OpenCL REQUIRED)
-    # target_link_libraries(mapping_core_base_lib OpenCL::OpenCL) # works only with CMAKE 3.7
-    target_link_libraries(mapping_core_base_lib ${OpenCL_LIBRARIES})
-    target_include_directories(mapping_core_base_lib PRIVATE ${OPENCL_INCLUDE_DIRS})
-endif (USE_OPENCL)
+find_package(OpenCL REQUIRED)
+# target_link_libraries(mapping_core_base_lib OpenCL::OpenCL) # works only with CMAKE 3.7
+target_link_libraries(mapping_core_base_lib ${OpenCL_LIBRARIES})
+target_include_directories(mapping_core_base_lib PRIVATE ${OPENCL_INCLUDE_DIRS})
 
 ## CGI
 find_package(Fcgi REQUIRED)
@@ -281,7 +268,7 @@ target_include_directories(mapping_core_services_lib PRIVATE ${Fcgi++_INCLUDE_DI
 set(MAPPING_CORE_PATH ${CMAKE_SOURCE_DIR} CACHE PATH "This is the mapping-core directory." FORCE)
 foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
     message(STATUS "Loading Module `${mapping_module}`")
-    add_subdirectory(../${MAPPING_MODULE_PATH}/${mapping_module} ${CMAKE_SOURCE_DIR}/target/modules/${mapping_module})
+    add_subdirectory(../${MAPPING_MODULE_PATH}/${mapping_module} target/modules/${mapping_module})
 endforeach (mapping_module)
 ## Base
 foreach (mapping_core_addition IN ITEMS ${MAPPING_ADD_TO_BASE_OBJECTS})
@@ -310,3 +297,26 @@ foreach (mapping_services_addition IN ITEMS ${MAPPING_ADD_TO_SERVICES_LIBRARIES}
     message(STATUS "Adding ${mapping_services_addition} to services.")
     target_link_libraries(mapping_core_services_lib ${mapping_services_addition})
 endforeach(mapping_services_addition)
+
+
+#copy mapping-core/conf directory to target/bin
+add_custom_target(mapping_conf_copy)
+add_dependencies(mapping_core_base_lib mapping_conf_copy)
+file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/)
+add_custom_command(TARGET mapping_conf_copy POST_BUILD
+        #remove old files first because later we want to append the files
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../conf/ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/
+        )
+
+#copy module conf files or append already copied files with same name by module conf files
+foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
+    # TODO: remove GLOBing
+    file(GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/../${MAPPING_MODULE_PATH}/${mapping_module}/conf/ ../${MAPPING_MODULE_PATH}/${mapping_module}/conf/*)
+    foreach(file ${files})
+        add_custom_command(TARGET mapping_conf_copy POST_BUILD
+                COMMAND echo "" >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${file} #adds a line break
+                COMMAND cat ../../${MAPPING_MODULE_PATH}/${mapping_module}/conf/${file} >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${file}
+                )
+    endforeach(file)
+endforeach (mapping_module)

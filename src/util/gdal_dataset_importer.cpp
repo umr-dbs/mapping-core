@@ -35,7 +35,7 @@ void GDALDatasetImporter::importDataset(std::string dataset_name,
 		
 	size_t placeholderPos =	dataset_filename_with_placeholder.find(placeholder);
 
-	std::string datasetJsonPath = Configuration::get("gdalsource.datasetpath");
+	std::string datasetJsonPath = Configuration::get<std::string>("gdalsource.datasetpath");
 
 	if(placeholderPos == std::string::npos){
 		throw ImporterException("GDALDatasetImporter: Date placeholder " + placeholder + " not found in dataset filename " + dataset_filename_with_placeholder);

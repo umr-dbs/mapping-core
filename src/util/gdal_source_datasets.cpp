@@ -12,7 +12,7 @@ const std::string suffix(".json");
 const size_t suffix_length = suffix.length();
 
 std::vector<std::string> GDALSourceDataSets::getDataSetNames() {
-    const std::string path = Configuration::get("gdalsource.datasets.path");
+    const std::string path = Configuration::get<std::string>("gdalsource.datasets.path");
 
     struct dirent *entry;
     DIR *dir = opendir(path.c_str());
@@ -41,7 +41,7 @@ std::vector<std::string> GDALSourceDataSets::getDataSetNames() {
 }
 
 Json::Value GDALSourceDataSets::getDataSetDescription(const std::string &dataSetName) {
-    const std::string path = Configuration::get("gdalsource.datasets.path");
+    const std::string path = Configuration::get<std::string>("gdalsource.datasets.path");
 
     std::string fileName = path + "/" + dataSetName + suffix;
 

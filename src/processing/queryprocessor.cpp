@@ -9,8 +9,8 @@ std::unique_ptr<QueryProcessor> QueryProcessor::default_instance;
 
 QueryProcessor &QueryProcessor::getDefaultProcessor() {
 	if (default_instance == nullptr) {
-		auto name = Configuration::get("processing.backend", "local");
-		default_instance = create(name, Configuration::getPrefixedParameters("processing."+name));
+		auto name = Configuration::get<std::string>("processing.backend", "local");
+		default_instance = create(name, Configuration::getSubTable("processing." + name));
 	}
 	return *default_instance;
 }

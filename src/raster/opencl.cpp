@@ -50,7 +50,7 @@ void init() {
 				throw PlatformException("No CL platforms found");
 			//printf("Platform number is: %d\n", (int) platformList.size());
 
-			auto preferredPlatformName = Configuration::get("global.opencl.preferredplatform", "");
+			auto preferredPlatformName = Configuration::get<std::string>("global.opencl.preferredplatform", "");
 			int64_t selectedPlatform = -1;
 
 			for (size_t i=0;i<platformList.size();i++) {
@@ -76,7 +76,7 @@ void init() {
 			cl_context_properties cprops[3] = {CL_CONTEXT_PLATFORM, (cl_context_properties)(platform)(), 0};
 			try {
 				int device_type = CL_DEVICE_TYPE_GPU;
-				if (Configuration::getBool("global.opencl.forcecpu", false))
+				if (Configuration::get<bool>("global.opencl.forcecpu", false))
 					device_type = CL_DEVICE_TYPE_CPU;
 
 				context = cl::Context(
