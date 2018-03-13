@@ -16,7 +16,7 @@ Natur40SourceOperator::Natur40SourceOperator(int sourcecounts[], GenericOperator
         : GenericOperator(sourcecounts, sources) {
     assumeSources(0);
 
-    auto connection_string = Configuration::get("operators.pgpointsource.dbcredentials");
+    auto connection_string = Configuration::get<std::string>("operators.pgpointsource.dbcredentials");
     this->connection = make_unique<pqxx::connection>(connection_string);
 
     auto sensor_types = params.get("sensorTypes", Json::Value(Json::arrayValue));
@@ -367,11 +367,11 @@ auto Natur40SourceOperator::create_feature_collection(const std::map<table_t, st
     // initialize row values
     std::map<column_t, double> numeric_values;
     for (const auto &column : numeric_columns) {
-        numeric_values[column] = ::std::numeric_limits<double>::quiet_NaN();
+        numeric_values[column] = std::numeric_limits<double>::quiet_NaN();
     }
     std::map<column_t, std::__cxx11::string> textual_values;
     for (const auto &column : textual_columns) {
-        textual_values[column] = ::std::numeric_limits<double>::quiet_NaN();
+        textual_values[column] = "";
     }
     std::__cxx11::string current_node;
     double current_time = rect.beginning_of_time();
