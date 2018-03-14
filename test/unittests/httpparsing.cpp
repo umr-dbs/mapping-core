@@ -5,6 +5,7 @@
 #include <sstream>
 #include <util/exceptions.h>
 #include <algorithm>
+#include <Poco/Exception.h>
 
 void parseCGIEnvironment(Parameters &params, std::string method,
 		const std::string &url, const std::string &query_string,
@@ -39,20 +40,22 @@ void parseCGIEnvironment(Parameters &params, std::string method,
 	parsePostData(params, input);
 }
 
-// Test a parameter that appears multiple times and has special characters
+// Test a parameter that appears multiple times, names are not case sensitive.
 TEST(HTTPParsing, getrepeated) {
 	Parameters params;
 	parseCGIEnvironment(params, "GET", "/cgi-bin/bla",
-			"PARAM=one&PARAM=two&pArAm=%C3%A4%C3%B6%C3%BC%C3%9F");
+			"PARAM=one&param=two&pArAm=%C3%A4%C3%B6%C3%BC%C3%9F");
 
-	EXPECT_EQ(params.get("param", ""), "äöüß");
+	EXPECT_EQ(params.get("param", ""), "one");
+    EXPECT_EQ(params.getLast("param", ""), "äöüß");
+    EXPECT_EQ(params.getAll("param").size(), 3);
 }
 
 // Test a parameter that has no value.
 TEST(HTTPParsing, getnovalue) {
 	Parameters params;
 	parseCGIEnvironment(params, "GET", "/cgi-bin/bla",
-			"flag1&flag2&flag3&value1=3&value2=4");
+			"flag1&flag2&flag3=&value1=3&value2=4");
 
 	EXPECT_EQ(params.get("flag1", "-"), "");
 	EXPECT_EQ(params.get("flag2", "-"), "");
@@ -74,10 +77,10 @@ TEST(HTTPParsing, posturlencoded) {
 	Parameters params;
 	parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "",
 			"application/x-www-form-urlencoded",
-			"flag1&param=one&PARAM=two&flag2&pArAm=%C3%A4%C3%B6%C3%BC%C3%9F");
+			"flag1&flag2=&pArAm=%C3%A4%C3%B6%C3%BC%C3%9F");
 
 	EXPECT_EQ(params.get("flag1", "-"), "");
-	EXPECT_EQ(params.get("flag2", "-"), "");
+    EXPECT_EQ(params.get("flag2", "-"), "");
 	EXPECT_EQ(params.get("param", ""), "äöüß");
 }
 
@@ -93,23 +96,13 @@ TEST(HTTPParsing, testquerystringspecialchars) {
 	EXPECT_EQ(params.get("p4", "-"), "");
 	EXPECT_EQ(params.get("p5", "-"), "");
 	EXPECT_EQ(params.get("p6", ""), "=?");
-	EXPECT_EQ(params.size(), 8); // Also interprets '?????' and '???' as keys.
-}
-
-// Test weird query string formats
-TEST(HTTPParsing, testparameteroverwrites) {
-	Parameters params;
-	parseCGIEnvironment(params, "GET", "/cgi-bin/bla", "p1=a&p1=b&p1=c&p1");
-
-	EXPECT_EQ(params.get("p1", "-"), "");
+	//EXPECT_EQ(params.size(), 8); // Also interprets '?????' and '???' as keys.
 }
 
 // Test illegal percent encoding
 TEST(HTTPParsing, illegalpercentencoding) {
 	Parameters params;
-	parseCGIEnvironment(params, "GET", "/cgi-bin/bla", "p1=%22%ZZ%5F");
-
-	EXPECT_EQ(params.get("p1", "-"), "\"%ZZ_");
+    EXPECT_THROW(parseCGIEnvironment(params, "GET", "/cgi-bin/bla", "p1=%22%ZZ%5F"), Poco::SyntaxException);
 }
 
 // This is a multipart message that with content-disposition NOT set as "form-data". Thus, no parameter is parsed here and the body is ignored as always.
@@ -171,10 +164,9 @@ const std::string multipart_message4 =
 
 
 TEST(HTTPParsing, multipart) {
-	// Since frontier is not a form-data content disposition, this test should read nothing (but succeed).
+	// Can not read multipart like this anymore, so ArgumentException is expected.
 	Parameters params;
-	parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "","multipart/mixed; boundary=frontier", multipart_message);
-	EXPECT_TRUE(params.empty());
+	EXPECT_THROW(parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "","multipart/mixed; boundary=frontier", multipart_message), ArgumentException);
 }
 /*
 TEST(HTTPParsing, multipart_escaped_boundary) {
