@@ -41,7 +41,7 @@ class PostgresSourceOperator : public GenericOperator {
 PostgresSourceOperator::PostgresSourceOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params) : GenericOperator(sourcecounts, sources) {
 	assumeSources(0);
 
-	connectionstring = params.get("connection", Configuration::get("operators.pgpointsource.dbcredentials", "")).asString();
+	connectionstring = params.get("connection", Configuration::get<std::string>("operators.pgpointsource.dbcredentials", "")).asString();
 	querystring = params.get("query", "x, y FROM locations").asString();
 
 #ifndef MAPPING_OPERATOR_STUBS

@@ -17,7 +17,7 @@ std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryProcessorBacke
 /*
  * Backend registration
  */
-typedef std::unique_ptr<QueryProcessor::QueryProcessorBackend> (*BackendConstructor)(const Parameters &params);
+typedef std::unique_ptr<QueryProcessor::QueryProcessorBackend> (*BackendConstructor)(const ConfigurationTable& params);
 
 static std::unordered_map< std::string, BackendConstructor > *getRegisteredConstructorsMap() {
 	static std::unordered_map< std::string, BackendConstructor > registered_constructors;
@@ -29,7 +29,7 @@ QueryProcessorBackendRegistration::QueryProcessorBackendRegistration(const char 
 	(*map)[std::string(name)] = constructor;
 }
 
-std::unique_ptr<QueryProcessor> QueryProcessor::create(const std::string &backend, const Parameters &params) {
+std::unique_ptr<QueryProcessor> QueryProcessor::create(const std::string &backend, const ConfigurationTable& params) {
 	auto map = getRegisteredConstructorsMap();
 	if (map->count(backend) != 1)
 		throw ArgumentException(concat("Unknown QueryProcessor backend: ", backend));

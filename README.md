@@ -16,17 +16,14 @@ This module is part of MAPPING - Marburg's Analysis, Processing and Provenance o
  * Fcgi
  * Fcgi++
  * cmake >= 3.7
- * Optional
-   * OpenCL
+ * OpenCL
 
 ## Install
 For information how to install MAPPING see [mapping-install.md](docs/mapping-install.md).
 
-
 ## Configuration
 For information how to configure MAPPING see [mapping-configuration.md](docs/mapping-configuration.md).
 If you want to run MAPPING as FCGI, see [Fast CGI configuration.md](docs/Fast%20CGI%20configuration.md).
-
 
 ## Building
 ```
@@ -39,20 +36,17 @@ make
    * `-DCMAKE_BUILD_TYPE=Debug`
  * Release Build
    * `-DCMAKE_BUILD_TYPE=Release`
- * Enable/Disabled OpenCL
-   * `-DUSE_OPENCL=<ON/OFF>`
  * Module
    * `-DMAPPING_MODULE_PATH=<path>`
-   * `-DMAPPING_MODULES=<module1,module2,...>`
+   * `-DMAPPING_MODULES="<module1;module2;...>"`
 
 
 ### Example
 ```
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
-  -DUSE_OPENCL=ON \
   -DMAPPING_MODULES="mapping-gfbio;mapping-r" \
   .
   
-make -j20
+make -j4
 ```

@@ -2,7 +2,7 @@
 #define SERVICES_HTTPSERVICES_H
 
 #include "util/make_unique.h"
-#include "util/configuration.h" // Parameters class
+#include "util/parameters.h"
 #include "processing/queryprocessor.h"
 #include "userdb/userdb.h"
 

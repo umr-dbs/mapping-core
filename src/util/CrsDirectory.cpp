@@ -7,7 +7,7 @@
 
 std::string CrsDirectory::getWKTForCrsId(const CrsId &crsId) {
     // TODO: load file only once
-    const std::string filePath = Configuration::get("crsdirectory.location");
+    const std::string filePath = Configuration::get<std::string>("crsdirectory.location");
 
     //open file then read json object from it
     std::ifstream file(filePath);

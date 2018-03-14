@@ -16,7 +16,7 @@ Natur40SourceOperator::Natur40SourceOperator(int sourcecounts[], GenericOperator
         : GenericOperator(sourcecounts, sources) {
     assumeSources(0);
 
-    auto connection_string = Configuration::get("operators.pgpointsource.dbcredentials");
+    auto connection_string = Configuration::get<std::string>("operators.pgpointsource.dbcredentials");
     this->connection = make_unique<pqxx::connection>(connection_string);
 
     auto sensor_types = params.get("sensorTypes", Json::Value(Json::arrayValue));
