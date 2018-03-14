@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 class Parameters : public std::multimap<std::string, std::string> {
 public:
@@ -16,6 +17,22 @@ public:
     long getLong(const std::string &name, long defaultValue) const;
     bool getBool(const std::string &name) const;
     bool getBool(const std::string &name, bool defaultValue) const;
+
+    const std::string &getLast(const std::string &name) const;
+    const std::string &getLast(const std::string &name, const std::string &defaultValue) const;
+    int getLastInt(const std::string &name) const;
+    int getLastInt(const std::string &name, int defaultValue) const;
+    long getLastLong(const std::string &name) const;
+    long getLastLong(const std::string &name, long defaultValue) const;
+    bool getLastBool(const std::string &name) const;
+    bool getLastBool(const std::string &name, bool defaultValue) const;
+
+
+    std::vector<std::string> getAll(const std::string &name) const;
+    std::vector<int> getAllInt(const std::string &name) const;
+    std::vector<long> getAllLong(const std::string &name) const;
+    std::vector<bool> getAllBool(const std::string &name) const;
+
 
     /**
      * Returns all parameters with a given prefix, with the prefix stripped.
