@@ -301,20 +301,27 @@ endforeach(mapping_services_addition)
 #copy mapping-core/conf directory to target/bin
 add_custom_target(mapping_conf_copy)
 add_dependencies(mapping_core_base_lib mapping_conf_copy)
-file(MAKE_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/)
 add_custom_command(TARGET mapping_conf_copy POST_BUILD
-        #remove old files first because later we want to append the files
-        COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/../conf/ ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/
         )
 
-#copy module conf files or append already copied files with same name by module conf files
-foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
-    file(GLOB files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/../${MAPPING_MODULE_PATH}/${mapping_module}/conf/ ../${MAPPING_MODULE_PATH}/${mapping_module}/conf/*)
-    foreach(file ${files})
-        add_custom_command(TARGET mapping_conf_copy POST_BUILD
-                COMMAND echo "" >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${file} #adds a line break
-                COMMAND cat ../../${MAPPING_MODULE_PATH}/${mapping_module}/conf/${file} >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${file}
-                )
-    endforeach(file)
-endforeach (mapping_module)
+# copy listed configuration files from conf folder to target/bin/conf/
+foreach(conf_file IN ITEMS
+            settings-default.toml
+            crs.json)
+    add_custom_command(TARGET mapping_conf_copy POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/../conf/${conf_file} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/
+            )
+        
+    #if file with same name exists in one of the modules, append it to the just copied file.
+    foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
+
+        if(EXISTS ../${MAPPING_MODULE_PATH}/${mapping_module}/conf/${conf_file})
+            add_custom_command(TARGET mapping_conf_copy POST_BUILD
+                    COMMAND echo "" >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${conf_file} #adds a line break
+                    COMMAND cat ../../${MAPPING_MODULE_PATH}/${mapping_module}/conf/${conf_file} >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${conf_file}
+                    )
+        endif()
+
+    endforeach (mapping_module)
+endforeach(conf_file)
