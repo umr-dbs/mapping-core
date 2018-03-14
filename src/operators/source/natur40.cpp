@@ -5,8 +5,8 @@
 #include <numeric>
 #include <future>
 #include <queue>
-#include <util/timeparser.h>
 
+#include "util/timeparser.h"
 #include "operators/source/natur40.h"
 #include "util/configuration.h"
 
@@ -23,6 +23,8 @@ Natur40SourceOperator::Natur40SourceOperator(int sourcecounts[], GenericOperator
     this->sensor_types.reserve(sensor_types.size() + 1);
     for (const auto &sensor_type_field : sensor_types) {
         const auto sensor_type = sensor_type_field.asString();
+
+        // check for legal characters with respect to SQL queries
         const bool only_allowed_types = std::all_of(sensor_type.begin(), sensor_type.end(), [](char c) {
             return std::isalnum(c) || c == '_';
         });
@@ -31,7 +33,12 @@ Natur40SourceOperator::Natur40SourceOperator(int sourcecounts[], GenericOperator
                     "natur40_source: sensor types are only allowed to have alphanumerical values or underscores"
             };
         }
-        this->sensor_types.push_back(sensor_type);
+
+        // make sensor type lowercase
+        std::string sensor_type_lowercase;
+        std::transform(std::begin(sensor_type), std::end(sensor_type), std::begin(sensor_type_lowercase), ::tolower);
+
+        this->sensor_types.push_back(sensor_type_lowercase);
     }
 
     // add locations if missing
@@ -367,11 +374,11 @@ auto Natur40SourceOperator::create_feature_collection(const std::map<table_t, st
     // initialize row values
     std::map<column_t, double> numeric_values;
     for (const auto &column : numeric_columns) {
-        numeric_values[column] = ::std::numeric_limits<double>::quiet_NaN();
+        numeric_values[column] = std::numeric_limits<double>::quiet_NaN();
     }
     std::map<column_t, std::__cxx11::string> textual_values;
     for (const auto &column : textual_columns) {
-        textual_values[column] = ::std::numeric_limits<double>::quiet_NaN();
+        textual_values[column] = "";
     }
     std::__cxx11::string current_node;
     double current_time = rect.beginning_of_time();
@@ -541,45 +548,54 @@ auto
 Natur40SourceOperator::get_table_name(const std::string &sensor_type) -> const std::string {
     // TODO: grab from postgres or file
 
-    if (sensor_type == "location") {
-        return "locations";
-    } else if (sensor_type == "light") {
-        return "lights";
-    } else if (sensor_type == "pressure") {
-        return "pressures";
-    } else if (sensor_type == "temperature") {
-        return "temperatures";
-    } else if (sensor_type == "co2") {
-        return {"co2"};
-    } else if (sensor_type == "tvoc") {
-        return {"tvoc"};
-    } else if (sensor_type == "image") {
-        return "images";
+    std::map<std::string, table_t> tables = {
+            {"location",               "locations"},
+            {"light",                  "lights"},
+            {"pressure",               "pressures"},
+            {"temperature",            "temperatures"},
+            {"co2",                    "co2"},
+            {"tvoc",                   "tvoc"},
+            {"image",                  "images"},
+            {"uv_irradiance",          "uv_irradiance"},
+            {"solar_irradiance",       "solar_irradiance"},
+            {"ir_surface_temperature", "ir_surface_tempe"},
+            {"rh_sht",                 "rh_sht"},
+            {"t_sht",                  "t_sht"},
+    };
+
+    const auto map_entry = tables.find(sensor_type);
+
+    if (map_entry != std::end(tables)) {
+        return map_entry->second;
     } else {
         throw OperatorException {"natur40_source: Unknown sensor type `" + sensor_type + "`"};
     }
 }
 
 auto
-Natur40SourceOperator::get_numeric_columns_for_table(const std::string &table_name) -> const std::vector<std::string> {
+Natur40SourceOperator::get_numeric_columns_for_table(const table_t &table_name) -> const std::vector<std::string> {
     // TODO: grab from postgres or file
 
-    if (table_name == "locations") {
-        return {"longitude", "latitude", "satellites"};
-    } else if (table_name == "lights") {
-        return {"light"};
-    } else if (table_name == "pressures") {
-        return {"pressure"};
-    } else if (table_name == "temperatures") {
-        return {"temperature"};
-    } else if (table_name == "co2") {
-        return {"co2"};
-    } else if (table_name == "tvoc") {
-        return {"tvoc"};
-    } else if (table_name == "images") {
-        return {};
+    std::map<std::string, std::vector<column_t>> numeric_columns = {
+            {"locations",        {"longitude", "latitude", "satellites"}},
+            {"lights",           {"light"}},
+            {"pressures",        {"pressure"}},
+            {"temperatures",     {"temperature"}},
+            {"co2",              {"co2"}},
+            {"tvoc",             {"tvoc"}},
+            {"uv_irradiance",    {"uv_irradiance"}},
+            {"solar_irradiance", {"solar_irradiance"}},
+            {"ir_surface_tempe", {"ir_surface_temp"}},
+            {"rh_sht",           {"rh_sht"}},
+            {"t_sht",            {"t_sht"}},
+    };
+
+    const auto map_entry = numeric_columns.find(table_name);
+
+    if (map_entry != std::end(numeric_columns)) {
+        return map_entry->second;
     } else {
-        throw OperatorException {"natur40_source: Unknown table name `" + table_name + "`"};
+        return {};
     }
 }
 
@@ -587,21 +603,15 @@ auto
 Natur40SourceOperator::get_textual_columns_for_table(const std::string &table_name) -> const std::vector<std::string> {
     // TODO: grab from postgres or file
 
-    if (table_name == "locations") {
-        return {};
-    } else if (table_name == "lights") {
-        return {};
-    } else if (table_name == "pressures") {
-        return {};
-    } else if (table_name == "temperatures") {
-        return {};
-    } else if (table_name == "co2") {
-        return {};
-    } else if (table_name == "tvoc") {
-        return {};
-    } else if (table_name == "images") {
-        return {"image"};
+    std::map<std::string, std::vector<column_t>> textual_columns = {
+            {"images", {"image"}},
+    };
+
+    const auto map_entry = textual_columns.find(table_name);
+
+    if (map_entry != std::end(textual_columns)) {
+        return map_entry->second;
     } else {
-        throw OperatorException {"natur40_source: Unknown table name `" + table_name + "`"};
+        return {};
     }
 }
