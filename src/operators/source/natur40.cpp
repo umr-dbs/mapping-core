@@ -22,7 +22,7 @@ Natur40SourceOperator::Natur40SourceOperator(int sourcecounts[], GenericOperator
     auto sensor_types = params.get("sensorTypes", Json::Value(Json::arrayValue));
     this->sensor_types.reserve(sensor_types.size() + 1);
     for (const auto &sensor_type_field : sensor_types) {
-        const auto sensor_type = sensor_type_field.asString();
+        auto sensor_type = sensor_type_field.asString();
 
         // check for legal characters with respect to SQL queries
         const bool only_allowed_types = std::all_of(sensor_type.begin(), sensor_type.end(), [](char c) {
@@ -34,11 +34,10 @@ Natur40SourceOperator::Natur40SourceOperator(int sourcecounts[], GenericOperator
             };
         }
 
-        // make sensor type lowercase
-        std::string sensor_type_lowercase;
-        std::transform(std::begin(sensor_type), std::end(sensor_type), std::begin(sensor_type_lowercase), ::tolower);
+        // make sensor type lowercase (inplace)
+        std::transform(std::begin(sensor_type), std::end(sensor_type), std::begin(sensor_type), ::tolower);
 
-        this->sensor_types.push_back(sensor_type_lowercase);
+        this->sensor_types.push_back(sensor_type);
     }
 
     // add locations if missing
