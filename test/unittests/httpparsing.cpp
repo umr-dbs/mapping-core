@@ -64,6 +64,15 @@ TEST(HTTPParsing, getnovalue) {
 	EXPECT_EQ(params.get("value2", ""), "4");
 }
 
+// + and %20 should be decoded to spaces.
+TEST(HTTPParsing, spaces){
+    Parameters params;
+    parseCGIEnvironment(params, "GET", "/cgi-bin/bla",
+            "value=what+the%20spaces?");
+    EXPECT_EQ(params.get("value", ""), "what the spaces?");
+}
+
+
 // Test an empty query string
 TEST(HTTPParsing, emptyget) {
 	Parameters params;
@@ -162,90 +171,8 @@ const std::string multipart_message4 =
             "\r\n"
 		;
 
-
+// Parsing multipart data is not supported right now, so ArgumentException is expected.
 TEST(HTTPParsing, multipart) {
-	// Can not read multipart like this anymore, so ArgumentException is expected.
 	Parameters params;
 	EXPECT_THROW(parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "","multipart/mixed; boundary=frontier", multipart_message), ArgumentException);
 }
-/*
-TEST(HTTPParsing, multipart_escaped_boundary) {
-	// This test should read the params "file1" and "file2".
-	Parameters params;
-	parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "","multipart/form-data; boundary=--myboundary                ", multipart_message2);
-
-	EXPECT_TRUE(params.hasParam("file1"));
-    EXPECT_EQ(params["file1"], "Content of a.txt.");
-	EXPECT_TRUE(params.hasParam("file2"));
-    EXPECT_EQ(params["file2"], "");
-}
-
-TEST(HTTPParsing, multipart_unnamed_formdata) {
-	// This test should fail because the message contains form-data without a valid name.
-	// Expected: Throw ArgumentException "
-	Parameters params;
-	EXPECT_THROW(parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "","multipart/form-data; boundary=xyz", multipart_message3),
-			ArgumentException);
-}
-
-TEST(HTTPParsing, multipart_malformed_boundary) {
-	// This test should fail because the message is malformed (missing the closing tag of the boundary).
-	// Expected: Throw runtime_error "Unexpected end of stream".
-	Parameters params;
-	EXPECT_THROW(parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "","multipart/form-data; boundary=xyz", multipart_message4),
-			std::runtime_error);
-
-}
-
-TEST(HTTPParsing, multipart_missing_boundary) {
-	// This test should fail because the message is missing the specified boundary label.
-	// Expected: Throw runtime_error "Unexpected end of stream".
-	Parameters params;
-	EXPECT_THROW(parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "","multipart/form-data; boundary=xyz", ""),
-			std::runtime_error);
-}
-
-TEST(HTTPParsing, multipart_unspecified_boundary) {
-	// This test should succeed. No parameters should be read, because no boundary has been specified.
-	Parameters params;
-	parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "","multipart/mixed", multipart_message);
-	EXPECT_TRUE(params.empty());
-}
-
-TEST(HTTPParsing, parse_illegal_content_type) {
-	// This test should fail due to the unknown content-type.
-	// Expected: Throw ArgumentException "Unknown content type in POST request".
-	Parameters params;
-	EXPECT_THROW(parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "","you-dont/know-me", multipart_message),
-			ArgumentException);
-
-}
-
-TEST(HTTPParsing, case_insensitive_request_method_post) {
-	// The test is exactly the same as the multipart_escaped_boundary test, the only difference being the character case in the REQUEST_METHOD parameter.
-	// This should NOT fail as per design, but shouldn't parse any parameters as well.
-	Parameters params;
-	parseCGIEnvironment(params, "PoST", "/cgi-bin/bla", "","multipart/form-data; boundary=--myboundary", multipart_message2);
-	EXPECT_TRUE(params.empty());
-
-}
-
-TEST(HTTPParsing, case_insensitive_request_method_get) {
-	// The same test using GET. This time get parameters should exist.
-	Parameters params;
-	parseCGIEnvironment(params, "PoST", "/cgi-bin/bla", "a=1&b=2&c=3","multipart/form-data; boundary=--myboundary", multipart_message2);
-	EXPECT_EQ(3, params.size());
-	EXPECT_EQ(1, params.getInt("a"));
-	EXPECT_EQ(2, params.getInt("b"));
-	EXPECT_EQ(3, params.getInt("c"));
-}
-
-TEST(HTTPParsing, EncodedAmpersandInValue) {
-	// Value of a parameter contains an encoded &
-	Parameters params;
-	parseCGIEnvironment(params, "GET", "/cgi-bin/bla", "foo=a%26b");
-
-	EXPECT_EQ(params.get("foo", "-"), "a&b");
-}
-*/
-
