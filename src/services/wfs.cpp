@@ -205,6 +205,38 @@ std::unique_ptr<PointCollection> WFSService::clusterPoints(const PointCollection
 		throw ArgumentException("WFSService: resolution is invalid (must be positive)");
 	}
 
+    // set default values for parameters
+	double circle_min_radius_px = 5;
+	double inter_circle_min_distance_px = 1;
+
+    // try to look up new `circle_min_radius_px`
+    const std::string circle_min_radius_px_key {"clustered_min_radius"};
+	if (params.hasParam(circle_min_radius_px_key)) {
+		try {
+			circle_min_radius_px = std::stod(params.get(circle_min_radius_px_key));
+
+            if (circle_min_radius_px <= 0) {
+                throw ArgumentException(concat("WFSService: `", circle_min_radius_px_key, "` parameter must be > 0"));
+            }
+		} catch (const std::invalid_argument &e) {
+			throw ArgumentException(concat("WFSService: `", circle_min_radius_px_key, "` parameter must be a double value"));
+		}
+	}
+
+    // try to look up new `inter_circle_min_distance_px`
+    const std::string inter_circle_min_distance_px_key {"clustered_min_distance"};
+    if (params.hasParam(inter_circle_min_distance_px_key)) {
+        try {
+            inter_circle_min_distance_px = std::stod(params.get(inter_circle_min_distance_px_key));
+
+            if (inter_circle_min_distance_px < 0) {
+                throw ArgumentException(concat("WFSService: `", inter_circle_min_distance_px, "` parameter must be >= 0"));
+            }
+        } catch (const std::invalid_argument &e) {
+            throw ArgumentException(concat("WFSService: `", inter_circle_min_distance_px_key, "` parameter must be a double value"));
+        }
+    }
+
 	auto clusteredPoints = make_unique<PointCollection>(points.stref);
 
 	const SpatialReference &sref = points.stref;
@@ -215,7 +247,7 @@ std::unique_ptr<PointCollection> WFSService::clusterPoints(const PointCollection
 
     // initialize empty tree
     std::size_t node_capacity = 1;
-    pv::Circle::CommonAttributes common_attributes{5, 1};
+    pv::Circle::CommonAttributes common_attributes{circle_min_radius_px, inter_circle_min_distance_px};
 	pv::CircleClusteringQuadTree clustering_tree{
         pv::BoundingBox(
             pv::Coordinate((x2 + x1) / (2 * resolution), (y2 + y1) / (2 * resolution)),
