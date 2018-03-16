@@ -69,6 +69,11 @@ sudo add-apt-repository ppa:adrozdoff/cmake
 sudo apt-get update
 ```
 
+### For Ubuntu ≤ 17.10
+```
+sudo add-apt-repository ppa:gezakovacs/poco
+sudo apt-get update
+```
 
 ### Install Packages:
 ```
@@ -101,7 +106,8 @@ apt-get install --yes \
     valgrind \
     r-cran-rcpp \
     libpqxx-dev \
-    libgdal-dev
+    libgdal-devs \
+    libpoco-dev
 ```
 
 ## Checkout MAPPING
