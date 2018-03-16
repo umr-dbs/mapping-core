@@ -307,21 +307,26 @@ add_custom_command(TARGET mapping_conf_copy POST_BUILD
 
 # copy listed configuration files from conf folder to target/bin/conf/
 foreach(conf_file IN ITEMS
-            settings-default.toml
-            crs.json)
+        settings-default.toml
+        crs.json)
     add_custom_command(TARGET mapping_conf_copy POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/../conf/${conf_file} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/
             )
-        
-    #if file with same name exists in one of the modules, append it to the just copied file.
-    foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
 
-        if(EXISTS ../${MAPPING_MODULE_PATH}/${mapping_module}/conf/${conf_file})
-            add_custom_command(TARGET mapping_conf_copy POST_BUILD
-                    COMMAND echo "" >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${conf_file} #adds a line break
-                    COMMAND cat ../../${MAPPING_MODULE_PATH}/${mapping_module}/conf/${conf_file} >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${conf_file}
-                    )
-        endif()
 
-    endforeach (mapping_module)
 endforeach(conf_file)
+
+# listed files from the modules conf folders to be moved to target/bin/conf/
+# will append existing file with same name.
+foreach(append_file IN ITEMS settings-default.toml)
+    foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
+        if(EXISTS ../${MAPPING_MODULE_PATH}/${mapping_module}/conf/)
+            if(EXISTS ../${MAPPING_MODULE_PATH}/${mapping_module}/conf/${append_file})
+            add_custom_command(TARGET mapping_conf_copy POST_BUILD
+                    COMMAND echo "" >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${append_file} #adds a line break
+                    COMMAND cat ../../${MAPPING_MODULE_PATH}/${mapping_module}/conf/${append_file} >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${append_file}
+                    )
+            endif()
+        endif()
+    endforeach (mapping_module)
+endforeach(append_file)
