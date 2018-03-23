@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include "cpptoml.h"
 #include "util/exceptions.h"
 
@@ -11,6 +12,8 @@
  * and the subtables with:
  * 		ConfigurationTable subtable = Configuration::getSubTable(...);
  * 		subtable.get<T>(...)
+ *
+ *
  *
  * If more functionality is needed getTomlTable will give access to the underlying cpptoml::table.
  *
@@ -31,6 +34,16 @@ class ConfigurationTable {
         template <class T>
         T get(const std::string& name, const T& alternative){
             return table->get_qualified_as<T>(name).value_or(alternative);
+        }
+
+        /// \tparam T use int64_t instead of int
+        template <class T>
+        std::vector<T> getVector(const std::string &name) {
+            auto array_option = table->get_qualified_array_of<T>(name);
+            if(array_option)
+                return *array_option;
+            else
+                throw ArgumentException("Configuration: \'" + name + "\' not found as array.");
         }
 
         ConfigurationTable getSubTable(const std::string& name){
@@ -77,6 +90,11 @@ class Configuration {
         template <class T>
         static T get(const std::string& name, T alternative){
             return table.get<T>(name, alternative);
+        }
+
+        template <class T>
+        static std::vector<T> getVector(const std::string &name){
+            return table.getVector<T>(name);
         }
 
         static ConfigurationTable getSubTable(const std::string& name){
