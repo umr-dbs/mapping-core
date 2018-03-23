@@ -15,7 +15,7 @@ std::vector<int> ConfigurationTable::getVector<int>(const std::string &name){
     auto int64_vector = table->get_qualified_array_of<int64_t>(name);
 
     if(!int64_vector)
-        throw ArgumentException("");
+        throw ArgumentException("Configuration: \'" + name + "\' not found as array.");
 
     std::vector<int> int_vector;
 
