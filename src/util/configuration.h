@@ -63,6 +63,11 @@ class ConfigurationTable {
 
 };
 
+//specialization to allow usage with type int, because cpptoml only allows int64_t as a type. will create a copy of original vector.
+template<>
+std::vector<int> ConfigurationTable::getVector<int>(const std::string &name);
+
+
 /**
  * Class for loading the configuration of the application.
  * It loads key, value parameters from the following location in the given order
