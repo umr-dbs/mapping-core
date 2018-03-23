@@ -106,7 +106,7 @@ apt-get install --yes \
     valgrind \
     r-cran-rcpp \
     libpqxx-dev \
-    libgdal-devs \
+    libgdal-dev \
     libpoco-dev
 ```
 
