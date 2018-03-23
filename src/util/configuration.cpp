@@ -9,6 +9,24 @@
 
 extern char **environ;
 
+//specialization to allow usage with type int. will create a copy of original vector.
+template<>
+std::vector<int> ConfigurationTable::getVector<int>(const std::string &name){
+    auto int64_vector = table->get_qualified_array_of<int64_t>(name);
+
+    if(!int64_vector)
+        throw ArgumentException("Configuration: \'" + name + "\' not found as array.");
+
+    std::vector<int> int_vector;
+
+
+    for(auto &i : *int64_vector){
+        int_vector.push_back((int)i);
+    }
+
+    return int_vector;
+}
+
 /*
  * Configuration
  */
