@@ -9,6 +9,7 @@ class Parameters : public std::multimap<std::string, std::string> {
 public:
     bool hasParam(const std::string& key) const;
 
+    //the getX functions return the last parameter of with that name inserted.
     const std::string &get(const std::string &name) const;
     const std::string &get(const std::string &name, const std::string &defaultValue) const;
     int getInt(const std::string &name) const;
@@ -17,16 +18,6 @@ public:
     long getLong(const std::string &name, long defaultValue) const;
     bool getBool(const std::string &name) const;
     bool getBool(const std::string &name, bool defaultValue) const;
-
-    const std::string &getLast(const std::string &name) const;
-    const std::string &getLast(const std::string &name, const std::string &defaultValue) const;
-    int getLastInt(const std::string &name) const;
-    int getLastInt(const std::string &name, int defaultValue) const;
-    long getLastLong(const std::string &name) const;
-    long getLastLong(const std::string &name, long defaultValue) const;
-    bool getLastBool(const std::string &name) const;
-    bool getLastBool(const std::string &name, bool defaultValue) const;
-
 
     std::vector<std::string> getAll(const std::string &name) const;
     std::vector<int> getAllInt(const std::string &name) const;

@@ -11,58 +11,82 @@ bool Parameters::hasParam(const std::string& key) const {
 }
 
 const std::string &Parameters::get(const std::string &name) const {
-    auto it = find(name);
-    if (it == end())
+    auto range = equal_range(name);
+    if(range.first == range.second)
         throw ArgumentException(concat("No parameter found for key ", name));
+
+    auto it = range.second;
+    it--;
     return it->second;
 }
 
 const std::string &Parameters::get(const std::string &name, const std::string &defaultValue) const {
-    auto it = find(name);
-    if (it == end())
+    auto range = equal_range(name);
+    if(range.first == range.second)
         return defaultValue;
+
+    auto it = range.second;
+    it--;
     return it->second;
 }
 
 int Parameters::getInt(const std::string &name) const {
-    auto it = find(name);
-    if (it == end())
+    auto range = equal_range(name);
+    if(range.first == range.second)
         throw ArgumentException(concat("No parameter found for key ", name));
+
+    auto it = range.second;
+    it--;
     return parseInt(it->second);
 }
 
 int Parameters::getInt(const std::string &name, const int defaultValue) const {
-    auto it = find(name);
-    if (it == end())
+    auto range = equal_range(name);
+    if(range.first == range.second)
         return defaultValue;
+
+    auto it = range.second;
+    it--;
     return parseInt(it->second);
 }
 
 long Parameters::getLong(const std::string &name) const {
-    auto it = find(name);
-    if (it == end())
+    auto range = equal_range(name);
+    if(range.first == range.second)
         throw ArgumentException(concat("No parameter found for key ", name));
+
+    auto it = range.second;
+    it--;
     return parseLong(it->second);
 }
 
 long Parameters::getLong(const std::string &name, const long defaultValue) const {
-    auto it = find(name);
-    if (it == end())
+    auto range = equal_range(name);
+    if(range.first == range.second)
         return defaultValue;
+
+    auto it = range.second;
+    it--;
     return parseLong(it->second);
 }
 
 bool Parameters::getBool(const std::string &name) const {
-    auto it = find(name);
-    if (it == end())
+    auto range = equal_range(name);
+    if(range.first == range.second)
         throw ArgumentException(concat("No parameter found for key ", name));
+
+    auto it = range.second;
+    it--;
     return parseBool(it->second);
 }
 
 bool Parameters::getBool(const std::string &name, const bool defaultValue) const {
-    auto it = find(name);
-    if (it == end())
+    auto range = equal_range(name);
+    if(range.first == range.second)
         return defaultValue;
+
+    auto it = range.second;
+    it--;
     return parseBool(it->second);
 }
 
@@ -120,87 +144,6 @@ std::vector<bool> Parameters::getAllBool(const std::string &name) const {
 
     return vec;
 }
-
-const std::string &Parameters::getLast(const std::string &name) const {
-    auto range = equal_range(name);
-    if(range.first == range.second)
-        throw ArgumentException(concat("No parameter found for key ", name));
-
-    auto it = range.second;
-    it--;
-    return it->second;
-}
-
-const std::string &Parameters::getLast(const std::string &name, const std::string &defaultValue) const {
-    auto range = equal_range(name);
-    if(range.first == range.second)
-        return defaultValue;
-
-    auto it = range.second;
-    it--;
-    return it->second;
-}
-
-int Parameters::getLastInt(const std::string &name) const {
-    auto range = equal_range(name);
-    if(range.first == range.second)
-        throw ArgumentException(concat("No parameter found for key ", name));
-
-    auto it = range.second;
-    it--;
-    return parseInt(it->second);
-}
-
-int Parameters::getLastInt(const std::string &name, int defaultValue) const {
-    auto range = equal_range(name);
-    if(range.first == range.second)
-        return defaultValue;
-
-    auto it = range.second;
-    it--;
-    return parseInt(it->second);
-}
-
-long Parameters::getLastLong(const std::string &name) const {
-    auto range = equal_range(name);
-    if(range.first == range.second)
-        throw ArgumentException(concat("No parameter found for key ", name));
-
-    auto it = range.second;
-    it--;
-    return parseLong(it->second);
-}
-
-long Parameters::getLastLong(const std::string &name, long defaultValue) const {
-    auto range = equal_range(name);
-    if(range.first == range.second)
-        return defaultValue;
-
-    auto it = range.second;
-    it--;
-    return parseLong(it->second);
-}
-
-bool Parameters::getLastBool(const std::string &name) const {
-    auto range = equal_range(name);
-    if(range.first == range.second)
-        throw ArgumentException(concat("No parameter found for key ", name));
-
-    auto it = range.second;
-    it--;
-    return parseBool(it->second);
-}
-
-bool Parameters::getLastBool(const std::string &name, bool defaultValue) const {
-    auto range = equal_range(name);
-    if(range.first == range.second)
-        return defaultValue;
-
-    auto it = range.second;
-    it--;
-    return parseBool(it->second);
-}
-
 
 int Parameters::parseInt(const std::string &str) {
     return std::stoi(str); // stoi throws if no conversion could be performed

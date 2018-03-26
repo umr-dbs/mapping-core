@@ -46,8 +46,8 @@ TEST(HTTPParsing, getrepeated) {
 	parseCGIEnvironment(params, "GET", "/cgi-bin/bla",
 			"PARAM=one&param=two&pArAm=%C3%A4%C3%B6%C3%BC%C3%9F");
 
-	EXPECT_EQ(params.get("param", ""), "one");
-    EXPECT_EQ(params.getLast("param", ""), "äöüß");
+	EXPECT_EQ(params.get("param", ""), "äöüß");
+    EXPECT_EQ(params.getAll("param")[0], "one");
     EXPECT_EQ(params.getAll("param").size(), 3);
 }
 
@@ -105,7 +105,6 @@ TEST(HTTPParsing, testquerystringspecialchars) {
 	EXPECT_EQ(params.get("p4", "-"), "");
 	EXPECT_EQ(params.get("p5", "-"), "");
 	EXPECT_EQ(params.get("p6", ""), "=?");
-	//EXPECT_EQ(params.size(), 8); // Also interprets '?????' and '???' as keys.
 }
 
 // Test illegal percent encoding
@@ -114,65 +113,8 @@ TEST(HTTPParsing, illegalpercentencoding) {
     EXPECT_THROW(parseCGIEnvironment(params, "GET", "/cgi-bin/bla", "p1=%22%ZZ%5F"), Poco::SyntaxException);
 }
 
-// This is a multipart message that with content-disposition NOT set as "form-data". Thus, no parameter is parsed here and the body is ignored as always.
-const std::string multipart_message =
-					"\r\n"
-					"--frontier\r\n"
-					"Content-Type: text/plain\r\n"
-					"\r\n"
-					"This is the body of the message.\r\n"
-                    "\r\n"
-					"--frontier\r\n"
-					"Content-Type: application/octet-stream\r\n"
-					"Content-Transfer-Encoding: base64\r\n"
-					"\r\n"
-					"PGh0bWw+CiAgPGhlYWQ+CiAgPC9oZWFkPgogIDxib2R5PgogICAgPHA+VGhpcyBpcyB0aGUg\r\n"
-					"Ym9keSBvZiB0aGUgbWVzc2FnZS48L3A+CiAgPC9ib2R5Pgo8L2h0bWw+Cg==\r\n"
-					"\r\n"
-                    "--frontier--"
-					"--frontier--\r\n";
-
-// This is a multipart message that with content-disposition set as "form-data". A 'name' key is provided.
-const std::string multipart_message2 =
-		"\r\n"
-		"----myboundary\r\n"
-		"Content-Disposition: form-data; name=\"text\"\r\n"
-		"\r\n"
-		"text default\r\n"
-		"----myboundary\r\n"
-		"Content-Disposition: form-data; name=\"file1\"; filename=\"a.txt\"\r\n"
-		"Content-Type: text/plain\r\n"
-		"\r\n"
-		"Content of a.txt.\r\n"
-        "\r\n"
-		"----myboundary\r\n"
-		"Content-Disposition: form-data; name=\"file2\"; filename=\"a.html\"\r\n"
-		"Content-Type: text/html\r\n"
-		"\n\n"
-		"----myboundary--"
-		;
-
-// This is a multipart message that with content-disposition set as "form-data". A 'name' key is NOT provided (which is not allowed).
-const std::string multipart_message3 =
-		"--xyz\r\n"
-                "\r\n"
-		"Content-Disposition: form-data;\r\n"
-		"xyz content\r\n"
-                "\r\n"
-		"--xyz--\r\n"
-		;
-
-// This is a multipart message with a corrupt boundary
-const std::string multipart_message4 =
-		"--xyz\r\n"
-                "\r\n"
-		"Content-Disposition: form-data;\r\n"
-		"xyz content\r\n"
-            "\r\n"
-		;
-
-// Parsing multipart data is not supported right now, so ArgumentException is expected.
+// Reading values from multipart data directly is not supported right now, so ArgumentException is expected.
 TEST(HTTPParsing, multipart) {
 	Parameters params;
-	EXPECT_THROW(parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "","multipart/mixed; boundary=frontier", multipart_message), ArgumentException);
+	EXPECT_THROW(parseCGIEnvironment(params, "POST", "/cgi-bin/bla", "","multipart/mixed; boundary=frontier", ""), ArgumentException);
 }
