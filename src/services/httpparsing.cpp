@@ -77,7 +77,7 @@ static void parsePostUrlEncoded(Parameters &params, std::istream &in, int conten
 
 /**
  * Get Reader for multipart data.
- * Parsing multipart post data is not supported right now.
+ * Reading values from multipart data has to be done manually right now.
  */
 std::unique_ptr<Poco::Net::MultipartReader> getMultipartPostDataReader(Parameters &params, std::istream &in) {
 
@@ -104,7 +104,7 @@ void parsePostData(Parameters &params, std::istream &in) {
 	if (content_type == "application/x-www-form-urlencoded") {
 		parsePostUrlEncoded(params, in, content_length);
 	} else if (content_type.find("multipart/form-data") != std::string::npos || content_type.find("multipart/mixed") != std::string::npos) {
-        throw ArgumentException("For multipart POST request call getMultipartPostDataReader (offers no parsing).");
+        throw ArgumentException("For multipart POST request call getMultipartPostDataReader.");
 	} else
 		throw ArgumentException("Unknown content type in POST request.");
 }
@@ -139,7 +139,7 @@ void parsePostData(Parameters &params, std::istream &in, FCGX_Request &request) 
 	if (content_type == "application/x-www-form-urlencoded") {
 		parsePostUrlEncoded(params, in, content_length);
 	} else if (content_type.find("multipart/form-data") != std::string::npos || content_type.find("multipart/mixed") != std::string::npos) {
-        throw ArgumentException("For multipart POST request call getMultipartPostDataReader (offers no parsing).");
+        throw ArgumentException("For multipart POST request call getMultipartPostDataReader.");
 	} else
 		throw ArgumentException("Unknown content type in POST request.");
 }
