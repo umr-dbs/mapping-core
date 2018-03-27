@@ -1,0 +1,11 @@
+
+{		
+    "filename": "../../test/systemtests/data/ogr_files/stationsWithCoordinates.csv",
+    "on_error" : "keep",
+    "time": "none",    
+    "columns" : {
+        "x" : "X",
+        "y" : "Y"
+    }
+}
+

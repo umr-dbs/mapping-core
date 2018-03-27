@@ -7,6 +7,7 @@
 
 #include <json/json.h>
 #include <util/gdal_source_datasets.h>
+#include <util/ogr_source_datasets.h>
 
 /**
  * This class provides user specific methods
@@ -81,6 +82,19 @@ void UserService::run() {
                     v[dataSet] = description;
                 }
             }
+
+			// OGR File Source
+			std::vector<std::string> ogr_source_names = OGRSourceDatasets::getFileNames();
+			for(const auto &name : ogr_source_names){
+				if(user.hasPermission("data.ogr_source." + name)){
+                    Json::Value description = OGRSourceDatasets::getListing(name);
+					description["name"] = name;
+                    description["operator"] = "ogr_source";
+
+					// TODO: resolve name clashes
+					v[name] = description;
+				}
+			}
 
 			response.sendSuccessJSON("sourcelist", v);
 			return;

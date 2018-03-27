@@ -8,11 +8,14 @@
 #include "util/exceptions.h"
 #include "util/make_unique.h"
 #include "util/timeparser.h"
+#include "configuration.h"
 #include <unordered_map>
 #include <unordered_set>
 #include <json/json.h>
+#include <dirent.h>
+#include <iostream>
 
-OGRSourceUtil::OGRSourceUtil(Json::Value &params) : params(params)
+OGRSourceUtil::OGRSourceUtil(Json::Value &params, Provenance provenance) : params(params), provenance(provenance)
 {		
 	//read the different parameters
 
@@ -64,19 +67,52 @@ OGRSourceUtil::OGRSourceUtil(Json::Value &params) : params(params)
 	hasDefault = params.isMember("default");	
 }
 
-OGRSourceUtil::~OGRSourceUtil(){ }
-
-Json::Value OGRSourceUtil::getParameters(){
-	return params;
+OGRSourceUtil::~OGRSourceUtil(){
+	close();
 }
 
-// Wrapper to read the different collection types. The passed function addFeature handles the specifics of the reading that differ for the different collection types.
-// Handles the attribute and time reading for all collection types.
+void OGRSourceUtil::close(){
+	GDALClose(dataset);
+	dataset = nullptr;
+}
+
+// Wrapper to read the different collection types. The passed function addFeature handles the specifics of the reading
+// that differ for the different collection types. Handles the attribute and time reading for all collection types.
 void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, 
-									  SimpleFeatureCollection *collection, 
-									  OGRLayer *layer, 
+									  SimpleFeatureCollection *collection,
 									  std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature)
 {
+	//open GDALDataset and get layer
+	dataset = OGRSourceUtil::openGDALDataset(params);
+
+	if(dataset == NULL){
+		close();
+		throw OperatorException("OGR Source: Can not load dataset");
+	}
+	if(dataset->GetLayerCount() < 1){
+		close();
+		throw OperatorException("OGR Source: No layers in OGR Dataset");
+	}
+
+	OGRLayer *layer;
+	if(params.isMember("layer_name")){
+        layer = dataset->GetLayerByName(params["layer_name"].asCString());
+	}
+	else
+		layer = dataset->GetLayer(0);
+
+	if(layer == NULL){
+		close();
+		throw OperatorException("OGR Source: Layer could not be read from dataset.");
+	}
+
+	// filters all Features not intersecting with the query rectangle.
+	layer->SetSpatialFilterRect(rect.x1, rect.y1, rect.x2, rect.y2);
+
+	// a call suggested by OGR Tutorial as "just in case" (to start reading from first feature)
+	layer->ResetReading();
+
+	//start reading the FeatureCollection
 	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
 	createAttributeArrays(attributeDefn, collection->feature_attributes);
 	initTimeReading(attributeDefn);
@@ -160,7 +196,7 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
 }
 
 
-std::unique_ptr<PointCollection> OGRSourceUtil::getPointCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer)
+std::unique_ptr<PointCollection> OGRSourceUtil::getPointCollection(const QueryRectangle &rect, const QueryTools &tools)
 {
 	auto points = make_unique<PointCollection>(rect);
 	
@@ -190,12 +226,12 @@ std::unique_ptr<PointCollection> OGRSourceUtil::getPointCollection(const QueryRe
 		return true;	
 	};
 
-	readAnyCollection(rect, points.get(), layer, addFeature);
+	readAnyCollection(rect, points.get(), addFeature);
 	points->validate();
 	return points;
 }
 
-std::unique_ptr<LineCollection> OGRSourceUtil::getLineCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer)
+std::unique_ptr<LineCollection> OGRSourceUtil::getLineCollection(const QueryRectangle &rect, const QueryTools &tools)
 {
 	auto lines = make_unique<LineCollection>(rect);	
 
@@ -225,12 +261,12 @@ std::unique_ptr<LineCollection> OGRSourceUtil::getLineCollection(const QueryRect
 		return true;			
 	};	
 	
-	readAnyCollection(rect, lines.get(), layer, addFeature);
+	readAnyCollection(rect, lines.get(), addFeature);
 	lines->validate();
 	return lines;
 }
 
-std::unique_ptr<PolygonCollection> OGRSourceUtil::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer) 
+std::unique_ptr<PolygonCollection> OGRSourceUtil::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools)
 {
 	auto polygons = make_unique<PolygonCollection>(rect);	
 
@@ -278,7 +314,7 @@ std::unique_ptr<PolygonCollection> OGRSourceUtil::getPolygonCollection(const Que
 		return true;
 	};
 	
-	readAnyCollection(rect, polygons.get(), layer, addFeature);
+	readAnyCollection(rect, polygons.get(), addFeature);
 	polygons->validate();
 	return polygons;
 }
@@ -306,7 +342,6 @@ void OGRSourceUtil::readRingToPolygonCollection(const OGRLinearRing *ring, std::
 	}
 	collection->finishRing();
 }
-
 
 // create the AttributeArrays for the FeatureCollection based on Attribute Fields in OGRLayer. 
 // only if the user asked for the attribute in the query parameters.
@@ -496,4 +531,65 @@ bool OGRSourceUtil::readTimeIntoCollection(const QueryRectangle &rect, OGRFeatur
 
 	time.push_back(TimeInterval(t1, t2));	
 	return true;
+}
+
+
+void OGRSourceUtil::writeSemanticParameters(std::ostringstream& stream){
+	//TODO what to write here? the code beneath is copied from CSVSource
+	/*Json::Value params = csvSourceUtil->getParameters();
+
+	params["filename"] = filename;
+
+	Json::Value provenanceInfo;
+	provenanceInfo["citation"] = provenance.citation;
+	provenanceInfo["license"] = provenance.license;
+	provenanceInfo["uri"] = provenance.uri;
+	params["provenance"] = provenanceInfo;
+
+	Json::FastWriter writer;
+	stream << writer.write(params);
+	*/
+}
+
+void OGRSourceUtil::getProvenance(ProvenanceCollection &pc){
+	pc.add(provenance);
+}
+
+GDALDataset* OGRSourceUtil::openGDALDataset(Json::Value &params){
+    GDALAllRegister();
+
+    std::string filename = params["filename"].asString();
+    Json::Value columns = params["columns"];
+
+    bool isCsv = hasSuffix(filename, ".csv") || hasSuffix(filename, ".tsv");
+
+    // if its a csv file we have to add open options to tell gdal what the geometry columns are.
+    if(isCsv){
+        std::string column_x = columns.get("x", "x").asString();
+
+        if(columns.isMember("y"))
+        {
+            std::string column_y 	= columns.get("y", "y").asString();
+            std::string optX 		= "X_POSSIBLE_NAMES=" + column_x;
+            std::string optY 		= "Y_POSSIBLE_NAMES=" + column_y;
+            std::string type_detect = "AUTODETECT_TYPE=YES";
+            const char * const strs[] = { optX.c_str(), optY.c_str(), type_detect.c_str(), NULL};
+            return (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, strs, NULL);
+        }
+        else
+        {
+            std::string opt = "GEOM_POSSIBLE_NAMES=" + column_x;
+            std::string type_detect = "AUTODETECT_TYPE=YES";
+            const char * const strs[] = { opt.c_str(), type_detect.c_str(), NULL };
+            return (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, strs, NULL);
+        }
+    }
+    else
+        return (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
+}
+
+bool hasSuffix(const std::string &str, const std::string &suffix)
+{
+    return  str.size() >= suffix.size() &&
+            str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
 }

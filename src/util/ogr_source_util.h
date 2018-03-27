@@ -1,13 +1,15 @@
 #ifndef UTIL_OGR_SOURCE_UTIL_H
 #define UTIL_OGR_SOURCE_UTIL_H
 
+#include <gdal/ogrsf_frmts.h>
 #include "util/exceptions.h"
 #include "util/enumconverter.h"
+#include "util/timeparser.h"
 #include "datatypes/pointcollection.h"
 #include "datatypes/linecollection.h"
 #include "datatypes/polygoncollection.h"
-#include "util/timeparser.h"
-
+#include "operators/provenance.h"
+#include "operators/querytools.h"
 #include <istream>
 #include <vector>
 #include <json/json.h>
@@ -65,14 +67,24 @@ static EnumConverter<ErrorHandling>ErrorHandlingConverter(ErrorHandlingMap);
 class OGRSourceUtil 
 {
 public:
-	OGRSourceUtil(Json::Value &params);
+	OGRSourceUtil(Json::Value &params, Provenance provenance);
 	~OGRSourceUtil();
-	std::unique_ptr<PointCollection> getPointCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer);
-	std::unique_ptr<LineCollection> getLineCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer);
-	std::unique_ptr<PolygonCollection> getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer);
-	Json::Value getParameters();
+	std::unique_ptr<PointCollection> getPointCollection(const QueryRectangle &rect, const QueryTools &tools);
+	std::unique_ptr<LineCollection> getLineCollection(const QueryRectangle &rect, const QueryTools &tools);
+	std::unique_ptr<PolygonCollection> getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools);
+	void writeSemanticParameters(std::ostringstream& stream);
+	void getProvenance(ProvenanceCollection &pc);
+
+	/**
+	 * Opens a GDALDataset and returns the pointer to it. This pointer has to be freed with GDALClose(GDALDataset*) when done.
+	 * @param params
+	 * @return
+	 */
+    static GDALDataset* openGDALDataset(Json::Value &params);
 
 private:
+	GDALDataset *dataset;
+	Provenance provenance;
 	bool hasDefault;
 	Json::Value params;
 	std::vector<std::string> attributeNames;
@@ -87,7 +99,8 @@ private:
 	ErrorHandling errorHandling;
 	TimeSpecification timeSpecification;
 
-	void readAnyCollection(const QueryRectangle &rect, SimpleFeatureCollection *collection, OGRLayer *layer, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature);
+	void close();
+	void readAnyCollection(const QueryRectangle &rect, SimpleFeatureCollection *collection, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature);
 	void readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection);
 	void readRingToPolygonCollection(const OGRLinearRing *ring, std::unique_ptr<PolygonCollection> &collection);
 	void createAttributeArrays(OGRFeatureDefn *attributeDefn, AttributeArrays &attributeArrays);
@@ -95,5 +108,7 @@ private:
 	void initTimeReading(OGRFeatureDefn *attributeDefn);
 	bool readTimeIntoCollection(const QueryRectangle &rect, OGRFeature *feature, std::vector<TimeInterval> &time);
 };
+
+bool hasSuffix(const std::string &str, const std::string &suffix);
 
 #endif

@@ -14,7 +14,7 @@
     },    
     "query": {        
         "params": {       		
-            "filename": "test/systemtests/data/places_dump/places_dump_DE_100k.csv",
+            "filename": "../../test/systemtests/data/places_dump/places_dump_DE_100k.csv",
             "on_error" : "abort",
             "time" : "none",
             "columns" : {
@@ -23,6 +23,6 @@
                 "textual" : ["Name", "PLZ"]
             }
         },
-        "type": "ogr_source"
+        "type": "ogr_raw_source"
     }    
 }

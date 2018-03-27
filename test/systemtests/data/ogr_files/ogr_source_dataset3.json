@@ -1,0 +1,9 @@
+
+{		
+    "filename": "../../test/systemtests/data/ogr_files/allStations.shp",
+    "on_error" : "keep",
+    "time": "none",    
+    "columns" : {
+        
+    }
+}

@@ -57,3 +57,6 @@ norasterforgiventimeexception=false # Configures the handling of NoRasterForGive
 
 [crsdirectory]
 location="conf/crs.json" # The location of the file containing the definitions of the supported CRS
+
+[ogrsource.files]
+path="../../test/systemtests/data/ogr_files"
