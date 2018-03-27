@@ -10,14 +10,17 @@ addons:
     packages:
       - docker-ce
 
+env:
+ - DOCKER_IMAGE="umrdbs/mapping-dependencies:latest"
+
 before_install:
- - docker pull umrdbs/mapping-dependencies:latest
- - docker run -it umrdbs/mapping-dependencies:latest bash
+ - docker pull $DOCKER_IMAGE
+ - docker run -d $DOCKER_IMAGE
 
 script:
- - cmake -DCMAKE_BUILD_TYPE=Release .
- - make -j$(cat /proc/cpuinfo | grep processor | wc -l)
- - make test
+ - docker exec $DOCKER_IMAGE "cmake -DCMAKE_BUILD_TYPE=Release ."
+ - docker exec $DOCKER_IMAGE "make -j$(cat /proc/cpuinfo | grep processor | wc -l)"
+ - docker exec $DOCKER_IMAGE "make test"
 
 notifications:
   slack:
