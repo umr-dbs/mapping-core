@@ -11,8 +11,9 @@ addons:
       - docker-ce
 
 env:
- - DOCKER_IMAGE="umrdbs/mapping-dependencies:latest"
- - DOCKER_CONTAINER="mapping_container"
+  global:
+   - DOCKER_IMAGE="umrdbs/mapping-dependencies:latest"
+   - DOCKER_CONTAINER="mapping_container"
 
 before_install:
  - docker pull $DOCKER_IMAGE
