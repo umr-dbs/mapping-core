@@ -12,15 +12,18 @@ addons:
 
 env:
  - DOCKER_IMAGE="umrdbs/mapping-dependencies:latest"
+ - DOCKER_CONTAINER="mapping_container"
 
 before_install:
  - docker pull $DOCKER_IMAGE
- - docker run -d $DOCKER_IMAGE
+ - docker run --name $DOCKER_CONTAINER -d $DOCKER_IMAGE
+ - docker exec $DOCKER_CONTAINER \
+   "git clone https://github.com/$TRAVIS_REPO_SLUG.git $TRAVIS_REPO_SLUG; cd $TRAVIS_REPO_SLUG; git checkout -qf $TRAVIS_COMMIT"
 
 script:
- - docker exec $DOCKER_IMAGE "cmake -DCMAKE_BUILD_TYPE=Release ."
- - docker exec $DOCKER_IMAGE "make -j$(cat /proc/cpuinfo | grep processor | wc -l)"
- - docker exec $DOCKER_IMAGE "make test"
+ - docker exec $DOCKER_CONTAINER "cmake -DCMAKE_BUILD_TYPE=Release ."
+ - docker exec $DOCKER_CONTAINER "make -j$(cat /proc/cpuinfo | grep processor | wc -l)"
+ - docker exec $DOCKER_CONTAINER "make test"
 
 notifications:
   slack:
