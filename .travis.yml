@@ -9,6 +9,7 @@ addons:
   apt:
     packages:
     - docker-ce
+
 env:
   global:
   - DOCKER_IMAGE="umrdbs/mapping-dependencies:latest"
