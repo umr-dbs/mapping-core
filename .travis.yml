@@ -18,11 +18,7 @@ env:
 
 before_install:
  - docker pull $DOCKER_IMAGE
- - docker run \
-     --name $DOCKER_CONTAINER \
-     -d \
-     --volume "$(pwd)/$TRAVIS_REPO_SLUG":"$DOCKER_CONTAINER_HOME/$TRAVIS_REPO_SLUG" \
-     $DOCKER_IMAGE
+ - docker run --name $DOCKER_CONTAINER -d --volume "$(pwd)/$TRAVIS_REPO_SLUG":"$DOCKER_CONTAINER_HOME/$TRAVIS_REPO_SLUG" $DOCKER_IMAGE
 # - docker run --name $DOCKER_CONTAINER -d $DOCKER_IMAGE
 # - docker exec -t $DOCKER_CONTAINER git clone https://github.com/$TRAVIS_REPO_SLUG.git $TRAVIS_REPO_SLUG
 # - docker exec -t -w "$DOCKER_CONTAINER_HOME/$TRAVIS_REPO_SLUG" $DOCKER_CONTAINER git checkout -qf $TRAVIS_COMMIT
