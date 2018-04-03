@@ -4,11 +4,11 @@
 
 TEST(Parameters, getInt) {
 	Parameters params;
-	params["42"] = "42";
+	params.insert(std::make_pair("42", "42"));
 	// TODO: these three tests tell us the behaviour of stoi(). Not sure if that's the behaviour we want.
-	params["43"] = " 43";
-	params["44"] = "44 ";
-	params["45"] = "45b";
+	params.insert(std::make_pair("43", " 43"));
+	params.insert(std::make_pair("44", "44 "));
+	params.insert(std::make_pair("45", "45b"));
 
 	EXPECT_EQ(params.getInt("42"), 42);
 	EXPECT_EQ(params.getInt("43"), 43);
@@ -18,12 +18,12 @@ TEST(Parameters, getInt) {
 
 TEST(Parameters, getBool) {
 	Parameters params;
-	params["yes"] = "yEs";
-	params["true"] = "trUe";
-	params["1"] = "1";
-	params["no"] = "No";
-	params["false"] = "faLSe";
-	params["0"] = "0";
+	params.insert(std::make_pair("yes", "yEs"));
+	params.insert(std::make_pair("true", "trUe"));
+	params.insert(std::make_pair("1", "1"));
+	params.insert(std::make_pair("no", "No"));
+	params.insert(std::make_pair("false", "faLSe"));
+	params.insert(std::make_pair("0", "0"));
 
 	EXPECT_EQ(params.getBool("yes"), true);
 	EXPECT_EQ(params.getBool("true"), true);
@@ -35,15 +35,15 @@ TEST(Parameters, getBool) {
 
 TEST(Parameters, getPrefixedParameters) {
 	Parameters params;
-	params["test.a"] = "a";
-	params["test.b"] = "b";
-	params["test.c"] = "c";
-	params["test."] = "should be ignored";
-	params["other.a"] = "o.a";
-	params["other.b"] = "o.b";
-	params["other.c"] = "o.c";
-	params["other.d"] = "o.d";
-	params["a"] = "not a";
+	params.insert(std::make_pair("test.a", "a"));
+	params.insert(std::make_pair("test.b", "b"));
+	params.insert(std::make_pair("test.c", "c"));
+	params.insert(std::make_pair("test.", "should be ignored"));
+	params.insert(std::make_pair("other.a", "o.a"));
+	params.insert(std::make_pair("other.b", "o.b"));
+	params.insert(std::make_pair("other.c", "o.c"));
+	params.insert(std::make_pair("other.d", "o.d"));
+	params.insert(std::make_pair("a", "not a"));
 
 	auto prefixed = params.getPrefixedParameters("test.");
 	EXPECT_EQ(prefixed.size(), 3);
