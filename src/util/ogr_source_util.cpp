@@ -84,7 +84,7 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
 
 	//createFromWkt allocates a geometry and writes its pointer into a local pointer, therefore the third parameter is a OGRGeometry **.
 	//afterwards it is moved into a unique_ptr
-   	OGRGeometry *defaultGeomPtr;
+   	OGRGeometry *defaultGeomPtr = nullptr;
    	if(hasDefault){
 		std::string wkt = params.get("default", "").asString();		   		
 	   	char* wktChar = (char*) wkt.c_str();
