@@ -226,6 +226,9 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
             );
 
             auto raster2 = GenericRaster::create(dd, stref, qrect.xres, qrect.yres);
+            if(hasnodata && nodata != 0) {
+                raster2->clear(nodata);
+            }
 
             if (raster) {
                 int gdal_pixel_offset_x = gdal_pixel_x1 - pixel_x1;
@@ -249,7 +252,11 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 
         DataDescription dd(type, loadingInfo.unit, hasnodata, nodata);
 
-        return GenericRaster::create(dd, stref, qrect.xres, qrect.yres);
+        auto raster = GenericRaster::create(dd, stref, qrect.xres, qrect.yres);
+        if(hasnodata && nodata != 0) {
+            raster->clear(nodata);
+        }
+        return raster;
     }
 
 	//GDALRasterBand is not to be freed, is owned by GDALDataset that will be closed later
