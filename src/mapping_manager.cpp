@@ -777,22 +777,16 @@ static int import_gdal_dataset(int argc, char *argv[]){
 	return 1;
 }
 
-#include "util/ogr_source_datasets.h"
-
 int main(int argc, char *argv[]) {
 
 	program_name = argv[0];
 	int returncode = 0;
 
-    Configuration::loadFromDefaultPaths();
-    std::cout << OGRSourceDatasets::getListing("ogr_source_dataset1") << std::endl;
-    std::cout << OGRSourceDatasets::getListing("ogr_source_dataset2") << std::endl;
-    std::cout << OGRSourceDatasets::getListing("ogr_source_dataset3") << std::endl;
+	if (argc < 2) {
+		usage();
+	}
 
-    if (argc < 2) {
-        usage();
-    }
-
+	Configuration::loadFromDefaultPaths();
 	// FIXME
 	NopCacheManager cm;
 	CacheManager::init(&cm);

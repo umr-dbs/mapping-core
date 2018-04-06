@@ -10,7 +10,7 @@
  * each layer are provided by the source listing of the user service.
  * Difference to OGRRawSourceOperator is that not all query parameters need to be provided when calling the operator.
  * These information, like time attributes, geometry attributes for csv files, etc. are saved on disk in a dataset
- * description json. This json file is loaded from this operator and used for reading the feature collection.
+ * description json. This json file is loaded by this operator and used for reading the feature collection.
  *
  *  params:
  *      - name: name of json OGRSource data json to be opened.
@@ -32,6 +32,7 @@ protected:
     void getProvenance(ProvenanceCollection &pc) override;
 private:
     std::unique_ptr<OGRSourceUtil> ogrUtil;
+    std::string dataset_name;
 };
 
 OGRSourceOperator::OGRSourceOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params)
@@ -39,23 +40,20 @@ OGRSourceOperator::OGRSourceOperator(int sourcecounts[], GenericOperator *source
 {
     assumeSources(0);
 
-    std::string name                    = params["name"].asString();
-    Json::Value loaded_params           = OGRSourceDatasets::getFileDescription(name);
+    dataset_name                        = params["name"].asString();
+    Json::Value loaded_params           = OGRSourceDatasets::getDatasetDescription(dataset_name);
 
-    if(params.isMember("layer_name"))
-        loaded_params["layer_name"]     = params["layer_name"];
+    loaded_params["layer_name"]         = params["layer_name"];
     loaded_params["columns"]["textual"] = params["textual"];
     loaded_params["columns"]["numeric"] = params["numeric"];
 
-
     Provenance provenance;
-    std::string filename = loaded_params.get("filename", "").asString();
     Json::Value provenanceInfo = loaded_params["provenance"];
     if (provenanceInfo.isObject()) {
         provenance = Provenance(provenanceInfo.get("citation", "").asString(),
                                 provenanceInfo.get("license", "").asString(),
                                 provenanceInfo.get("uri", "").asString(),
-                                "data.ogr_raw_source." + filename);
+                                "data.ogr_raw_source." + dataset_name); //todo: does this need the layer_name added?
     }
 
     ogrUtil = make_unique<OGRSourceUtil>(loaded_params, provenance);
@@ -79,7 +77,16 @@ OGRSourceOperator::getPolygonCollection(const QueryRectangle &rect, const QueryT
 }
 
 void OGRSourceOperator::writeSemanticParameters(std::ostringstream &stream) {
-    ogrUtil->writeSemanticParameters(stream);
+    Json::Value root;
+
+    Json::Value& params = ogrUtil->getParameters();
+
+    root["name"]        = dataset_name;
+    root["layer_name"]  = params["layer_name"];
+    root["textual"]     = params["columns"]["textual"];
+    root["numeric"]     = params["columns"]["numeric"];
+
+    stream << root;
 }
 
 void OGRSourceOperator::getProvenance(ProvenanceCollection &pc) {

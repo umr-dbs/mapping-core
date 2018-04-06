@@ -5,7 +5,7 @@
 #include "configuration.h"
 #include "ogr_source_util.h"
 
-std::vector<std::string> OGRSourceDatasets::getFileNames(){
+std::vector<std::string> OGRSourceDatasets::getDatasetNames(){
     const std::string path = Configuration::get<std::string>("ogrsource.files.path");
 
     struct dirent *entry;
@@ -36,19 +36,19 @@ std::vector<std::string> OGRSourceDatasets::getFileNames(){
     return filenames;
 }
 
-Json::Value OGRSourceDatasets::getListing(const std::string &name){
-    Json::Value root = getFileDescription(name);
+Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name){
+    Json::Value root = getDatasetDescription(dataset_name);
 
     Json::Value columns = root["columns"];
 
-    bool isCsv = hasSuffix(root["filename"].asString(), ".csv") || hasSuffix(root["filename"].asString(), ".tsv");
+    bool isCsv = OGRSourceUtil::hasSuffix(root["filename"].asString(), ".csv") || OGRSourceUtil::hasSuffix(root["filename"].asString(), ".tsv");
 
     Json::Value layer_array(Json::ValueType::arrayValue);
 
     GDALAllRegister();
     GDALDataset *dataset = OGRSourceUtil::openGDALDataset(root);
 
-    if(dataset == NULL){
+    if(dataset == nullptr){
         throw OperatorException("OGR Source Datasets: Can not load dataset");
     }
 
@@ -66,8 +66,8 @@ Json::Value OGRSourceDatasets::getListing(const std::string &name){
 
         OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
 
-        for(int i = 0; i < attributeDefn->GetFieldCount(); i++){
-            OGRFieldDefn *field = attributeDefn->GetFieldDefn(i);
+        for(int j = 0; j < attributeDefn->GetFieldCount(); j++){
+            OGRFieldDefn *field = attributeDefn->GetFieldDefn(j);
             std::string field_name  = field->GetNameRef();
 
             //make sure not to add geometry columns if it is csv file
@@ -108,7 +108,7 @@ Json::Value OGRSourceDatasets::getListing(const std::string &name){
     return root;
 }
 
-Json::Value OGRSourceDatasets::getFileDescription(const std::string &name){
+Json::Value OGRSourceDatasets::getDatasetDescription(const std::string &name){
     std::string directory = Configuration::get<std::string>("ogrsource.files.path");
     std::string filename = directory + "/" + name + ".json";
 

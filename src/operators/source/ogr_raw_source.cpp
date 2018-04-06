@@ -10,7 +10,7 @@
 
 /** Operator for opening OGR/GDAL supported vector data files as FeatureCollections.
  *  Main implementation of feature reading can be found in util/ogr_source_util.h/cpp.
- *  Difference to OGRSourceOperator:
+ *  Difference to OGRSourceOperator: All data has to be provided in query, nothing is defined in datasets on disk.
  *
  * Query Parameters:
  * - filename: path to the input file
@@ -73,7 +73,7 @@ OGRRawSourceOperator::OGRRawSourceOperator(int sourcecounts[], GenericOperator *
 		provenance = Provenance(provenanceInfo.get("citation", "").asString(),
 								provenanceInfo.get("license", "").asString(),
 								provenanceInfo.get("uri", "").asString(),
-								"data.ogr_raw_source." + filename);
+								"data.ogr_raw_source." + filename); //todo: does this need the layer_name added?
 	}
 	ogrUtil = make_unique<OGRSourceUtil>(params, provenance);
 }
@@ -82,7 +82,7 @@ REGISTER_OPERATOR(OGRRawSourceOperator, "ogr_raw_source");
 
 void OGRRawSourceOperator::writeSemanticParameters(std::ostringstream& stream)
 {
-	ogrUtil->writeSemanticParameters(stream);
+	ogrUtil->writeSemanticParametersRaw(stream);
 }
 
 void OGRRawSourceOperator::getProvenance(ProvenanceCollection &pc)

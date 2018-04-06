@@ -18,7 +18,7 @@
 
 
 /*
-* Additionally defines a few enums (including string representations) for parameter parsing.
+* Enums (plus string representations) for parameter parsing.
 * These are copied from CSV Source because that functionality is supposed to be replaced by this operator.
 */
 
@@ -61,29 +61,40 @@ static EnumConverter<ErrorHandling>ErrorHandlingConverter(ErrorHandlingMap);
 
 /**
  * Class for reading OGR feature collections and creating SimpleFeatureCollections.
- *
+ * Doing the work for OGRSource and OGRRawSource.
+ * All the needed parameters for params are explained in ogr_raw_source.h
  */
-
-class OGRSourceUtil 
+class OGRSourceUtil
 {
 public:
 	OGRSourceUtil(Json::Value &params, Provenance provenance);
-	~OGRSourceUtil();
+	~OGRSourceUtil() = default;
 	std::unique_ptr<PointCollection> getPointCollection(const QueryRectangle &rect, const QueryTools &tools);
 	std::unique_ptr<LineCollection> getLineCollection(const QueryRectangle &rect, const QueryTools &tools);
 	std::unique_ptr<PolygonCollection> getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools);
-	void writeSemanticParameters(std::ostringstream& stream);
 	void getProvenance(ProvenanceCollection &pc);
+    Json::Value& getParameters();
 
-	/**
-	 * Opens a GDALDataset and returns the pointer to it. This pointer has to be freed with GDALClose(GDALDataset*) when done.
-	 * @param params
-	 * @return
-	 */
+    /**
+     * Writes all parameters into the stream, suitable for OGR Raw Source.
+     * OGR Source does not provide all the parameters in the query, so it's not used there.
+     */
+    void writeSemanticParametersRaw(std::ostringstream& stream);
+
+    /**
+     * Opens a GDALDataset with GDAL API for vector files.
+     * @param params JSON parameters from query, needs to provide filename. columns with x (,y) members for csv files.
+     * @return Pointer to the opened GDALDataset. The pointer needs to be freed with GDALClose. Returns NULL if opening failed.
+     */
     static GDALDataset* openGDALDataset(Json::Value &params);
 
+    /**
+     * returns if str ends with substring suffix.
+     */
+    static bool hasSuffix(const std::string &str, const std::string &suffix);
+
 private:
-	GDALDataset *dataset;
+	std::unique_ptr<GDALDataset, std::function<void(GDALDataset *)>> dataset;
 	Provenance provenance;
 	bool hasDefault;
 	Json::Value params;
@@ -99,8 +110,7 @@ private:
 	ErrorHandling errorHandling;
 	TimeSpecification timeSpecification;
 
-	void close();
-	void readAnyCollection(const QueryRectangle &rect, SimpleFeatureCollection *collection, std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature);
+	void readAnyCollection(const QueryRectangle &rect, SimpleFeatureCollection *collection, std::function<bool(OGRGeometry *)> addFeature);
 	void readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection);
 	void readRingToPolygonCollection(const OGRLinearRing *ring, std::unique_ptr<PolygonCollection> &collection);
 	void createAttributeArrays(OGRFeatureDefn *attributeDefn, AttributeArrays &attributeArrays);
@@ -108,7 +118,5 @@ private:
 	void initTimeReading(OGRFeatureDefn *attributeDefn);
 	bool readTimeIntoCollection(const QueryRectangle &rect, OGRFeature *feature, std::vector<TimeInterval> &time);
 };
-
-bool hasSuffix(const std::string &str, const std::string &suffix);
 
 #endif
