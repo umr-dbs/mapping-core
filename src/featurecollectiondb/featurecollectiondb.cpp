@@ -116,3 +116,7 @@ FeatureCollectionDB::DataSetMetaData FeatureCollectionDB::createPolygons(UserDB:
 	return featurecollectiondb_backend->loadDataSetMetaData(user, dataSetName);
 }
 
+bool FeatureCollectionDB::isAvailable() {
+	return featurecollectiondb_backend != nullptr;
+}
+

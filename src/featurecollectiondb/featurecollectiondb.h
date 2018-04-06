@@ -25,6 +25,8 @@ public:
 	static void init(const std::string &backend, const std::string &location);
 	static void shutdown();
 
+	static bool isAvailable();
+
 	// TODO: owner of the data set?
 	struct DataSetMetaData {
 		size_t dataSetId;

@@ -16,6 +16,11 @@ class FeatureCollectionDBSourceOperator : public GenericOperator {
 	public:
 		FeatureCollectionDBSourceOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params) : GenericOperator(sourcecounts, sources) {
 			assumeSources(0);
+
+			if(!FeatureCollectionDB::isAvailable()){
+				throw SourceException("FeatureCollectionDB is not available.");
+			}
+
 			owner = params.get("owner", "").asString();
 			dataSetName = params.get("data_set_name", "").asString();
 		}

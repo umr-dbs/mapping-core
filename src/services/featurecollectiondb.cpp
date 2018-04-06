@@ -81,6 +81,10 @@ void FeatureCollectionDBService::run() {
 	auto session = UserDB::loadSession(params.get("sessiontoken"));
 	auto& user = session->getUser();
 
+	if(!FeatureCollectionDB::isAvailable()){
+		throw SourceException("FeatureCollectionDB is not available.");
+	}
+
 	try {
 	std::string request = params.get("request");
 
