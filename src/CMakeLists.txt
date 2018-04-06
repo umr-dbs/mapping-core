@@ -252,6 +252,10 @@ find_package(LibArchive REQUIRED)
 target_link_libraries(mapping_core_base_lib ${LibArchive_LIBRARIES})
 target_include_directories(mapping_core_base_lib PRIVATE ${LibArchive_INCLUDE_DIRS})
 
+#Poco
+target_link_libraries(mapping_core_base_lib PocoFoundation)
+target_link_libraries(mapping_core_base_lib PocoNet)
+
 ## OpenCl
 find_package(OpenCL REQUIRED)
 # target_link_libraries(mapping_core_base_lib OpenCL::OpenCL) # works only with CMAKE 3.7
@@ -272,7 +276,15 @@ set(MAPPING_CORE_PATH ${CMAKE_SOURCE_DIR} CACHE PATH "This is the mapping-core d
 foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
     message(STATUS "Loading Module `${mapping_module}`")
     add_subdirectory(../${MAPPING_MODULE_PATH}/${mapping_module} target/modules/${mapping_module})
+    # pass systemtests variable to parent scope so that test can use it
+    if(SYSTEMTESTS_${mapping_module}_INTERNAL)
+        set(SYSTEMTESTS_${mapping_module} ${SYSTEMTESTS_${mapping_module}_INTERNAL} PARENT_SCOPE)
+    endif()
 endforeach (mapping_module)
+
+# pass systemtests variable to parent scope so that test can use it
+set(MAPPING_ADD_TO_UNITTESTS_LIBRARIES ${MAPPING_ADD_TO_UNITTESTS_LIBRARIES_INTERNAL} PARENT_SCOPE)
+
 ## Base
 foreach (mapping_core_addition IN ITEMS ${MAPPING_ADD_TO_BASE_OBJECTS})
     message(STATUS "Adding ${mapping_core_addition} to base.")
@@ -316,8 +328,6 @@ foreach(conf_file IN ITEMS
     add_custom_command(TARGET mapping_conf_copy POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/../conf/${conf_file} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/
             )
-
-
 endforeach(conf_file)
 
 # listed files from the modules conf folders to be moved to target/bin/conf/
@@ -326,7 +336,7 @@ foreach(append_file IN ITEMS settings-default.toml)
     foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
         if(EXISTS ../${MAPPING_MODULE_PATH}/${mapping_module}/conf/)
             if(EXISTS ../${MAPPING_MODULE_PATH}/${mapping_module}/conf/${append_file})
-            add_custom_command(TARGET mapping_conf_copy POST_BUILD
+                add_custom_command(TARGET mapping_conf_copy POST_BUILD
                     COMMAND echo "" >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${append_file} #adds a line break
                     COMMAND cat ../../${MAPPING_MODULE_PATH}/${mapping_module}/conf/${append_file} >> ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/conf/${append_file}
                     )

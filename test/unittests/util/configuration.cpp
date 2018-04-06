@@ -1,6 +1,32 @@
+
 #include <gtest/gtest.h>
 #include "util/configuration.h"
 
+TEST(Configuration, arrays){
+    Configuration::loadFromString("doubleArray=[1.0,2.3,5.7]\n[sub]\nintArray=[1,2,3,10,20]\nboolarray=[false, true, false]\nstringarray=[\"first\",\"scnd\"]");
+
+    std::vector<double> third = Configuration::getVector<double>("doubleArray");
+    EXPECT_EQ(third.size(), 3);
+    EXPECT_EQ(third[0], 1.0);
+    EXPECT_EQ(third[2], 5.7);
+
+    std::vector<int> first = Configuration::getVector<int>("sub.intArray");
+    EXPECT_EQ(first.size(), 5);
+    EXPECT_EQ(first[0], 1);
+    EXPECT_EQ(first[4], 20);
+
+    std::vector<bool> second = Configuration::getVector<bool>("sub.boolarray");
+    EXPECT_EQ(second.size(), 3);
+    EXPECT_EQ(second[0], false);
+    EXPECT_EQ(second[1], true);
+
+    std::vector<std::string> fourth = Configuration::getVector<std::string>("sub.stringarray");
+
+    EXPECT_EQ(fourth.size(), 2);
+    EXPECT_EQ(fourth[0], "first");
+    EXPECT_EQ(fourth[1], "scnd");
+
+}
 
 TEST(Configuration, mergeTest){
 
