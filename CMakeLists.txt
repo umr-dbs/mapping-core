@@ -23,6 +23,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/target/lib)
 set(MAPPING_MODULE_PATH .. CACHE PATH "A list of mapping modules to include in the build process")
 set(MAPPING_MODULES "" CACHE STRING "A list of mapping modules to include in the build process")
 
+# Disable options from cpptoml
+option(ENABLE_LIBCXX "Use libc++ for the C++ standard library" OFF)
+option(CPPTOML_BUILD_EXAMPLES "Build examples" OFF)
+
 # External Dependencies
 include(DownloadProject)
 
