@@ -14,7 +14,7 @@
  *
  * Query Parameters:
  * - filename: path to the input file
- * - layer: name of the layer to load
+ * - layer_name: name of the layer to load
  * - time: the type of the time column(s)
  *   - "none": no time information is mapped
  *   - "start": only start information is mapped. duration has to specified in the duration attribute
