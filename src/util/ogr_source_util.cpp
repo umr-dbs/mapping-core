@@ -90,7 +90,7 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
 		throw OperatorException("OGR Source: No layers in OGR Dataset");
 
     //get the layer. We have no responsibility over it's memory.
-	OGRLayer *layer;
+	OGRLayer *layer = nullptr;
 	if(params.isMember("layer_name"))
         layer = dataset->GetLayerByName(params["layer_name"].asCString());
 	else
