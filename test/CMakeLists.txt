@@ -51,9 +51,17 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
 target_link_libraries(mapping_core_unittests_lib gtest)
 
+# Define the build of the test executables as one of the tests s.t. they are built on `make test`
+# TODO: use multiple threads for building
+add_test(NAME build_mapping_unittests COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR}
+        --target mapping_unittests --config $<CONFIG>)
+add_test(NAME build_mapping_manager COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR}
+        --target mapping_manager --config $<CONFIG>)
 
 add_test(NAME
     all_tests COMMAND mapping_unittests --gtest_color=yes --gtest_output="xml:unittest_latest.xml")
+set_tests_properties (all_tests PROPERTIES DEPENDS build_mapping_unittests)
+
 
 list(APPEND systemtests classification_ndvi)
 list(APPEND systemtests csv_source_data_uri)
@@ -133,6 +141,7 @@ list(APPEND systemtests wkt_source_polygons_time)
 # TODO: replace with cmake command
 add_test(SETUP_SYSTEMTESTS bash systemtests/setup.sh ${CMAKE_BINARY_DIR})
 set_tests_properties(SETUP_SYSTEMTESTS PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+set_tests_properties (SETUP_SYSTEMTESTS PROPERTIES DEPENDS build_mapping_manager)
 
 foreach(systemtest ${systemtests})
     add_test(SYSTEMTEST_${systemtest} "${CMAKE_BINARY_DIR}/mapping_manager" testquery systemtests/queries/${systemtest}.json)
