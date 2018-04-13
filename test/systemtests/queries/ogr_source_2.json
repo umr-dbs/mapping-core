@@ -15,9 +15,9 @@
     "query": {
         "params": {
             "name": "ogr_source_dataset2",
-            "layer_name" : "stationsWithCoordinates",
-            "numeric" : [],
-            "textual" : ["type", "Station_ID"]
+            "layer_name" : "ne_10m_ports",
+            "numeric" : [ "scalerank" ],
+            "textual" : ["name", "website"]
         },
         "type": "ogr_source"
     }
