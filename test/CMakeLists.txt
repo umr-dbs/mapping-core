@@ -144,7 +144,7 @@ set_tests_properties(SETUP_SYSTEMTESTS PROPERTIES WORKING_DIRECTORY ${CMAKE_CURR
 set_tests_properties (SETUP_SYSTEMTESTS PROPERTIES DEPENDS build_mapping_manager)
 
 foreach(systemtest ${systemtests})
-    add_test(SYSTEMTEST_${systemtest} "${CMAKE_BINARY_DIR}/mapping_manager" testquery systemtests/queries/${systemtest}.json)
+    add_test(SYSTEMTEST_${systemtest} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mapping_manager testquery ${CMAKE_SOURCE_DIR}/test/systemtests/queries/${systemtest}.json)
     set_tests_properties(SYSTEMTEST_${systemtest} PROPERTIES FIXTURES_REQUIRED SYSTEMTESTS
                                                              WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endforeach(systemtest)
