@@ -90,9 +90,9 @@ add_library(mapping_core_base_lib
         util/gdal_source_datasets.cpp
         datatypes/Coordinate.cpp
         util/parameters.cpp
-        util/parameters.h
         datatypes/raster/raster.cpp
-        raster/opencl.cpp)
+        raster/opencl.cpp
+        util/ogr_source_datasets.cpp)
 
 target_include_directories(mapping_core_base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi mapping_core_base_lib)
@@ -127,7 +127,7 @@ add_library(mapping_core_operators_lib
         operators/source/rasterdb_source.cpp
         operators/source/wkt_source.cpp
         operators/source/gdal_source.cpp
-        operators/source/ogr_source.cpp
+        operators/source/ogr_raw_source.cpp
         util/ogr_source_util.cpp
         util/gdal_timesnap.cpp
         util/csv_source_util.cpp
@@ -155,7 +155,9 @@ add_library(mapping_core_operators_lib
         operators/plots/histogram.cpp
         operators/plots/feature_attributes_plot.cpp
         operators/source/featurecollectiondb_source.cpp
-        util/rasterize_polygons.cpp util/rasterize_polygons.h)
+        util/rasterize_polygons.cpp
+        util/rasterize_polygons.h
+        operators/source/ogr_source.cpp)
 target_link_libraries_internal(mapping_core_operators_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_operators_lib)
 target_link_libraries_internal(mapping_manager mapping_core_operators_lib)

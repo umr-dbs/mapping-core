@@ -1,0 +1,9 @@
+
+{		
+    "filename": "../../test/systemtests/data/ogr_files/ne_10m_ports/ne_10m_ports.shp",
+    "on_error" : "keep",
+    "time": "none",    
+    "columns" : {
+        
+    }
+}

@@ -88,7 +88,7 @@ void Configuration::loadFromEnvironment() {
     }
 
     // The file must be loaded before we parse the variables, to guarantee a repeatable priority when multiple settings overlap
-    if (configuration_file.empty())
+    if (!configuration_file.empty())
         loadFromFile(configuration_file);
 
     loadFromString(relevant_vars);

@@ -8,18 +8,21 @@
 #include "util/exceptions.h"
 #include "util/make_unique.h"
 #include "util/timeparser.h"
+#include "configuration.h"
 #include <unordered_map>
 #include <unordered_set>
 #include <json/json.h>
+#include <dirent.h>
+#include <iostream>
 
-OGRSourceUtil::OGRSourceUtil(Json::Value &params) : params(params)
-{		
-	//read the different parameters
+OGRSourceUtil::OGRSourceUtil(Json::Value &params, Provenance provenance) : params(params), provenance(provenance)
+{
+    //read the different parameters
 
-	errorHandling = ErrorHandlingConverter.from_json(params, "on_error");	
+    errorHandling = ErrorHandlingConverter.from_json(params, "on_error");
 
-	Json::Value columns = params.get("columns", Json::Value(Json::ValueType::objectValue));
-	auto textual = columns.get("textual", Json::Value(Json::ValueType::arrayValue));
+    Json::Value columns = params.get("columns", Json::Value(Json::ValueType::objectValue));
+    auto textual = columns.get("textual", Json::Value(Json::ValueType::arrayValue));
     for (auto &name : textual)
     	wantedAttributes[name.asString()] = AttributeType::TEXTUAL;
     
@@ -64,79 +67,120 @@ OGRSourceUtil::OGRSourceUtil(Json::Value &params) : params(params)
 	hasDefault = params.isMember("default");	
 }
 
-OGRSourceUtil::~OGRSourceUtil(){ }
-
-Json::Value OGRSourceUtil::getParameters(){
-	return params;
-}
-
-// Wrapper to read the different collection types. The passed function addFeature handles the specifics of the reading that differ for the different collection types.
-// Handles the attribute and time reading for all collection types.
+// Wrapper to read the different collection types. The passed function addFeature handles the specifics of the reading
+// that differ for the different collection types. Handles the attribute and time reading for all collection types.
 void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect, 
-									  SimpleFeatureCollection *collection, 
-									  OGRLayer *layer, 
-									  std::function<bool(OGRGeometry *, OGRFeature *, int)> addFeature)
+									  SimpleFeatureCollection *collection,
+									  std::function<bool(OGRGeometry *)> addFeature)
 {
+	//open GDALDataset and put the raw pointer into a unique_ptr member to handle it's lifetime.
+    GDALDataset *dataset_raw = OGRSourceUtil::openGDALDataset(params);
+    if(dataset_raw == nullptr){
+        throw OperatorException("OGR Source: Can not load dataset");
+    }
+
+    dataset = std::unique_ptr<GDALDataset, std::function<void(GDALDataset *)>>(
+            dataset_raw,
+            [](GDALDataset *dataset){
+                GDALClose(dataset);
+            });
+    dataset_raw = nullptr;
+
+	if(dataset->GetLayerCount() < 1)
+		throw OperatorException("OGR Source: No layers in OGR Dataset");
+
+    //get the layer. We have no responsibility over it's memory.
+	OGRLayer *layer = nullptr;
+	if(params.isMember("layer_name"))
+        layer = dataset->GetLayerByName(params["layer_name"].asCString());
+	else
+		layer = dataset->GetLayer(0);
+
+	if(layer == nullptr)
+		throw OperatorException("OGR Source: Layer could not be read from dataset.");
+
+	// filters all Features not intersecting with the query rectangle.
+	layer->SetSpatialFilterRect(rect.x1, rect.y1, rect.x2, rect.y2);
+
+	// a call suggested by OGR Tutorial as "just in case" (to start reading from first feature)
+	layer->ResetReading();
+
+	//start reading the FeatureCollection
 	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
 	createAttributeArrays(attributeDefn, collection->feature_attributes);
 	initTimeReading(attributeDefn);
-	OGRFeature* feature;
 
 	//createFromWkt allocates a geometry and writes its pointer into a local pointer, therefore the third parameter is a OGRGeometry **.
 	//afterwards it is moved into a unique_ptr
-   	OGRGeometry *defaultGeomPtr = nullptr;
+   	OGRGeometry *default_geometry_raw = nullptr;
    	if(hasDefault){
 		std::string wkt = params.get("default", "").asString();		   		
 	   	char* wktChar = (char*) wkt.c_str();
-	   	OGRSpatialReference ref(NULL);
-	   	OGRErr err = OGRGeometryFactory::createFromWkt(&wktChar, &ref, &defaultGeomPtr);	   	
+	   	OGRSpatialReference ref(nullptr);
+	   	OGRErr err = OGRGeometryFactory::createFromWkt(&wktChar, &ref, &default_geometry_raw);
 	   	if(err != OGRERR_NONE)
 	   		throw OperatorException("OGR Source: default wkt-string could not be parsed.");
    	} 
-   	std::unique_ptr<OGRGeometry> defGeom(defaultGeomPtr);
-   	defaultGeomPtr = NULL;
+
+   	std::unique_ptr<OGRGeometry, std::function<void (OGRGeometry *)>> default_geometry(
+            default_geometry_raw,
+            [](OGRGeometry *geom){
+                OGRGeometryFactory::destroyGeometry(geom);
+            });
+   	default_geometry_raw = nullptr;
+
 
 	int featureCount = 0;
+    //add deleter
+    OGRFeature *feature_raw = nullptr;
+    auto feature_deleter = [](OGRFeature *feature){
+        OGRFeature::DestroyFeature(feature);
+    };
 
 	// iterate all features of the OGRLayer
-	while( (feature = layer->GetNextFeature()) != NULL )
+	while( (feature_raw = layer->GetNextFeature()) != nullptr)
 	{
+        //move the feature_raw pointer into a unique_ptr with custom deleter.
+        std::unique_ptr<OGRFeature, std::function<void (OGRFeature *)>> feature (feature_raw, feature_deleter);
+        feature_raw = nullptr;
+
 		//each feature has potentially multiple geometries
 		if(feature->GetGeomFieldCount() > 1){
 			throw OperatorException("OGR Source: at least one OGRFeature has more than one Geometry. For now we don't support this.");		
 		}
-		
+
 		OGRGeometry *geom = feature->GetGeomFieldRef(0);
 		bool success = false;
 
-		if(geom != NULL)
+		if(geom != nullptr)
 		{						
-			success = addFeature(geom, feature, featureCount);
+			success = addFeature(geom);
 		} 
 		else if(hasDefault)
 		{
-			success = addFeature(defGeom.get(), feature, featureCount);
+			success = addFeature(default_geometry.get());
 		}
 
-		if(success && !readTimeIntoCollection(rect, feature, collection->time)){		
-			//error returned, either ErrorHandling::SKIP or the time stamps of feature were filtered -> so continue to next feature	
-			success = false;
-			collection->removeLastFeature();
-		}		
+        if(success){
+            //read time and if time reading was successful read attributes.
+            bool time_and_attribute_success = readTimeIntoCollection(rect, feature.get(), collection->time);
+            if(time_and_attribute_success)
+                time_and_attribute_success = readAttributesIntoCollection(collection->feature_attributes, attributeDefn, feature.get(), featureCount);
 
-		//returns false if attribute could not be written and errorhandling is SKIP: the inserted feature has to be removed
-		if(success && !readAttributesIntoCollection(collection->feature_attributes, attributeDefn, feature, featureCount)){
-			success = false;
-			collection->removeLastFeature();
-		}
+            //false means that attribute or time could not be written and errorhandling is SKIP: the already inserted feature has to be removed
+            if(!time_and_attribute_success){
+                success = false;
+                collection->removeLastFeature();
+            }
+        }
 
 		if(success)
 			featureCount++;					
 		else
 		{
 			switch(errorHandling){
-				case ErrorHandling::ABORT:					
-					if(geom == NULL)
+				case ErrorHandling::ABORT:
+					if(geom == nullptr)
 						throw OperatorException("OGR Source: Invalid dataset, at least one OGRGeometry was NULL and no default values exist.");
 					else
 						throw OperatorException("OGR Source: Dataset contains not expected FeatureType (Points,Lines,Polygons)");
@@ -149,37 +193,36 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
 					//TODO: ???? Insert 0-Feature?
 					break;
 			}
-		}			
-		OGRFeature::DestroyFeature(feature);	
+		}
 	}
 
-	// if it is wanted to insert default timestamps for TimeSpec.::NONE uncomment this.
+	// if it is wanted to insert default timestamps for TimeSpec::NONE uncomment this.
 	// for now we decided not to add them.
 	/*if(timeSpecification == TimeSpecification::NONE)
 		collection->addDefaultTimestamps();*/
 }
 
 
-std::unique_ptr<PointCollection> OGRSourceUtil::getPointCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer)
+std::unique_ptr<PointCollection> OGRSourceUtil::getPointCollection(const QueryRectangle &rect, const QueryTools &tools)
 {
 	auto points = make_unique<PointCollection>(rect);
 	
-	auto addFeature = [&](OGRGeometry *geom, OGRFeature *feature, int featureCount) -> bool 
+	auto addFeature = [&](OGRGeometry *geom) -> bool
 	{
 		int type = wkbFlatten(geom->getGeometryType());							
 		
 		if(type == wkbPoint)
 		{	
-			OGRPoint *point = (OGRPoint *)geom;				
+			auto point = static_cast<OGRPoint *>(geom);
 			points->addCoordinate(point->getX(), point->getY());
 			points->finishFeature();	
 		}				
 		else if(type == wkbMultiPoint)
 		{
-			OGRMultiPoint *mp = (OGRMultiPoint *)geom;
+			auto mp = static_cast<OGRMultiPoint *>(geom);
 			int num = mp->getNumGeometries();
 			for(int k = 0; k < num; k++){
-				OGRPoint *point = (OGRPoint *)mp->getGeometryRef(k);
+				auto point = static_cast<OGRPoint *>(mp->getGeometryRef(k));
 				points->addCoordinate(point->getX(), point->getY());
 				points->finishFeature();
 			}			
@@ -190,31 +233,31 @@ std::unique_ptr<PointCollection> OGRSourceUtil::getPointCollection(const QueryRe
 		return true;	
 	};
 
-	readAnyCollection(rect, points.get(), layer, addFeature);
+	readAnyCollection(rect, points.get(), addFeature);
 	points->validate();
 	return points;
 }
 
-std::unique_ptr<LineCollection> OGRSourceUtil::getLineCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer)
+std::unique_ptr<LineCollection> OGRSourceUtil::getLineCollection(const QueryRectangle &rect, const QueryTools &tools)
 {
 	auto lines = make_unique<LineCollection>(rect);	
 
-	auto addFeature = [&](OGRGeometry *geom, OGRFeature *feature, int featureCount) -> bool 
+	auto addFeature = [&](OGRGeometry *geom) -> bool
 	{
 		int type = wkbFlatten(geom->getGeometryType());
 		
 		if(type == wkbLineString)
 		{
-			OGRLineString *ls = (OGRLineString *)geom;
+			auto ls = static_cast<OGRLineString *>(geom);
 			readLineStringToLineCollection(ls, lines);									
 			lines->finishFeature();
 		}
 		else if(type == wkbMultiLineString)
 		{
-			OGRMultiLineString *mls = (OGRMultiLineString *)geom;					
+			auto mls = static_cast<OGRMultiLineString *>(geom);
 			for(int l = 0; l < mls->getNumGeometries(); l++)
 			{						
-				OGRLineString *ls = (OGRLineString *)mls->getGeometryRef(l);
+				auto ls = static_cast<OGRLineString *>(mls->getGeometryRef(l));
 				readLineStringToLineCollection(ls, lines);						
 			}
 			lines->finishFeature();
@@ -225,21 +268,21 @@ std::unique_ptr<LineCollection> OGRSourceUtil::getLineCollection(const QueryRect
 		return true;			
 	};	
 	
-	readAnyCollection(rect, lines.get(), layer, addFeature);
+	readAnyCollection(rect, lines.get(), addFeature);
 	lines->validate();
 	return lines;
 }
 
-std::unique_ptr<PolygonCollection> OGRSourceUtil::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools, OGRLayer *layer) 
+std::unique_ptr<PolygonCollection> OGRSourceUtil::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools)
 {
 	auto polygons = make_unique<PolygonCollection>(rect);	
 
-	auto addFeature = [&](OGRGeometry *geom, OGRFeature *feature, int featureCount) -> bool 
+	auto addFeature = [&](OGRGeometry *geom) -> bool
 	{
 		int type = wkbFlatten(geom->getGeometryType());			
 		if(type == wkbPolygon)
 		{
-			OGRPolygon *polygon = (OGRPolygon *)geom;
+			auto polygon = static_cast<OGRPolygon *>(geom);
 			const OGRLinearRing *extRing = polygon->getExteriorRing();
 			readRingToPolygonCollection(extRing, polygons);					
 
@@ -254,11 +297,11 @@ std::unique_ptr<PolygonCollection> OGRSourceUtil::getPolygonCollection(const Que
 		}				
 		else if(type == wkbMultiPolygon)
 		{
-			OGRMultiPolygon *multiPolygon = (OGRMultiPolygon *)geom;
+			auto multiPolygon = static_cast<OGRMultiPolygon *>(geom);
 
 			for(int l = 0; l < multiPolygon->getNumGeometries(); l++)
 			{
-				OGRPolygon *polygon = (OGRPolygon *)multiPolygon->getGeometryRef(l);
+				auto polygon = static_cast<OGRPolygon *>(multiPolygon->getGeometryRef(l));
 
 				const OGRLinearRing *extRing = polygon->getExteriorRing();
 				readRingToPolygonCollection(extRing, polygons);					
@@ -278,7 +321,7 @@ std::unique_ptr<PolygonCollection> OGRSourceUtil::getPolygonCollection(const Que
 		return true;
 	};
 	
-	readAnyCollection(rect, polygons.get(), layer, addFeature);
+	readAnyCollection(rect, polygons.get(), addFeature);
 	polygons->validate();
 	return polygons;
 }
@@ -307,7 +350,6 @@ void OGRSourceUtil::readRingToPolygonCollection(const OGRLinearRing *ring, std::
 	collection->finishRing();
 }
 
-
 // create the AttributeArrays for the FeatureCollection based on Attribute Fields in OGRLayer. 
 // only if the user asked for the attribute in the query parameters.
 // create a string vector with the attribute names for writing the attributes for each feature easier
@@ -321,7 +363,7 @@ void OGRSourceUtil::createAttributeArrays(OGRFeatureDefn *attributeDefn, Attribu
 	{
 		OGRFieldDefn *fieldDefn = attributeDefn->GetFieldDefn(i);
 		std::string name(fieldDefn->GetNameRef());		
-		if(name == ""){
+		if(name.empty()){
 			throw OperatorException("OGR Source: an attribute has no name.");
 		}
 		existingAttributes.insert(name);
@@ -335,7 +377,7 @@ void OGRSourceUtil::createAttributeArrays(OGRFeatureDefn *attributeDefn, Attribu
 			else if(wantedType == AttributeType::NUMERIC)
 				attributeArrays.addNumericAttribute(name, Unit::unknown()); //TODO: units
 		} else
-			attributeNames.push_back("");	//if attribute is not wanted add an empty string into the attributeNames vector.
+			attributeNames.emplace_back("");	//if attribute is not wanted add an empty string into the attributeNames vector.
 	}
 
 	// check if all requested attributes exist in FeatureDefn
@@ -355,7 +397,7 @@ bool OGRSourceUtil::readAttributesIntoCollection(AttributeArrays &attributeArray
 	for(int i = 0; i < attributeDefn->GetFieldCount(); i++)
 	{
 		//if attribute was not wanted the place in the std::vector has an empty string
-		if(attributeNames[i] == "")
+		if(attributeNames[i].empty())
 			continue;
 
 		OGRFieldDefn *fieldDefn  = attributeDefn->GetFieldDefn(i);
@@ -494,6 +536,58 @@ bool OGRSourceUtil::readTimeIntoCollection(const QueryRectangle &rect, OGRFeatur
 	if(t1 < rect.t1 && t2 < rect.t1 || t1 > rect.t1 && t2 > rect.t2)
 		return false;
 
-	time.push_back(TimeInterval(t1, t2));	
+	time.emplace_back(TimeInterval(t1, t2));
 	return true;
+}
+
+void OGRSourceUtil::writeSemanticParametersRaw(std::ostringstream& stream){
+	Json::FastWriter writer;
+	stream << writer.write(params);
+}
+
+void OGRSourceUtil::getProvenance(ProvenanceCollection &pc){
+	pc.add(provenance);
+}
+
+GDALDataset* OGRSourceUtil::openGDALDataset(Json::Value &params){
+    GDALAllRegister();
+
+    std::string filename = params["filename"].asString();
+    Json::Value columns = params["columns"];
+
+    bool isCsv = hasSuffix(filename, ".csv") || hasSuffix(filename, ".tsv");
+
+    // if its a csv file we have to add open options to tell gdal what the geometry columns are.
+    if(isCsv){
+        std::string column_x = columns.get("x", "x").asString();
+
+        if(columns.isMember("y"))
+        {
+            std::string column_y 	= columns.get("y", "y").asString();
+            std::string optX 		= "X_POSSIBLE_NAMES=" + column_x;
+            std::string optY 		= "Y_POSSIBLE_NAMES=" + column_y;
+            std::string type_detect = "AUTODETECT_TYPE=YES";
+            const char * const strs[] = { optX.c_str(), optY.c_str(), type_detect.c_str(), NULL};
+            return (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, strs, NULL);
+        }
+        else
+        {
+            std::string opt = "GEOM_POSSIBLE_NAMES=" + column_x;
+            std::string type_detect = "AUTODETECT_TYPE=YES";
+            const char * const strs[] = { opt.c_str(), type_detect.c_str(), NULL };
+            return (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, strs, NULL);
+        }
+    }
+    else
+        return (GDALDataset*)GDALOpenEx(filename.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
+}
+
+bool OGRSourceUtil::hasSuffix(const std::string &str, const std::string &suffix)
+{
+    return  str.size() >= suffix.size() &&
+            str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+Json::Value& OGRSourceUtil::getParameters(){
+    return params;
 }
