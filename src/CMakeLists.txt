@@ -90,11 +90,9 @@ add_library(mapping_core_base_lib
         util/gdal_source_datasets.cpp
         datatypes/Coordinate.cpp
         util/parameters.cpp
-        util/parameters.h
         datatypes/raster/raster.cpp
         raster/opencl.cpp
-        util/ogr_source_datasets.cpp
-        util/ogr_source_datasets.h)
+        util/ogr_source_datasets.cpp)
 
 target_include_directories(mapping_core_base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi mapping_core_base_lib)
