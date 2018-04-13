@@ -55,5 +55,9 @@ norasterforgiventimeexception=false # Configures the handling of NoRasterForGive
 #[gdalsource.datasets]
 #path="" # The path to the JSON data set descriptions for the GDALSource
 
+#[ogrsource.files]
+#path="" # The path to the JSON data set descriptions for the OGRSource
+
 [crsdirectory]
 location="conf/crs.json" # The location of the file containing the definitions of the supported CRS
+
