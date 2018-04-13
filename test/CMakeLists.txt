@@ -35,11 +35,6 @@ target_link_libraries_internal(mapping_unittests mapping_core_unittests_lib)
 target_link_libraries_internal(mapping_unittests mapping_core_services_lib)
 target_link_libraries_internal(mapping_unittests mapping_core_operators_lib)
 
-foreach (mapping_unittests_addition IN ITEMS ${MAPPING_ADD_TO_UNITTESTS_LIBRARIES})
-    message(STATUS "Adding ${mapping_unittests_addition} to unittests.")
-    target_sources(mapping_core_unittests_lib PRIVATE $<TARGET_OBJECTS:${mapping_unittests_addition}>)
-endforeach(mapping_unittests_addition)
-
 target_link_libraries(mapping_unittests ${Fcgi_LIBRARIES})
 target_link_libraries(mapping_unittests ${Fcgi++_LIBRARIES})
 
@@ -55,6 +50,7 @@ download_project(PROJ       googletest
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
 target_link_libraries(mapping_core_unittests_lib gtest)
+
 
 add_test(NAME
     all_tests COMMAND mapping_unittests --gtest_color=yes --gtest_output="xml:unittest_latest.xml")
@@ -138,20 +134,8 @@ list(APPEND systemtests wkt_source_polygons_time)
 add_test(SETUP_SYSTEMTESTS bash systemtests/setup.sh ${CMAKE_BINARY_DIR})
 set_tests_properties(SETUP_SYSTEMTESTS PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-
 foreach(systemtest ${systemtests})
-    add_test(SYSTEMTEST_${systemtest} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mapping_manager" testquery test/systemtests/queries/${systemtest}.json)
+    add_test(SYSTEMTEST_${systemtest} "${CMAKE_BINARY_DIR}/mapping_manager" testquery systemtests/queries/${systemtest}.json)
     set_tests_properties(SYSTEMTEST_${systemtest} PROPERTIES FIXTURES_REQUIRED SYSTEMTESTS
                                                              WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endforeach(systemtest)
-
-# systemtests from modules
-foreach(mapping_module IN ITEMS ${MAPPING_MODULES})
-    if(SYSTEMTESTS_${mapping_module})
-        foreach(systemtest ${SYSTEMTESTS_${mapping_module}})
-            add_test(SYSTEMTEST_${systemtest} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mapping_manager" testquery ../${mapping_module}/test/systemtests/queries/${systemtest}.json)
-            set_tests_properties(SYSTEMTEST_${systemtest} PROPERTIES FIXTURES_REQUIRED SYSTEMTESTS
-                    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-        endforeach(systemtest)
-    endif()
-endforeach(mapping_module)
