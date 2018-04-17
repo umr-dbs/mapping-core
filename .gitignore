@@ -25,3 +25,4 @@ docs/mappingDoc/*
 
 # mapping configuration
 mapping.conf
+conf/settings.toml
