@@ -122,15 +122,20 @@ target_link_libraries_internal(mapping_core_services_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_services_lib)
 
 add_library(mapping_core_operators_lib
+        util/ogr_source_util.cpp
+        util/gdal_timesnap.cpp
+        util/csv_source_util.cpp
+        util/sunpos.cpp
+        util/rasterize_polygons.cpp
+        util/rasterize_polygons.h
+        operators/source/featurecollectiondb_source.cpp
         operators/source/csv_source.cpp
         operators/source/postgres_source.cpp
         operators/source/rasterdb_source.cpp
         operators/source/wkt_source.cpp
         operators/source/gdal_source.cpp
         operators/source/ogr_raw_source.cpp
-        util/ogr_source_util.cpp
-        util/gdal_timesnap.cpp
-        util/csv_source_util.cpp
+        operators/source/ogr_source.cpp
         operators/processing/raster/matrixkernel.cpp
         operators/processing/raster/expression.cpp
         operators/processing/raster/classification.cpp
@@ -151,13 +156,10 @@ add_library(mapping_core_operators_lib
         operators/processing/meteosat/pansharpening.cpp
         operators/processing/meteosat/gccthermthresholddetection.cpp
         operators/processing/meteosat/co2correction.cpp
-        util/sunpos.cpp
+        operators/processing/scripting/r_script.cpp
         operators/plots/histogram.cpp
         operators/plots/feature_attributes_plot.cpp
-        operators/source/featurecollectiondb_source.cpp
-        util/rasterize_polygons.cpp
-        util/rasterize_polygons.h
-        operators/source/ogr_source.cpp)
+        )
 target_link_libraries_internal(mapping_core_operators_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_operators_lib)
 target_link_libraries_internal(mapping_manager mapping_core_operators_lib)
