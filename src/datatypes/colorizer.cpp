@@ -299,7 +299,7 @@ std::unique_ptr<Colorizer> Colorizer::fromUnit(const Unit &unit) {
 }
 
 std::unique_ptr<Colorizer> Colorizer::fromJson(const Json::Value &json) {
-    if(!json.isMember("breakpoints")) {
+    if(!json.isMember("breakpoints") || json["breakpoints"].empty()) {
         throw ArgumentException("Missing breakpoints for colorizer");
     }
 
