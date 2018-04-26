@@ -133,26 +133,14 @@ SpatialReference OGCService::parseBBOX(const std::string bbox_str, CrsId crsId, 
 
 
 
-void OGCService::outputImage(GenericRaster *raster, bool flipx, bool flipy, const std::string &colors, Raster2D<uint8_t> *overlay) {
-	std::unique_ptr<Colorizer> colorizer;
-	if(colors.empty()) {
-		colorizer = Colorizer::fromUnit(raster->dd.unit);
-	} else {
-		Json::Reader reader(Json::Features::strictMode());
-		Json::Value json;
-		if (!reader.parse(colors, json))
-			throw std::runtime_error(concat("OGCService: could not parse colors"));
-
-		colorizer = Colorizer::fromJson(json);
-	}
-
-	if (!response.hasSentHeaders()) {
+void OGCService::outputImage(GenericRaster &raster, bool flipx, bool flipy, const Colorizer &colorizer, Raster2D<uint8_t> *overlay) {
+		if (!response.hasSentHeaders()) {
 		response.sendDebugHeader();
 		response.sendContentType("image/png");
 		response.finishHeaders();
 	}
 
-	raster->toPNG(response, *colorizer, flipx, flipy, overlay); //"/tmp/xyz.tmp.png");
+	raster.toPNG(response, colorizer, flipx, flipy, overlay); //"/tmp/xyz.tmp.png");
 }
 
 void OGCService::outputSimpleFeatureCollectionGeoJSON(SimpleFeatureCollection *collection, bool displayMetadata) {

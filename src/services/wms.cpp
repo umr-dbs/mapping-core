@@ -18,6 +18,8 @@ class WMSService : public OGCService {
 		using OGCService::OGCService;
 		virtual ~WMSService() = default;
 		virtual void run();
+
+        std::unique_ptr<Colorizer> createColorizer(GenericRaster &raster, std::string colors);
 };
 REGISTER_HTTP_SERVICE(WMSService, "WMS");
 
@@ -58,9 +60,8 @@ void WMSService::run() {
 			//	send403("only tiled for now");
 
 			SpatialReference sref = parseBBOX(params.get("bbox"), query_crsId, false);
-			auto colorizer = params.get("colors", "");
+			auto colors = params.get("colors", "");
 			auto format = params.get("format", "image/png");
-
 
 			bool flipx, flipy;
 			QueryRectangle qrect(
@@ -118,7 +119,7 @@ void WMSService::run() {
 				}
 			}
 
-			outputImage(result_raster.get(), flipx, flipy, colorizer, overlay.get());
+			outputImage(*result_raster, flipx, flipy, *createColorizer(*result_raster, colors), overlay.get());
 		}  catch (const std::exception &e) {
 			// Alright, something went wrong.
 			// We're still in a WMS request though, so do our best to output an image with a clear error message.
@@ -142,7 +143,7 @@ void WMSService::run() {
 				errorraster->printCentered(1, msg.c_str());
 			}
 
-			outputImage(errorraster.get(), false, false, "");
+			outputImage(*errorraster, false, false, Colorizer::error());
 		}
 		// cut into pieces
 
@@ -179,6 +180,7 @@ void WMSService::run() {
 		 */
 	}
 	else if (request == "GetColorizer") {
+		// TODO: remove this request and use DescribeLayer to check for validity of raster result
 		if (params.get("version") != "1.3.0")
 			response.send500("Invalid version");
 
@@ -193,12 +195,10 @@ void WMSService::run() {
 		auto result_raster = processQuery(query, user)
 			->getRaster(GenericOperator::RasterQM::LOOSE);
 
-		auto unit = result_raster->dd.unit;
-		auto colorizer = Colorizer::fromUnit(unit);
-
 		response.sendContentType("application/json");
 		response.finishHeaders();
-		response << colorizer->toJson();
+		// for now reply with a mock response as long as front end uses this method to check raster result validity
+		response << "{\"interpolation\":\"linear\", \"breakpoints\": [0,\"#000000\"]}";
 	}
 	// GetFeatureInfo (optional)
 	else if (request == "GetFeatureInfo") {
@@ -208,4 +208,23 @@ void WMSService::run() {
 	else
 		response.send500("unknown request");
 
+}
+
+std::unique_ptr<Colorizer> WMSService::createColorizer(GenericRaster& raster, std::string colors) {
+    std::unique_ptr<Colorizer> colorizer;
+    if(colors.empty()) {
+        if (raster.dd.unit.hasMinMax()) {
+            colorizer = Colorizer::greyscale(raster.dd.unit.getMin(), raster.dd.unit.getMax());
+        } else {
+            throw ArgumentException("OGCService: no colorizer given and min/max values missing for default colorizer");
+        }
+    } else {
+        Json::Reader reader(Json::Features::strictMode());
+        Json::Value json;
+        if (!reader.parse(colors, json))
+            throw std::runtime_error(concat("OGCService: could not parse colors"));
+
+        colorizer = Colorizer::fromJson(json);
+    }
+    return colorizer;
 }

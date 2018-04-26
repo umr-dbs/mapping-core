@@ -80,7 +80,7 @@ static void convert(int argc, char *argv[]) {
 
 	try {
 		auto raster = GenericRaster::fromGDAL(argv[2], 1);
-		auto c = Colorizer::fromUnit(raster->dd.unit);
+		auto c = Colorizer::greyscale(raster->dd.unit.getMin(), raster->dd.unit.getMax());
 		std::ofstream output(argv[3]);
 		raster->toPNG(output, *c);
 	}
@@ -357,7 +357,7 @@ static void runquery(int argc, char *argv[]) {
 			}
 			{
 				//Profiler::Profiler p("TO_PNG");
-				auto colors = Colorizer::fromUnit(raster->dd.unit);
+				auto colors = Colorizer::greyscale(raster->dd.unit.getMin(), raster->dd.unit.getMax());
 				std::ofstream output(std::string(out_filename) + ".png");
 				raster->toPNG(output, *colors);
 			}
