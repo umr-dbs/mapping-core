@@ -11,6 +11,14 @@ color_t color_from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 	return (uint32_t) a << 24 | (uint32_t) b << 16 | (uint32_t) g << 8 | (uint32_t) r;
 }
 
+color_t color_from_json(const Json::Value &json) {
+	int r = json["r"].asInt();
+	int g = json["g"].asInt();
+	int b = json["b"].asInt();
+	int a = json.get("a", 255).asInt();
+	return color_from_rgba(r, g, b, a);
+}
+
 static uint8_t r_from_color(color_t color) {
 	return color & 0xff;
 }
@@ -35,7 +43,8 @@ static uint8_t channel_from_double(double c) {
 	return std::round(c);
 }
 
-Colorizer::Colorizer(ColorTable table, Interpolation interpolation) : table(std::move(table)), interpolation(interpolation) {
+Colorizer::Colorizer(ColorTable table, Interpolation interpolation, color_t nodataColor, color_t defaultColor)
+		: table(std::move(table)), interpolation(interpolation), nodataColor(nodataColor), defaultColor(defaultColor) {
 }
 
 Colorizer::~Colorizer() {
@@ -130,12 +139,18 @@ std::unique_ptr<Colorizer> Colorizer::fromJson(const Json::Value &json) {
     Colorizer::ColorTable breakpoints;
     for (auto& breakpoint : json["breakpoints"]) {
         double value = breakpoint["value"].asDouble();
-        int r = breakpoint["r"].asInt();
-        int g = breakpoint["g"].asInt();
-        int b = breakpoint["b"].asInt();
-        int a = breakpoint.get("a", 255).asInt();
-        breakpoints.emplace_back(value, color_from_rgba(r, g, b, a));
+        breakpoints.emplace_back(value, color_from_json(breakpoint));
     }
+
+    color_t nodataColor = defaultNoDataColor;
+	if(json.isMember("nodata")) {
+		nodataColor = color_from_json(json["nodata"]);
+    }
+
+    color_t defaultColor = defaultDefaultColor;
+	if(json.isMember("default")) {
+		defaultColor = color_from_json(json["default"]);
+	}
 
     std::string type = json.get("type", "gradient").asString();
 
@@ -150,7 +165,7 @@ std::unique_ptr<Colorizer> Colorizer::fromJson(const Json::Value &json) {
         throw ArgumentException("Unknown type for colorizer");
     }
 
-    return make_unique<Colorizer>(breakpoints, interpolation);
+    return make_unique<Colorizer>(breakpoints, interpolation, nodataColor, defaultColor);
 }
 
 std::unique_ptr<Colorizer> Colorizer::greyscale(double min, double max) {

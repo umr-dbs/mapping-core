@@ -41,8 +41,8 @@ template<typename T> void Raster2D<T>::toPNG(std::ostream &output, const Coloriz
 
 
 	uint32_t colors[256];
-	colors[0] = color_from_rgba(0,0,0,0);
-	colors[1] = color_from_rgba(255,0,255,255);
+	colors[0] = colorizer.getNoDataColor();
+	colors[1] = colorizer.getDefaultColor();
 
     double actual_min = colorizer.minValue();
     double actual_max = colorizer.maxValue();
