@@ -3,6 +3,7 @@ add_executable(mapping_cgi cgi.cpp)
 
 add_executable(mapping_manager mapping_manager.cpp)
 
+add_executable(mapping_uploader uploader/uploader_cgi.cpp)
 
 # Deploy
 # TODO: specify install script
@@ -97,6 +98,7 @@ add_library(mapping_core_base_lib
 target_include_directories(mapping_core_base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi mapping_core_base_lib)
 target_link_libraries_internal(mapping_manager mapping_core_base_lib)
+target_link_libraries_internal(mapping_uploader mapping_core_base_lib)
 
 add_library(mapping_core_services_lib
         services/httpservice.cpp
@@ -117,9 +119,10 @@ add_library(mapping_core_services_lib
         pointvisualization/QuadTreeNode.cpp
         pointvisualization/CircleClusteringQuadTree.cpp
         services/featurecollectiondb.cpp
-        )
+        services/importer.cpp)
 target_link_libraries_internal(mapping_core_services_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_services_lib)
+target_link_libraries_internal(mapping_uploader mapping_core_services_lib)
 
 add_library(mapping_core_operators_lib
         util/ogr_source_util.cpp
@@ -163,6 +166,12 @@ add_library(mapping_core_operators_lib
 target_link_libraries_internal(mapping_core_operators_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_operators_lib)
 target_link_libraries_internal(mapping_manager mapping_core_operators_lib)
+target_link_libraries_internal(mapping_uploader mapping_core_operators_lib)
+
+add_library(mapping_uploader_lib
+        uploader/uploader.cpp)
+target_link_libraries_internal(mapping_uploader_lib mapping_core_base_lib)
+target_link_libraries_internal(mapping_uploader mapping_uploader_lib)
 
 # Generate OpenCL headers
 add_custom_target(mapping_cl_header_generator)
@@ -220,8 +229,8 @@ target_link_libraries(mapping_core_base_lib ${GEOS_LIBRARY})
 target_link_libraries(mapping_core_base_lib geos) # TODO: extend find file for c++ lib
 target_include_directories(mapping_core_base_lib PRIVATE ${GEOS_INCLUDE_DIR})
 
-find_package(Boost COMPONENTS date_time REQUIRED)
-target_link_libraries(mapping_core_base_lib Boost::date_time)
+find_package(Boost COMPONENTS date_time filesystem REQUIRED)
+target_link_libraries(mapping_core_base_lib Boost::date_time Boost::filesystem)
 target_include_directories(mapping_core_base_lib PRIVATE ${Boost_INCLUDE_DIRS})
 
 find_package(GDAL REQUIRED)
