@@ -60,7 +60,7 @@ void NodeServer::worker_loop() {
 					Log::info("Read on worker-connection interrupted. Trying again.");
 				} catch (const NetworkException &ne) {
 					// Re-throw network-error to outer catch.
-					throw;
+				throw;
 				} catch (const std::exception &e) {
 					Log::error("Unexpected error while processing request: %s", e.what());
 					auto msg = concat("Unexpected error while processing request: ", e.what());
