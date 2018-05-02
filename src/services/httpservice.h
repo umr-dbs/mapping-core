@@ -94,6 +94,15 @@ class HTTPService {
 
 		static void run(std::streambuf *in, std::streambuf *out, std::streambuf *err);
 		static void run(std::streambuf *in, std::streambuf *out, std::streambuf *err, FCGX_Request & request);
+	private:
+        /**
+         * Catches MappingExceptions and send the exceptions nested structure as Json response.
+         */
+		static void catchExceptions(HTTPResponseStream& response, const MappingException &e);
+		/**
+		 * Reads an exception into the exceptionJson and calls method recursivley for nested exception.
+		 */
+        static void readNestedException(Json::Value &exceptionJson, const MappingException &me, const bool global_debug);
 };
 
 

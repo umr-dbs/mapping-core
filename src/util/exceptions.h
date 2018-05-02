@@ -5,11 +5,40 @@
 
 #include <stdexcept>
 
+enum class MappingExceptionType{
+    TRANSIENT,
+    PERMANENT,
+    CONFIDENTIAL,
+    SAME_AS_NESTED
+};
 
-#define _CUSTOM_EXCEPTION_CLASS_PARENT(C, PARENT) class C : public PARENT { public: C(const std::string &msg) : PARENT(#C ": " + msg) {}}
+/**
+ *
+ */
+class MappingException : public std::runtime_error {
+public:
+    MappingException(const std::string &msg, const MappingExceptionType type)
+            : std::runtime_error(msg), type(type) {
+
+    }
+
+    const MappingExceptionType getExceptionType() const {
+        return type;
+    }
+
+private:
+    const MappingExceptionType type;
+};
+
+/**
+ * Macro creating the exception classes. Important here: The MappingExceptionType is set as a default parameter
+ * to CONFIDENTAL, so that not every exception usage at once has to be adapted. CONFIDENTAL is the default, so that
+ * error information that can be shared has to shared explicitly.
+ */
+#define _CUSTOM_EXCEPTION_CLASS_PARENT(C, PARENT) class C : public PARENT { public: C(const std::string &msg, const MappingExceptionType type = MappingExceptionType::CONFIDENTIAL) : PARENT(#C ": " + msg, type) {}}
 
 // This is just some magic to get around the fact that macros cannot have default parameters
-#define _CUSTOM_EXCEPTION_CLASS_DEFAULT(C) _CUSTOM_EXCEPTION_CLASS_PARENT(C, std::runtime_error)
+#define _CUSTOM_EXCEPTION_CLASS_DEFAULT(C) _CUSTOM_EXCEPTION_CLASS_PARENT(C, MappingException)
 
 #define _CUSTOM_EXCEPTION_CLASS_GET_3RD_PARAM(p1, p2, p3, ...) p3
 #define _CUSTOM_EXCEPTION_CLASS_CHOOSER(...) _CUSTOM_EXCEPTION_CLASS_GET_3RD_PARAM(__VA_ARGS__, _CUSTOM_EXCEPTION_CLASS_PARENT, _CUSTOM_EXCEPTION_CLASS_DEFAULT, 0)

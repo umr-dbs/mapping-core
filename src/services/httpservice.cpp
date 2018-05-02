@@ -59,13 +59,18 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 
 		service->run();
 	}
+    catch(const MappingException &e){
+        catchExceptions(response, e);
+    }
 	catch (const std::exception &e) {
+
 		error << "Request failed with an exception: " << e.what() << "\n";
 		if (Configuration::get<bool>("global.debug", false)) {
-        		response.send500(concat("invalid request: ", e.what()));
-	        } else {
-           		response.send500("invalid request");
-        	}
+            response.send500(concat("invalid request: ", e.what()));
+        } else {
+            response.send500("invalid request");
+        }
+
 	}
 	Log::off();
 }
@@ -91,17 +96,65 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 
 		service->run();
 	}
+    catch(const MappingException &e){
+        catchExceptions(response, e);
+    }
 	catch (const std::exception &e) {
 		error << "Request failed with an exception: " << e.what() << "\n";
 		if (Configuration::get<bool>("global.debug", false)) {
-                        response.send500(concat("invalid request: ", e.what()));
-                } else {
-                        response.send500("invalid request");
-                }
+            response.send500(concat("invalid request: ", e.what()));
+        } else {
+            response.send500("invalid request");
+        }
 	}
 	Log::off();
 }
 
+void HTTPService::catchExceptions(HTTPResponseStream& response, const MappingException &me){
+    auto exception_type = me.getExceptionType();
+	const bool global_debug = Configuration::get<bool>("global.debug", false);
+
+	if(global_debug || exception_type != MappingExceptionType::CONFIDENTIAL){
+        Json::Value exceptionJson;
+        readNestedException(exceptionJson, me, global_debug);
+
+        //TODO: is this okay:
+        response.sendHeader("Status", "500 Internal Server Error");
+        response.sendJSON(exceptionJson);
+    } else {
+        response.send500("invalid request");
+    }
+}
+
+void HTTPService::readNestedException(Json::Value &exceptionJson, const MappingException &me, const bool global_debug){
+    auto type = me.getExceptionType();
+
+    try {
+        exceptionJson["message"] = me.what();
+        switch(type){
+            case MappingExceptionType::CONFIDENTIAL:
+                exceptionJson["type"] = "CONFIDENTIAL";
+                break;
+            case MappingExceptionType::PERMANENT:
+                exceptionJson["type"] = "PERMANENT";
+                break;
+            case MappingExceptionType::TRANSIENT:
+                exceptionJson["type"] = "TRANSIENT";
+                break;
+            case MappingExceptionType::SAME_AS_NESTED:
+                exceptionJson["type"] = "SAME_AS_NESTED";
+                break;
+        }
+
+        std::rethrow_if_nested(me);
+
+    } catch(MappingException &nested) {
+        if(global_debug || nested.getExceptionType() != MappingExceptionType::CONFIDENTIAL)
+            readNestedException(exceptionJson["nested_exception"], nested, global_debug);
+    } catch(std::runtime_error &e){
+        exceptionJson["nested_exception"] = "non_mapping_exception";
+    }
+}
 
 /*
  * Service::ResponseStream
