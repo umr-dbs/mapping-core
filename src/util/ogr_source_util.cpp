@@ -14,6 +14,9 @@
 #include <json/json.h>
 #include <dirent.h>
 #include <iostream>
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include <boost/date_time/local_time/local_time.hpp>
+#include <boost/date_time/c_local_time_adjustor.hpp>
 
 OGRSourceUtil::OGRSourceUtil(Json::Value &params, Provenance provenance) : params(params), provenance(provenance)
 {
@@ -108,7 +111,7 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
 	//start reading the FeatureCollection
 	OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
 	createAttributeArrays(attributeDefn, collection->feature_attributes);
-	initTimeReading(attributeDefn);
+	initTimeReading(attributeDefn, layer, rect);
 
 	//createFromWkt allocates a geometry and writes its pointer into a local pointer, therefore the third parameter is a OGRGeometry **.
 	//afterwards it is moved into a unique_ptr
@@ -201,7 +204,6 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
 	/*if(timeSpecification == TimeSpecification::NONE)
 		collection->addDefaultTimestamps();*/
 }
-
 
 std::unique_ptr<PointCollection> OGRSourceUtil::getPointCollection(const QueryRectangle &rect, const QueryTools &tools)
 {
@@ -447,11 +449,12 @@ bool OGRSourceUtil::readAttributesIntoCollection(AttributeArrays &attributeArray
 }
 
 // initializes the column index for the time columns
-void OGRSourceUtil::initTimeReading(OGRFeatureDefn *attributeDefn)
+void OGRSourceUtil::initTimeReading(OGRFeatureDefn *attributeDefn, OGRLayer *layer, const QueryRectangle &rect)
 {
 	if(timeSpecification == TimeSpecification::NONE)
 		return;
 
+	OGRFieldType time1Type = OGRFieldType::OFTInteger, time2Type = OGRFieldType::OFTInteger;
 	time1Index = -1;
 	time2Index = -1;
 
@@ -459,29 +462,92 @@ void OGRSourceUtil::initTimeReading(OGRFeatureDefn *attributeDefn)
 	{
 		OGRFieldDefn *fieldDefn = attributeDefn->GetFieldDefn(i);
 		std::string name(fieldDefn->GetNameRef());
-		if(name == time1Name)
+		if(name == time1Name){
+			time1Type = fieldDefn->GetType();
 			time1Index = i;
-		else if(name == time2Name)
+		}
+		else if(timeSpecification != TimeSpecification::START && name == time2Name){
+			time2Type = fieldDefn->GetType();
 			time2Index = i;
+		}
 	}
 
 	if(time1Index == -1)
 		throw OperatorException("OGR Source: time1 attribute not found.");
-	
+
 	if(timeSpecification == TimeSpecification::START_DURATION || timeSpecification == TimeSpecification::START_END)
 	{
 		if(time2Index == -1)
-			throw OperatorException("OGR Source: time1 attribute not found.");
+			throw OperatorException("OGR Source: time2 attribute not found.");
 	}
+
+    //try filtering the attributes via OGRLayer, so we don't have to do it manually in readTimeIntoCollection
+	timeAlreadyFiltered = trySettingTemporalFilter(layer, rect, time1Type, time2Type);
+}
+
+bool OGRSourceUtil::trySettingTemporalFilter(OGRLayer *layer, const QueryRectangle &rect, OGRFieldType time1_type,
+                                             OGRFieldType time2_type){
+	// DateTime is the supported field data type!
+	// Both fields have to available and of type DateTime, because only START_END as TimeSpecification is supported.
+	// That's because I couldn't find a way to express in the sql like query (time_attribute + time_duration).
+	if(timeSpecification != TimeSpecification::START_END ||
+	   time1_type 		 != OGRFieldType::OFTDateTime 	 ||
+	   time2_type 		 != OGRFieldType::OFTDateTime)
+	{
+        return false;
+    }
+
+	//create TimeDate representation of rect.t1 and rect.t2
+	std::string rect_time_String_1 = "\'";
+	rect_time_String_1 += rect.toIsoString(rect.t1);
+	rect_time_String_1 += "\'";
+
+	std::string rect_time_string_2 = "\'";
+	rect_time_string_2 += rect.toIsoString(rect.t2);
+	rect_time_string_2 += "\'";
+
+	std::stringstream filter_stream;
+    // Create SQL like comparison to check if attributes validity intersects with the query rectangles times:
+    // (feature.t1 >= rect.t1 || feature.t2 >= rect.t1) && (feature.t1 <= rect.t2 || feature.t2 <= rect.t2)
+    filter_stream << "( " << time1Name << " >= " << rect_time_String_1;
+    filter_stream << " OR " << time2Name << " >= " << rect_time_String_1 << " ) ";
+    filter_stream << " AND ( " << time1Name << " <= " << rect_time_string_2;
+    filter_stream << " OR " << time2Name << " <= " << rect_time_string_2  << " )";
+
+    OGRErr err = layer->SetAttributeFilter(filter_stream.str().c_str());
+    return err == OGRSTCNone;
 }
 
 // reads the time values for the given feature from the time columns/attributes.
 bool OGRSourceUtil::readTimeIntoCollection(const QueryRectangle &rect, OGRFeature *feature, std::vector<TimeInterval> &time)
 {
-	if(timeSpecification == TimeSpecification::NONE)
-		return true;	
+    if(timeSpecification == TimeSpecification::NONE)
+		return true;
 
-	double t1, t2;
+	// only read time from the features time attributes. Filtering was done by
+	// SetAttributeFilter method in initTimeReading/trySettingTemporalFilter
+    if(timeAlreadyFiltered){
+        try {
+            time_t unixtime1 = getFieldAsTime_t(feature, time1Index);
+            time_t unixtime2 = getFieldAsTime_t(feature, time2Index);
+            time.emplace_back(TimeInterval(unixtime1, unixtime2));
+            return true;
+
+        } catch(std::exception &e){
+            switch(errorHandling) {
+                case ErrorHandling::ABORT:
+                    throw OperatorException("OGR Source: Could not parse time.");
+                case ErrorHandling::SKIP:
+                    return false;
+                case ErrorHandling::KEEP:
+                    time.emplace_back(rect.beginning_of_time(), rect.end_of_time());
+                    return true;
+            }
+        }
+    }
+
+	// Filtering was not done already, so we do it here.
+	double t1 = 0.0, t2 = 0.0;
 	bool error = false;
 	if (timeSpecification == TimeSpecification::START) {
 		try {
@@ -533,12 +599,58 @@ bool OGRSourceUtil::readTimeIntoCollection(const QueryRectangle &rect, OGRFeatur
 	}
 	
 	//check if features time stamps have overlap with query rectangle times
-	if(t1 < rect.t1 && t2 < rect.t1 || t1 > rect.t1 && t2 > rect.t2)
+	if(t1 < rect.t1 && t2 < rect.t1 || t1 > rect.t2 && t2 > rect.t2)
 		return false;
 
+    std::cout << feature->GetFieldAsString(time1Index) << std::endl;
+    std::cout << t1 << ", " << t2 << std::endl;
 	time.emplace_back(TimeInterval(t1, t2));
 	return true;
 }
+
+time_t OGRSourceUtil::getFieldAsTime_t(OGRFeature *feature, int featureIndex){
+    using namespace boost::posix_time;
+    using namespace boost::date_time;
+
+    int d = 0, mon = 0, y = 0, h = 0, min = 0, s = 0, time_zone = 0;
+    bool success = feature->GetFieldAsDateTime(featureIndex, &y, &mon, &d, &h, &min, &s, &time_zone);
+    if(!success)
+        throw OperatorException("OGRSource: Could not read time attribute.");
+
+    ptime time(date(y, mon, d), hours(h)+minutes(min)+seconds(s));
+
+    // Return values for time_zone flag are explained here:
+    // http://www.gdal.org/classOGRFeature.html#a9cbf2fc45b5674265db25183aa93b36c
+    if(time_zone == 0) //unknown, assume it as UTC
+    {
+        return to_time_t(time);
+    }
+    else if(time_zone == 1) //localtime
+    {
+		// TODO: find out in which cases this happens.
+		// Because we don't know when this happens and what it is supposed to mean in this context
+        // (local computer time or the local time where the data was recorded) we throw an exception for now.
+		throw OperatorException("OGRSource: Unexpected time zone value from the time attribute: \"localtime\"");
+    }
+    else
+    {
+        // time zone is explicitly given, 100 <-> +00, 104 <-> +01; 108 <-> +02; 96 <-> -01, etc
+        int zone_hours = (time_zone - 100) / 4;
+
+        if(zone_hours == 0){
+            return to_time_t(time);
+        }
+        else if(zone_hours > 0){
+            ptime adjusted_time = time - hours(zone_hours);
+            return to_time_t(adjusted_time);
+        }
+        else {
+            ptime adjusted_time = time + hours(-1 * zone_hours);
+            return to_time_t(adjusted_time);
+        }
+    }
+}
+
 
 void OGRSourceUtil::writeSemanticParametersRaw(std::ostringstream& stream){
 	Json::FastWriter writer;

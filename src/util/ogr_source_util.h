@@ -110,13 +110,26 @@ private:
 	ErrorHandling errorHandling;
 	TimeSpecification timeSpecification;
 
+    bool timeAlreadyFiltered;
+
 	void readAnyCollection(const QueryRectangle &rect, SimpleFeatureCollection *collection, std::function<bool(OGRGeometry *)> addFeature);
 	void readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection);
 	void readRingToPolygonCollection(const OGRLinearRing *ring, std::unique_ptr<PolygonCollection> &collection);
 	void createAttributeArrays(OGRFeatureDefn *attributeDefn, AttributeArrays &attributeArrays);
 	bool readAttributesIntoCollection(AttributeArrays &attributeArrays, OGRFeatureDefn *attributeDefn, OGRFeature *feature, int featureIndex);
-	void initTimeReading(OGRFeatureDefn *attributeDefn);
+	void initTimeReading(OGRFeatureDefn *attributeDefn, OGRLayer *layer, const QueryRectangle &rect);
 	bool readTimeIntoCollection(const QueryRectangle &rect, OGRFeature *feature, std::vector<TimeInterval> &time);
+	/**
+     * Is called in initTimeReading and tries to create an attribute filter for the OGRLayer that filters
+     * the attributes by the temporal information of the query rectangle. This is only supported if the TimeSpecification
+     * of the feature collection is time+end and the these time attributes are of the type OGRDateTime.
+     * @return if the temporal filter could be set on the OGRLayer.
+     */
+	bool trySettingTemporalFilter(OGRLayer *layer, const QueryRectangle &rect, OGRFieldType time1_type, OGRFieldType time2_type);
+    /**
+     * Reads a OGRDateTime attribute from the feature. Creates and returns a time_t unix timestamp from it.
+     */
+    time_t getFieldAsTime_t(OGRFeature *feature, int featureIndex);
 };
 
 #endif
