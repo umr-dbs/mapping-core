@@ -47,7 +47,7 @@ std::unique_ptr<QueryProcessor::QueryResult> LocalQueryProcessor::process(const 
 			return QueryProcessor::QueryResult::plot(plot->toJSON(), q.rectangle, std::move(provenance));
 		}
 		else {
-			throw ArgumentException("Unknown query type");
+			throw ArgumentException("Unknown query type", MappingExceptionType::TRANSIENT);
 		}
 	}
 	catch (const std::exception &e) {

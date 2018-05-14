@@ -269,7 +269,7 @@ cl::Program compileSource(const std::string &sourcecode) {
 	catch (const cl::Error &e) {
 		std::stringstream ss;
 		ss << "Error building cl::Program: " << e.what() << " " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(deviceList[0]);
-		throw OpenCLException(ss.str());
+		throw OpenCLException(ss.str(), MappingExceptionType::CONFIDENTIAL);
 	}
 
 	program_cache[sourcecode] = program;

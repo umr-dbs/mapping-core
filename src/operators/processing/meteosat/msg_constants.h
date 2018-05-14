@@ -81,7 +81,7 @@ namespace msg{
 			if (sat.name == satellite_name)
 				return sat;
 		}
-		throw ArgumentException(satellite_name + " is not a known METEOSAT Satellite name!");
+		throw ArgumentException(satellite_name + " is not a known METEOSAT Satellite name!", MappingExceptionType::TRANSIENT);
 	}
 
 	/**
@@ -94,7 +94,7 @@ namespace msg{
 					if (sat.msg_id == msg_id)
 						return sat;
 				}
-		throw ArgumentException(std::to_string(msg_id) + " is no id of a known METEOSAT Satellite!");
+		throw ArgumentException(std::to_string(msg_id) + " is no id of a known METEOSAT Satellite!", MappingExceptionType::TRANSIENT);
 	}
 
 

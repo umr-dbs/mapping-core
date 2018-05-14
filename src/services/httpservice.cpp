@@ -63,7 +63,6 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
         catchExceptions(response, e);
     }
 	catch (const std::exception &e) {
-
 		error << "Request failed with an exception: " << e.what() << "\n";
 		if (Configuration::get<bool>("global.debug", false)) {
             response.send500(concat("invalid request: ", e.what()));
@@ -112,13 +111,19 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 
 void HTTPService::catchExceptions(HTTPResponseStream& response, const MappingException &me){
     auto exception_type = me.getExceptionType();
-	const bool global_debug = Configuration::get<bool>("global.debug", false);
+	const bool global_debug = false;//Configuration::get<bool>("global.debug", false);
 
 	if(global_debug || exception_type != MappingExceptionType::CONFIDENTIAL){
         Json::Value exceptionJson;
-        readNestedException(exceptionJson, me, global_debug);
+        readNestedException(exceptionJson, me);
 
-        //TODO: is this okay:
+        if(!global_debug){
+            bool all_confidential = clearExceptionJsonFromConfidential(exceptionJson);
+            if(all_confidential){
+                response.send500("invalid request");
+                return;
+            }
+        }
         response.sendHeader("Status", "500 Internal Server Error");
         response.sendJSON(exceptionJson);
     } else {
@@ -126,7 +131,7 @@ void HTTPService::catchExceptions(HTTPResponseStream& response, const MappingExc
     }
 }
 
-void HTTPService::readNestedException(Json::Value &exceptionJson, const MappingException &me, const bool global_debug){
+void HTTPService::readNestedException(Json::Value &exceptionJson, const MappingException &me){
     auto type = me.getExceptionType();
 
     try {
@@ -149,11 +154,36 @@ void HTTPService::readNestedException(Json::Value &exceptionJson, const MappingE
         std::rethrow_if_nested(me);
 
     } catch(MappingException &nested) {
-        if(global_debug || nested.getExceptionType() != MappingExceptionType::CONFIDENTIAL)
-            readNestedException(exceptionJson["nested_exception"], nested, global_debug);
+        readNestedException(exceptionJson["nested_exception"], nested);
     } catch(std::runtime_error &e){
-        exceptionJson["nested_exception"] = "non_mapping_exception";
+        Json::Value error_obj;
+        error_obj["message"] = "non_mapping_exception";
+        error_obj["type"] = "non_mapping_exception";
+        exceptionJson["nested_exception"] = error_obj;
     }
+}
+
+bool HTTPService::clearExceptionJsonFromConfidential(Json::Value &exceptionJson){
+
+    if(exceptionJson["type"].asString() == "CONFIDENTIAL")
+        return true;
+
+    const bool hasNested = exceptionJson.isMember("nested_exception");
+
+    if(exceptionJson["type"].asString() == "SAME_AS_NESTED"){
+        if(hasNested)
+            return clearExceptionJsonFromConfidential(exceptionJson["nested_exception"]);
+        else
+            return true; //SAME_AS_NESTED but no nested exception exists, so remove it just in case.
+    } else {
+        //TRANSIENT or PERMANENT as type. If a nested confidential exception exists, remove it.
+        const bool nestedIsConfidential = clearExceptionJsonFromConfidential(exceptionJson["nested_exception"]);
+        if(hasNested && nestedIsConfidential){
+            exceptionJson.removeMember("nested_exception");
+        }
+        return false;
+    }
+
 }
 
 /*
