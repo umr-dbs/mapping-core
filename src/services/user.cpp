@@ -8,6 +8,7 @@
 #include <json/json.h>
 #include <util/gdal_source_datasets.h>
 #include <util/ogr_source_datasets.h>
+#include <boost/filesystem.hpp>
 
 /**
  * This class provides user specific methods
@@ -20,6 +21,7 @@
  * - request = logout: destroys current session
  * - request = sourcelist: get list of available raster sources
  * - request = info: get user information
+ * - request = uploadlist: get list of files uploaded by the user
  *
  */
 class UserService : public HTTPService {
@@ -110,6 +112,55 @@ void UserService::run() {
 
 			response.sendSuccessJSON(json);
 			return;
+		}
+
+		if(request == "uploadlist"){
+			using namespace boost::filesystem;
+			std::string username = user.getUsername();
+			Json::Value uploadlist_json(Json::ValueType::arrayValue);
+
+			auto upload_dir = Configuration::get<std::string>("uploader.directory");
+			path base_path(upload_dir);
+			base_path /= username;
+
+			if(exists(base_path) && is_directory(base_path)){
+				//in the users folder are folders again, one folder per upload.
+				for(auto it = directory_iterator(base_path); it != directory_iterator{}; ++it)
+				{
+					auto upload_path = (*it).path();
+					if(!is_directory(upload_path))
+						continue;
+
+					Json::Value upload_json(Json::ValueType::objectValue);
+					upload_json["upload_name"] = upload_path.filename().string();
+					std::time_t write_time 	= last_write_time(upload_path);
+					upload_json["last_write_time"] = write_time; //boost does not support creation time?
+					Json::Value upload_files_json(Json::ValueType::arrayValue);
+
+					//iterate all files in upload folder
+					for(auto it_inner = directory_iterator(upload_path); it_inner != directory_iterator{}; ++it_inner)
+					{
+						Json::Value file_json(Json::ValueType::objectValue);
+						auto file_path 		= (*it_inner).path();
+						if(!is_regular_file(file_path))
+							continue;
+
+						file_json["name"] 	= file_path.filename().string();
+						file_json["size"]	= file_size(file_path);
+
+						upload_files_json.append(file_json);
+					}
+
+					upload_json["files"] = upload_files_json;
+					uploadlist_json.append(upload_json);
+				}
+                response.sendSuccessJSON(uploadlist_json);
+                return;
+			} else{
+				response.sendFailureJSON("No user uploads found.");
+				return;
+			}
+
 		}
 
 		response.sendFailureJSON("unknown request");
