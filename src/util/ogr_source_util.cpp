@@ -454,7 +454,8 @@ void OGRSourceUtil::initTimeReading(OGRFeatureDefn *attributeDefn, OGRLayer *lay
 	if(timeSpecification == TimeSpecification::NONE)
 		return;
 
-	OGRFieldType time1Type = OGRFieldType::OFTInteger, time2Type = OGRFieldType::OFTInteger;
+	time1Type = OGRFieldType::OFTInteger;
+    time2Type = OGRFieldType::OFTInteger;
 	time1Index = -1;
 	time2Index = -1;
 
@@ -482,20 +483,33 @@ void OGRSourceUtil::initTimeReading(OGRFeatureDefn *attributeDefn, OGRLayer *lay
 	}
 
     //try filtering the attributes via OGRLayer, so we don't have to do it manually in readTimeIntoCollection
-	timeAlreadyFiltered = trySettingTemporalFilter(layer, rect, time1Type, time2Type);
+	timeAlreadyFiltered = trySettingTemporalFilter(layer, rect);
 }
 
-bool OGRSourceUtil::trySettingTemporalFilter(OGRLayer *layer, const QueryRectangle &rect, OGRFieldType time1_type,
-                                             OGRFieldType time2_type){
-	// DateTime is the supported field data type!
-	// Both fields have to available and of type DateTime, because only START_END as TimeSpecification is supported.
+bool OGRSourceUtil::trySettingTemporalFilter(OGRLayer *layer, const QueryRectangle &rect){
+	// DateTime and Date are the supported field data type!
+	// Both fields have to available and of type DateTime/Date, because only START_END as TimeSpecification is supported.
 	// That's because I couldn't find a way to express in the sql like query (time_attribute + time_duration).
-	if(timeSpecification != TimeSpecification::START_END ||
-	   time1_type 		 != OGRFieldType::OFTDateTime 	 ||
-	   time2_type 		 != OGRFieldType::OFTDateTime)
-	{
+	if(timeSpecification != TimeSpecification::START_END)
         return false;
-    }
+
+    // can try to set the filter without the fields being of type Date/DateTime. But that is unsafe and
+    // can result in empty collections. So the filter could be set on string data fields and still be a good query.
+    // but both attributes still have to be present and be of a Date/DateTime structure (as a string).
+    bool hasSaveTypes = (time1Type == OGRFieldType::OFTDateTime || time1Type == OGRFieldType::OFTDate) &&
+                           (time2Type == OGRFieldType::OFTDateTime || time2Type == OGRFieldType::OFTDate);
+
+    // if this parameter is true, ignore if we have save types. e.g. WFS would still work, if the data on the wfs server
+    // is Date/DateTime because the filtering happens there, but the file send to us will have String as data type,
+    // because the WFS driver can not send it while keeping Date/DateTime datatypes.
+	const bool forceOGRTimeFiltering = params.get("force_ogr_time_filter", true).asBool(); //TODO: make default false, is true for testing
+
+    if(!forceOGRTimeFiltering && !hasSaveTypes)
+        return false;
+
+    // now check if the fields are strings if force is used. Testing against Integer, Double wouldn't make sense
+    if(!hasSaveTypes && forceOGRTimeFiltering && (time1Type != OGRFieldType::OFTString || time2Type != OGRFieldType::OFTString))
+        return false;
 
 	//create TimeDate representation of rect.t1 and rect.t2
 	std::string rect_time_String_1 = "\'";
@@ -514,8 +528,14 @@ bool OGRSourceUtil::trySettingTemporalFilter(OGRLayer *layer, const QueryRectang
     filter_stream << " AND ( " << time1Name << " <= " << rect_time_string_2;
     filter_stream << " OR " << time2Name << " <= " << rect_time_string_2  << " )";
 
+	//not sure if this works:
+    //filter_stream << "((" << time1Name << " BETWEEN " << rect_time_String_1 << " AND " << rect_time_string_2 << ")";
+    //filter_stream << " OR ";
+    //filter_stream << "(" << time2Name << " BETWEEN " << rect_time_String_1 << " AND " << rect_time_string_2 << "))";
+
     OGRErr err = layer->SetAttributeFilter(filter_stream.str().c_str());
-    return err == OGRSTCNone;
+    //err actually does not provide useful information, it does not test the query.
+	return err == OGRSTCNone;
 }
 
 // reads the time values for the given feature from the time columns/attributes.
@@ -526,22 +546,27 @@ bool OGRSourceUtil::readTimeIntoCollection(const QueryRectangle &rect, OGRFeatur
 
 	// only read time from the features time attributes. Filtering was done by
 	// SetAttributeFilter method in initTimeReading/trySettingTemporalFilter
+    // if the data types of the time attributes are not Date/DateTime, the filter was forced, so we read the time the old way.
     if(timeAlreadyFiltered){
-        try {
-            time_t unixtime1 = getFieldAsTime_t(feature, time1Index);
-            time_t unixtime2 = getFieldAsTime_t(feature, time2Index);
-            time.emplace_back(TimeInterval(unixtime1, unixtime2));
-            return true;
+        if((time1Type != OGRFieldType::OFTDateTime || time1Type != OGRFieldType::OFTDate) &&
+           (time2Type != OGRFieldType::OFTDateTime || time2Type != OGRFieldType::OFTDate))
+        {
+            try {
+                time_t unixtime1 = getFieldAsTime_t(feature, time1Index);
+                time_t unixtime2 = getFieldAsTime_t(feature, time2Index);
+                time.emplace_back(TimeInterval(unixtime1, unixtime2));
+                return true;
 
-        } catch(std::exception &e){
-            switch(errorHandling) {
-                case ErrorHandling::ABORT:
-                    throw OperatorException("OGR Source: Could not parse time.");
-                case ErrorHandling::SKIP:
-                    return false;
-                case ErrorHandling::KEEP:
-                    time.emplace_back(rect.beginning_of_time(), rect.end_of_time());
-                    return true;
+            } catch(std::exception &e){
+                switch(errorHandling) {
+                    case ErrorHandling::ABORT:
+                        throw OperatorException("OGR Source: Could not parse time.");
+                    case ErrorHandling::SKIP:
+                        return false;
+                    case ErrorHandling::KEEP:
+                        time.emplace_back(rect.beginning_of_time(), rect.end_of_time());
+                        return true;
+                }
             }
         }
     }
@@ -602,22 +627,19 @@ bool OGRSourceUtil::readTimeIntoCollection(const QueryRectangle &rect, OGRFeatur
 	if(t1 < rect.t1 && t2 < rect.t1 || t1 > rect.t2 && t2 > rect.t2)
 		return false;
 
-    std::cout << feature->GetFieldAsString(time1Index) << std::endl;
-    std::cout << t1 << ", " << t2 << std::endl;
 	time.emplace_back(TimeInterval(t1, t2));
 	return true;
 }
 
 time_t OGRSourceUtil::getFieldAsTime_t(OGRFeature *feature, int featureIndex){
     using namespace boost::posix_time;
-    using namespace boost::date_time;
 
     int d = 0, mon = 0, y = 0, h = 0, min = 0, s = 0, time_zone = 0;
     bool success = feature->GetFieldAsDateTime(featureIndex, &y, &mon, &d, &h, &min, &s, &time_zone);
     if(!success)
         throw OperatorException("OGRSource: Could not read time attribute.");
 
-    ptime time(date(y, mon, d), hours(h)+minutes(min)+seconds(s));
+    ptime time(boost::gregorian::date(y, mon, d), hours(h)+minutes(min)+seconds(s));
 
     // Return values for time_zone flag are explained here:
     // http://www.gdal.org/classOGRFeature.html#a9cbf2fc45b5674265db25183aa93b36c
@@ -627,9 +649,8 @@ time_t OGRSourceUtil::getFieldAsTime_t(OGRFeature *feature, int featureIndex){
     }
     else if(time_zone == 1) //localtime
     {
-		// TODO: find out in which cases this happens.
 		// Because we don't know when this happens and what it is supposed to mean in this context
-        // (local computer time or the local time where the data was recorded) we throw an exception for now.
+        // (local computer time, or the local time where the data was recorded [what we don't know]) we throw an exception for now.
 		throw OperatorException("OGRSource: Unexpected time zone value from the time attribute: \"localtime\"");
     }
     else

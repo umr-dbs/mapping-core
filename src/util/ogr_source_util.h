@@ -104,10 +104,12 @@ private:
 	std::string time2Name;
 	int time1Index;
 	int time2Index;
-	double timeDuration;
+	OGRFieldType time1Type = OGRFieldType::OFTInteger;
+	OGRFieldType time2Type = OGRFieldType::OFTInteger;
 	std::unique_ptr<TimeParser> time1Parser;
 	std::unique_ptr<TimeParser> time2Parser;
 	ErrorHandling errorHandling;
+	double timeDuration;
 	TimeSpecification timeSpecification;
 
     bool timeAlreadyFiltered;
@@ -125,7 +127,7 @@ private:
      * of the feature collection is time+end and the these time attributes are of the type OGRDateTime.
      * @return if the temporal filter could be set on the OGRLayer.
      */
-	bool trySettingTemporalFilter(OGRLayer *layer, const QueryRectangle &rect, OGRFieldType time1_type, OGRFieldType time2_type);
+	bool trySettingTemporalFilter(OGRLayer *layer, const QueryRectangle &rect);
     /**
      * Reads a OGRDateTime attribute from the feature. Creates and returns a time_t unix timestamp from it.
      */
