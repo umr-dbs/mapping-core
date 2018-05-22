@@ -502,7 +502,7 @@ bool OGRSourceUtil::trySettingTemporalFilter(OGRLayer *layer, const QueryRectang
     // if this parameter is true, ignore if we have save types. e.g. WFS would still work, if the data on the wfs server
     // is Date/DateTime because the filtering happens there, but the file send to us will have String as data type,
     // because the WFS driver can not send it while keeping Date/DateTime datatypes.
-	const bool forceOGRTimeFiltering = params.get("force_ogr_time_filter", true).asBool(); //TODO: make default false, is true for testing
+	const bool forceOGRTimeFiltering = params.get("force_ogr_time_filter", false).asBool();
 
     if(!forceOGRTimeFiltering && !hasSaveTypes)
         return false;
@@ -527,11 +527,6 @@ bool OGRSourceUtil::trySettingTemporalFilter(OGRLayer *layer, const QueryRectang
     filter_stream << " OR " << time2Name << " >= " << rect_time_String_1 << " ) ";
     filter_stream << " AND ( " << time1Name << " <= " << rect_time_string_2;
     filter_stream << " OR " << time2Name << " <= " << rect_time_string_2  << " )";
-
-	//not sure if this works:
-    //filter_stream << "((" << time1Name << " BETWEEN " << rect_time_String_1 << " AND " << rect_time_string_2 << ")";
-    //filter_stream << " OR ";
-    //filter_stream << "(" << time2Name << " BETWEEN " << rect_time_String_1 << " AND " << rect_time_string_2 << "))";
 
     OGRErr err = layer->SetAttributeFilter(filter_stream.str().c_str());
     //err actually does not provide useful information, it does not test the query.
