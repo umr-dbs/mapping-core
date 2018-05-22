@@ -29,7 +29,7 @@ std::unique_ptr<HTTPService> HTTPService::getRegisteredService(const std::string
 	auto map = getRegisteredConstructorsMap();
 	auto it = map->find(name);
 	if (it == map->end())
-		throw ArgumentException(concat("No service named ", name, " is registered"));
+		throw ArgumentException(concat("No service named ", name, " is registered"), MappingExceptionType::PERMANENT);
 
 	auto constructor = it->second;
 
@@ -254,14 +254,14 @@ std::unique_ptr<QueryProcessor::QueryResult> HTTPService::processQuery(Query &qu
 	auto queryResult = QueryProcessor::getDefaultProcessor().process(query, true);
 
 	if(queryResult->isError()) {
-		throw OperatorException("HTTPService: query failed with error: " + queryResult->getErrorMessage());
+		throw OperatorException("HTTPService: query failed with error: " + queryResult->getErrorMessage(), queryResult->getErrorType());
 	}
 
 	ProvenanceCollection &provenance = queryResult->getProvenance();
 
 	for(std::string identifier : provenance.getLocalIdentifiers()) {
 		if(identifier != "" && !user.hasPermission(identifier)) {
-			throw PermissionDeniedException("HTTPService: Permission denied for query result");
+			throw PermissionDeniedException("HTTPService: Permission denied for query result", MappingExceptionType::CONFIDENTIAL);
 		}
 	}
 
