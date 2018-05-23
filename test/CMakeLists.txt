@@ -26,7 +26,8 @@ add_library(mapping_core_unittests_lib
         unittests/util/formula.cpp
         unittests/util/sha1.cpp
         unittests/gdal_source.cpp
-        unittests/util/configuration.cpp)
+        unittests/util/configuration.cpp
+        unittests/uploader.cpp)
 
 target_include_directories(mapping_core_unittests_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -35,6 +36,7 @@ target_link_libraries_internal(mapping_unittests mapping_core_base_lib)
 target_link_libraries_internal(mapping_unittests mapping_core_unittests_lib)
 target_link_libraries_internal(mapping_unittests mapping_core_services_lib)
 target_link_libraries_internal(mapping_unittests mapping_core_operators_lib)
+target_link_libraries_internal(mapping_unittests mapping_uploader_lib)
 
 target_link_libraries(mapping_unittests ${Fcgi_LIBRARIES})
 target_link_libraries(mapping_unittests ${Fcgi++_LIBRARIES})
