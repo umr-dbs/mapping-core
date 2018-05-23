@@ -171,6 +171,7 @@ target_link_libraries_internal(mapping_uploader mapping_core_operators_lib)
 add_library(mapping_uploader_lib
         uploader/uploader.cpp)
 target_link_libraries_internal(mapping_uploader_lib mapping_core_base_lib)
+target_link_libraries_internal(mapping_uploader_lib mapping_core_services_lib)
 target_link_libraries_internal(mapping_uploader mapping_uploader_lib)
 
 # Generate OpenCL headers

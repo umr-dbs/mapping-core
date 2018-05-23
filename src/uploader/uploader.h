@@ -23,7 +23,7 @@ public:
 private:
     void runIntern();
     Parameters parseParameters(Poco::Net::MultipartReader &mr);
-    void uploadFile(Poco::Net::MultipartReader &mr, std::string &base_path, Parameters &params, bool isFirstFile);
+    void uploadFile(Poco::Net::MultipartReader &mr, std::string &base_path, std::vector<std::string> &files_writen);
 
     std::istream input;
     std::ostream error;
