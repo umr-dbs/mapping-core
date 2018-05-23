@@ -118,8 +118,7 @@ add_library(mapping_core_services_lib
         pointvisualization/FindResult.cpp
         pointvisualization/QuadTreeNode.cpp
         pointvisualization/CircleClusteringQuadTree.cpp
-        services/featurecollectiondb.cpp
-        services/importer.cpp)
+        services/featurecollectiondb.cpp)
 target_link_libraries_internal(mapping_core_services_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_services_lib)
 target_link_libraries_internal(mapping_uploader mapping_core_services_lib)
