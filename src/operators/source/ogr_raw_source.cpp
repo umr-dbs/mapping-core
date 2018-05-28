@@ -36,6 +36,8 @@
  *   - numeric: an array of column names containing numeric values
  *   - textual: an array of column names containing alpha-numeric values
  * - default: wkt defintion of the default point/line/polygon as a string [optional]
+ * - force_ogr_time_filter: bool. force external time filter via ogr layer, even though data types don't match. Might not work
+ * 							(result: empty collection), but has better performance for wfs requests [optional, false if not provided]
  * - on_error: specify the type of error handling
  *   - "skip"
  *   - "abort"
