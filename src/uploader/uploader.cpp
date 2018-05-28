@@ -17,7 +17,6 @@ UploadService::UploadService(std::streambuf *in, std::streambuf *out, std::strea
 
 void UploadService::run(){
     try {
-
         //analog to HTTPService check these env variables
         std::string request_method = getenv_str("REQUEST_METHOD", false);
         std::string content_type = getenv_str("CONTENT_TYPE", true);
@@ -31,13 +30,13 @@ void UploadService::run(){
             throw UploaderException("Uploader requires a multipart POST requests.");
         }
 
-        runIntern();
+        runInternal();
     } catch (std::exception &e) {
         response.send500(concat("Invalid upload: ", e.what()));
     }
 }
 
-void UploadService::runIntern(){
+void UploadService::runInternal(){
 
     MultipartReader mr(input);
 

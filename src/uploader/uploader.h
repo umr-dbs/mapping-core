@@ -31,7 +31,7 @@ public:
     UploadService(std::streambuf *in, std::streambuf *out, std::streambuf *err);
     void run();
 private:
-    void runIntern();
+    void runInternal();
     Parameters parseParameters(Poco::Net::MultipartReader &mr);
     void uploadFile(Poco::Net::MultipartReader &mr, std::string &base_path, std::vector<std::string> &files_writen);
 
