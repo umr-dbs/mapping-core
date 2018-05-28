@@ -650,20 +650,19 @@ time_t OGRSourceUtil::getFieldAsTime_t(OGRFeature *feature, int featureIndex){
     }
     else
     {
-        // time zone is explicitly given, 100 <-> +00, 104 <-> +01; 108 <-> +02; 96 <-> -01, etc
+        // time zone is explicitly given, 100 <-> +00:00, 104 <-> +01:00; 111 <-> +02:45; 96 <-> -01:00, etc
+        // So every step represents 15 minutes.
         int zone_hours = (time_zone - 100) / 4;
+        int zone_minutes = (time_zone - 100) % 4;
 
-        if(zone_hours == 0){
-            return to_time_t(time);
+        ptime adjusted_time = time;
+        if(zone_hours != 0){
+            adjusted_time -= hours(zone_hours);
         }
-        else if(zone_hours > 0){
-            ptime adjusted_time = time - hours(zone_hours);
-            return to_time_t(adjusted_time);
+        if(zone_minutes != 0) {
+            adjusted_time -= minutes(15 * zone_minutes);
         }
-        else {
-            ptime adjusted_time = time + hours(-1 * zone_hours);
-            return to_time_t(adjusted_time);
-        }
+        return to_time_t(adjusted_time);
     }
 }
 
