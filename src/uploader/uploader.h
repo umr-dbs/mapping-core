@@ -12,9 +12,19 @@
 using namespace Poco::Net;
 
 /**
- * Convention for the multipart post request that is expected by the UploadService:
+ * Service for uploading files to mapping. This just stores them in an upload directory.
+ * The service expects a multipart post request.
  *
+ * Convention for the multipart post request:
+ *  - the first part contains parameters, encoded as URL parameter: param1=val1&param2=val2
+ *  - then follow one or more file parts:
+ *      + Content-Disposition is form-data and a filename parameter is provided.
+ *      + the file is written in the parts body.
  *
+ * parameters needed:
+ *  - sessiontoken
+ *  - upload_name: name for the upload.
+ *  - append_upload: bool indicating if an upload with the same name already exists and should be appended by this upload.
  */
 class UploadService {
 public:

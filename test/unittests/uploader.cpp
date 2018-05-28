@@ -3,7 +3,7 @@
 #include <boost/filesystem/operations.hpp>
 #include "uploader/uploader.h"
 
-//copied from userdb unittest
+//copied from userdb unittest for in memory userdb.
 class UserDBTestClock_Uploader : public UserDB::Clock {
 public:
     UserDBTestClock_Uploader(time_t *now) : now(now) {}
@@ -15,6 +15,8 @@ public:
 };
 
 
+std::string temp_dir_name = "this_should_not_be_the_real_uploader_directory_name";
+
 class UploaderTest : public ::testing::Test {
 protected:
     virtual void SetUp();
@@ -23,16 +25,17 @@ protected:
     std::string upl_dir;
 };
 
+
+// SetUp & TearDown create a temp directory for the upload, after the test it is deleted.
+// these functions are called for each test individually.
 void UploaderTest::SetUp() {
-    //not finished, because UserDB is not working in unittests at the moment.
     Configuration::loadFromDefaultPaths();
 
     time_t now = time(nullptr);
-    UserDB::
     UserDB::init("sqlite", ":memory:", make_unique<UserDBTestClock_Uploader>(&now), 0);
 
     //change upload dir parameter to a test directory
-    Configuration::loadFromString("[uploader]\ndirectory=\"this_should_not_be_the_real_uploader_directory_name\""); //change upload dir param to test dir
+    Configuration::loadFromString("[uploader]\ndirectory=\""+ temp_dir_name + "\"");
     upl_dir = Configuration::get<std::string>("uploader.directory");
 
     const std::string username = "dummy";
@@ -45,7 +48,7 @@ void UploaderTest::SetUp() {
     auto session = UserDB::createSession(username, password);
     sessiontoken = session->getSessiontoken();
 
-    //set env variables for the
+    //set env variables for the http request
     setenv("REQUEST_METHOD", "POST", true);
     setenv("CONTENT_TYPE", "multipart/mixed", true);
 }
@@ -65,13 +68,13 @@ std::string two_file_request_p1 =
 std::string two_file_request_p2 =
         "\n"
         "--frontier\n"
-        "Content-Disposition: form-data; name=\"mainFile\"; filename=\"hello.csv\"\n"
+        "Content-Disposition: form-data; filename=\"hello.csv\"\n"
         "Content-Type: application/octet-stream\n"
         "Content-Transfer-Encoding: base64\n"
         "\n"
         "d2t0O29zbV9pZDtuYW1lO2lzX2luO3RpbWVfc3RhcnQ7dGltZV9lbmQ7cG9wdWxhdGlvbg0KUE9JTlQoLTAuMTI3NjQ3NCA1MS41MDczMjE5KTsxMDc3NzU7TG9uZG9uO0VuZ2xhbmQsIFVuaXRlZCBLaW5nZG9tLCBVSywgR3JlYXQgQnJpdGFpbiwgRXVyb3BlOzIwMTUtMDktMTUgMTI6NDg6MTIrMDI7MjAxNS0xMC0wNCAxOTo0ODoxMiswMjs4NDE2NTM1DQpQT0lOVCgtMS41NDM3OTQxIDUzLjc5NzQxODUpOzM1ODMwOTtMZWVkcztVSyxVbml0ZWQgS2luZ2RvbSwgWW9ya3NoaXJlLFdlc3QgWW9ya3NoaXJlLCBBaXJlZGFsZTsyMDE1LTA4LTEzIDAyOjIxOjEyKzAyOzIwMTUtMDktMTEgMTI6MjE6MTIrMDI7NzcwODAwDQpQT0lOVCgyMy43Mjc5ODQzIDM3Ljk4NDE0OTMpOzQ0MTE4MzvOkc64zq7Ovc6xO0F0aGluYSBtdW5pY2lwYWxpdHksQXR0aWtpLEdyZWVjZSxFVTsyMDE1LTA5LTE1IDE0OjU1OjI4KzAyOzIwMTUtMTAtMjEgMTQ6NTU6MjgrMDI7MTk3ODg0Nw0KUE9JTlQoLTc2LjYxMDgwNzMgMzkuMjkwODYwOCk7NjcxMTEzO0JhbHRpbW9yZTs7MjAxNS0wNy0yMyAxNTozNTowMiswMjsyMDE1LTEwLTIzIDE1OjM1OjAyKzAyOzYyMTM0Mg0KUE9JTlQoMTQuNTA2ODkyMSA0Ni4wNDk4NjUpOzY5Njg4Mjc7TGp1YmxqYW5hO1Nsb3ZlbmlhLCBFdXJvcGU7MjAxNS0wOC0xMyAwMjoyMToxMyswMjsyMDE1LTA5LTIzIDAyOjIxOjEzKzAyOzI3MjAwMA0K\n"
         "--frontier\n"
-        "Content-Disposition: form-data; name=\"typeFile\"; filename=\"hello.csvt\"\n"
+        "Content-Disposition: form-data; filename=\"hello.csvt\"\n"
         "Content-Type: text/plain\n"
         "\n"
         "\"WKT\",\"Integer\",\"String\",\"String\",\"DateTime\",\"DateTime\",\"DateTime\",\"Integer\"\n"
@@ -80,7 +83,6 @@ std::string two_file_request_p2 =
  * Runnig twice the same upload (with append_upload=false), first successfull, second throwing an exception.
  */
 TEST_F(UploaderTest, same_upload_twice){
-
     {
         //test upload. sessiontoken is inserted into test strings.
         std::stringstream fake_in;
@@ -107,7 +109,7 @@ TEST_F(UploaderTest, same_upload_twice){
         EXPECT_TRUE(result_json["result"].asBool());
         EXPECT_EQ(result_json["upload_name"], "test_upload");
 
-        boost::filesystem::path path_test("this_should_not_be_the_real_uploader_directory_name");
+        boost::filesystem::path path_test(temp_dir_name);
         path_test /= "dummy";
         path_test /= "test_upload";
         path_test /= "hello.csv";
@@ -130,19 +132,18 @@ TEST_F(UploaderTest, same_upload_twice){
                 "Content-type: text/plain\r\n"
                 "\r\nInvalid upload: UploaderException: Upload with same name already exists");
     }
-
 }
 
 std::string two_file_request_crash_p2 =
                 "\n"
                 "--frontier\n"
-                "Content-Disposition: form-data; name=\"mainFile\"; filename=\"hello.csv\"\n"
+                "Content-Disposition: form-data; filename=\"hello.csv\"\n"
                 "Content-Type: application/octet-stream\n"
                 "Content-Transfer-Encoding: base64\n"
                 "\n"
                 "d2t0O29zbV9pZDtuYW1lO2lzX2luO3RpbWVfc3RhcnQ7dGltZV9lbmQ7cG9wdWxhdGlvbg0KUE9JTlQoLTAuMTI3NjQ3NCA1MS41MDczMjE5KTsxMDc3NzU7TG9uZG9uO0VuZ2xhbmQsIFVuaXRlZCBLaW5nZG9tLCBVSywgR3JlYXQgQnJpdGFpbiwgRXVyb3BlOzIwMTUtMDktMTUgMTI6NDg6MTIrMDI7MjAxNS0xMC0wNCAxOTo0ODoxMiswMjs4NDE2NTM1DQpQT0lOVCgtMS41NDM3OTQxIDUzLjc5NzQxODUpOzM1ODMwOTtMZWVkcztVSyxVbml0ZWQgS2luZ2RvbSwgWW9ya3NoaXJlLFdlc3QgWW9ya3NoaXJlLCBBaXJlZGFsZTsyMDE1LTA4LTEzIDAyOjIxOjEyKzAyOzIwMTUtMDktMTEgMTI6MjE6MTIrMDI7NzcwODAwDQpQT0lOVCgyMy43Mjc5ODQzIDM3Ljk4NDE0OTMpOzQ0MTE4MzvOkc64zq7Ovc6xO0F0aGluYSBtdW5pY2lwYWxpdHksQXR0aWtpLEdyZWVjZSxFVTsyMDE1LTA5LTE1IDE0OjU1OjI4KzAyOzIwMTUtMTAtMjEgMTQ6NTU6MjgrMDI7MTk3ODg0Nw0KUE9JTlQoLTc2LjYxMDgwNzMgMzkuMjkwODYwOCk7NjcxMTEzO0JhbHRpbW9yZTs7MjAxNS0wNy0yMyAxNTozNTowMiswMjsyMDE1LTEwLTIzIDE1OjM1OjAyKzAyOzYyMTM0Mg0KUE9JTlQoMTQuNTA2ODkyMSA0Ni4wNDk4NjUpOzY5Njg4Mjc7TGp1YmxqYW5hO1Nsb3ZlbmlhLCBFdXJvcGU7MjAxNS0wOC0xMyAwMjoyMToxMyswMjsyMDE1LTA5LTIzIDAyOjIxOjEzKzAyOzI3MjAwMA0K\n"
                 "--frontier\n"
-                "Content-Disposition: form-data; name=\"typeFile\"; filename=\"hello.csvt\"\n"
+                "Content-Disposition: form-data; filename=\"hello.csvt\"\n"
                 "Content-Type: application/octet-stream\n"
                 "Content-Transfer-Encoding: proencodingyeah\n"
                 "\n"
@@ -152,7 +153,7 @@ std::string two_file_request_crash_p2 =
 std::string single_file_p2 =
                 "\n"
                 "--frontier\n"
-                "Content-Disposition: form-data; name=\"typeFile\"; filename=\"iwillsuri.ve\"\n"
+                "Content-Disposition: form-data; filename=\"iwillsuri.ve\"\n"
                 "Content-Type: text/plain\n"
                 "\n"
                 "\"WKT\",\"Integer\",\"String\",\"String\",\"DateTime\",\"DateTime\",\"DateTime\",\"Integer\"\n"
@@ -165,9 +166,8 @@ std::string two_file_request_append_upload_p1 =
                 "upload_name=test_upload&append_upload=true&sessiontoken=";
 
 /*
- * This will fail because the second file "hello.csvt" has a not existing encoding.
- * Therefore no file should be kept.
- * TODO: Add that old files are not deleted
+ * Two uploads. The second appends the first, but fails with an exception (because of wrong encoding).
+ * In the end the file from first upload should exist but the files from second upload should be deleted.
  */
 TEST_F(UploaderTest, upload_failed) {
 
@@ -202,7 +202,7 @@ TEST_F(UploaderTest, upload_failed) {
 
 
     //check that both files from the upload do not exist, but the file from the first upload is still there
-    boost::filesystem::path base_path("this_should_not_be_the_real_uploader_directory_name");
+    boost::filesystem::path base_path(temp_dir_name);
     base_path /= "dummy";
     base_path /= "test_upload";
     boost::filesystem::path csv_path = base_path;
@@ -215,5 +215,4 @@ TEST_F(UploaderTest, upload_failed) {
     EXPECT_FALSE(boost::filesystem::exists(csv_path));
     EXPECT_FALSE(boost::filesystem::exists(csvt_path));
     EXPECT_TRUE (boost::filesystem::exists(survive_path));
-
 }

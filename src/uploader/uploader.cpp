@@ -53,8 +53,10 @@ void UploadService::runIntern(){
     auto session = UserDB::loadSession(sessiontoken);
     auto user = session->getUser();
     auto username = user.getUsername();
+    if(!user.hasPermission("upload")){
+        throw OperatorException("User does not have permission to upload.");
+    }
 
-    //TODO: use boost filesystem
     std::string upload_dir = Configuration::get<std::string>("uploader.directory");
     boost::filesystem::path total_path(upload_dir);
     total_path /= username;
