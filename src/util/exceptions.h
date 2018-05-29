@@ -17,8 +17,8 @@ enum class MappingExceptionType{
  */
 class MappingException : public std::runtime_error {
 public:
-    MappingException(const std::string &msg, const MappingExceptionType type)
-            : std::runtime_error(msg), type(type) {
+    MappingException(const std::string &msg, const MappingExceptionType type) : std::runtime_error(msg), type(type)
+    {
 
     }
 
@@ -32,8 +32,8 @@ private:
 
 /**
  * Macro creating the exception classes. Important here: The MappingExceptionType is set as a default parameter
- * to CONFIDENTAL, so that not every exception usage at once has to be adapted. CONFIDENTAL is the default, so that
- * error information that can be shared has to shared explicitly.
+ * to CONFIDENTAL, so that not every exception usage has to be adapted at once. CONFIDENTAL is the default, so that
+ * error information has to shared explicitly.
  */
 #define _CUSTOM_EXCEPTION_CLASS_PARENT(C, PARENT) class C : public PARENT { public: C(const std::string &msg, const MappingExceptionType type = MappingExceptionType::CONFIDENTIAL) : PARENT(#C ": " + msg, type) {}}
 

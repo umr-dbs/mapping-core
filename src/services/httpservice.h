@@ -94,18 +94,19 @@ class HTTPService {
 
 		static void run(std::streambuf *in, std::streambuf *out, std::streambuf *err);
 		static void run(std::streambuf *in, std::streambuf *out, std::streambuf *err, FCGX_Request & request);
-	public:
+	private:
         /**
-         * Catches MappingExceptions and sends the exceptions nested structure as Json response.
+         * Catches MappingExceptions and sends the exceptions nested structure as Json http response.
          */
 		static void catchExceptions(HTTPResponseStream& response, const MappingException &e);
 		/**
-		 * Reads an exception into the exceptionJson and calls method recursively for nested exception.
+		 * Writes info of the exception into the exceptionJson object and calls
+		 * method recursively for nested exceptions.
 		 */
         static void readNestedException(Json::Value &exceptionJson, const MappingException &me);
 		/**
-		 * Clears confidential exceptions from the response json, including exceptions flaged as SAME_AS_NESTED when the child is CONFIDENTIAL.
-		 * If root element is CONFIDENTIAL the calling function has to handle the removing.
+		 * Clears confidential exceptions from the response json recursively, including exceptions flagged as SAME_AS_NESTED when
+		 * the child is CONFIDENTIAL. If root element is CONFIDENTIAL the calling function has to handle the removing.
 		 * @return if the parameter Json::Value is CONFIDENTIAL or SAME_AS_NESTED and the nested is CONFIDENTIAL.
 		 */
 		static bool clearExceptionJsonFromConfidential(Json::Value &exceptionJson);

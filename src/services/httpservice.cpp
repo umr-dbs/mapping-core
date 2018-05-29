@@ -111,7 +111,7 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 
 void HTTPService::catchExceptions(HTTPResponseStream& response, const MappingException &me){
     auto exception_type = me.getExceptionType();
-	const bool global_debug = false;//Configuration::get<bool>("global.debug", false);
+	const bool global_debug = Configuration::get<bool>("global.debug", false);
 
 	if(global_debug || exception_type != MappingExceptionType::CONFIDENTIAL){
         Json::Value exceptionJson;
