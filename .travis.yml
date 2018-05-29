@@ -1,0 +1,43 @@
+language: cpp
+dist: trusty
+sudo: required
+
+services:
+- docker
+
+addons:
+  apt:
+    packages:
+    - docker-ce
+
+env:
+  global:
+  - DOCKER_IMAGE="umrdbs/mapping-dependencies:latest"
+  - DOCKER_CONTAINER="mapping_container"
+  - DOCKER_CONTAINER_HOME="/app"
+
+before_install:
+- docker pull $DOCKER_IMAGE
+- docker run -d
+  --name $DOCKER_CONTAINER 
+  --volume "$(pwd)":"$DOCKER_CONTAINER_HOME/$TRAVIS_REPO_SLUG"
+  $DOCKER_IMAGE
+
+script:
+- docker exec -t 
+  -w "$DOCKER_CONTAINER_HOME/$TRAVIS_REPO_SLUG"
+  $DOCKER_CONTAINER
+  cmake -DCMAKE_BUILD_TYPE=Release .
+- docker exec -t
+  -w "$DOCKER_CONTAINER_HOME/$TRAVIS_REPO_SLUG"
+  $DOCKER_CONTAINER make
+  -j$(cat /proc/cpuinfo | grep processor | wc -l)
+- docker exec -t
+  -w "$DOCKER_CONTAINER_HOME/$TRAVIS_REPO_SLUG"
+  $DOCKER_CONTAINER
+  make test
+
+notifications:
+  slack:
+    secure: GhV3lxBjwKo/ytcBvwLQER85VAm4Vrth4aqPwD3ORiFQOW/u7MW8DY4B445RmjPfA64piHZlVWlbDBmykbr/lV5iMU9Gkn5MpC2BK5zF7eyNJf+sFoAhJAAjZlCgoyq0FplgHi96EkKw8MK70YXhl0XVnzEUjKiLf4pKIWohyAdUVe2h6JrvUCgfBc4CosxzDhhrQBowvbD7Otx6tzUiioRZCvJWHUObvgrQSUka5GbIQEgZL4rZKGH4VhYwgmYHczQcxrAFa8NChgQTFAaLEDPcpg9RLKygCvvUpUd/e4hpw35uifm+MvsmPMmzy2YNpOwIQMx/b26zx1osVGaW1K7uNse4SlMIXN91iTkicX/ywddqjQ9yhYynU7+hDb4VEgA3nwIMzX/g21b/OhjEa8TM+xsX+imenzMuDBJufh3qvRQ9gqDDVE6tnkD3xOaOZYXFkxnbRmQ7gLYnq1swjV65xI4ZnWY6XeVHeu6o/GjorfKsdoC87xmdROsENv/GD+7LO9rZaNymw0c5sYPneD+IM8r7rU1yw1YiXx8h/kNCiTzx6O8nJ0Sh79p8mIsWB446QinZ2EBJ9P+JT4nmwZ8VhiYLNgjFOQlZnOpF5j9ONrFqkaHlYz6nzaKDFCGhNEm90qqsLEhKf64CwttIquKC2oY4aZrXVdaOq73kwIs=
+
