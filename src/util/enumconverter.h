@@ -1,5 +1,7 @@
-#include "util/exceptions.h"
+#ifndef UTIL_ENUMCONVERTER_H
+#define UTIL_ENUMCONVERTER_H
 
+#include "util/exceptions.h"
 #include <string>
 #include <tuple>
 #include <utility>
@@ -42,7 +44,17 @@ class EnumConverter {
 			auto str = root.get(name, default_value).asString();
 			return from_string(str);
 		}
+
+		bool is_value(const std::string &s){
+			for (auto &tuple : map) {
+				if (tuple.second == s)
+					return true;
+			}
+			return false;
+		}
 	private:
 		const std::vector< std::pair<T, std::string>> &map;
 		const std::string default_value;
 };
+
+#endif
