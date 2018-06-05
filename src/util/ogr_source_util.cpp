@@ -166,10 +166,11 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
                 time_and_attribute_success = readAttributesIntoCollection(collection->feature_attributes, attributeDefn,
                                                                           feature.get(), featureCount);
 
-            //false means that attribute or time could not be written and errorhandling is SKIP: the already inserted feature has to be removed
+            // false means that attribute or time could not be written and errorhandling is SKIP:
+            // the already inserted feature has to be removed, rest of loop can be skipped.
             if (!time_and_attribute_success) {
-                success = false;
                 collection->removeLastFeature();
+                continue;
             }
         }
 
