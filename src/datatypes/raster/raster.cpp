@@ -362,7 +362,7 @@ void Raster<T, dimensions>::setRepresentation(Representation r) {
 		catch (cl::Error &e) {
 			std::stringstream ss;
 			ss << "CL Error in Raster::setRepresentation(): " << e.err() << ": " << e.what();
-			throw OpenCLException(ss.str());
+			throw OpenCLException(ss.str(), MappingExceptionType::CONFIDENTIAL);
 		}
 
 		clbuffer_info = RasterOpenCL::getBufferWithRasterinfo(this).release();

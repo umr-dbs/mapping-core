@@ -40,8 +40,8 @@ QueryProcessor::~QueryProcessor() {
 /*
  * QueryResult
  */
-QueryProcessor::QueryResult::QueryResult(Query::ResultType result_type, std::unique_ptr<SpatioTemporalResult> result, std::unique_ptr<ProvenanceCollection> provenance, const std::string &result_plot, const std::string &result_error, const QueryRectangle &qrect)
-	: result_type(result_type), result(std::move(result)), provenance(std::move(provenance)), result_plot(result_plot), result_error(result_error), qrect(qrect) {
+QueryProcessor::QueryResult::QueryResult(Query::ResultType result_type, std::unique_ptr<SpatioTemporalResult> result, std::unique_ptr<ProvenanceCollection> provenance, const std::string &result_plot, const std::string &result_error, const QueryRectangle &qrect, const MappingExceptionType errorType)
+	: result_type(result_type), result(std::move(result)), provenance(std::move(provenance)), result_plot(result_plot), result_error(result_error), qrect(qrect), errorType(errorType) {
 }
 
 std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::raster(std::unique_ptr<GenericRaster> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
@@ -59,8 +59,8 @@ std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::polygo
 std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::plot(const std::string &plot, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
 	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::PLOT, nullptr, std::move(provenance), plot, "", qrect));
 }
-std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::error(const std::string &error, const QueryRectangle &qrect) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::ERROR, nullptr, nullptr, "", error, qrect));
+std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::error(const std::string &error, const QueryRectangle &qrect, MappingExceptionType errorType) {
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::ERROR, nullptr, nullptr, "", error, qrect, errorType));
 }
 
 
@@ -159,5 +159,9 @@ bool QueryProcessor::QueryResult::isError() {
 
 std::string QueryProcessor::QueryResult::getErrorMessage() {
 	return result_error;
+}
+
+MappingExceptionType QueryProcessor::QueryResult::getErrorType(){
+	return errorType;
 }
 

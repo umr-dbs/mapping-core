@@ -32,7 +32,7 @@ QueryProcessorBackendRegistration::QueryProcessorBackendRegistration(const char 
 std::unique_ptr<QueryProcessor> QueryProcessor::create(const std::string &backend, const ConfigurationTable& params) {
 	auto map = getRegisteredConstructorsMap();
 	if (map->count(backend) != 1)
-		throw ArgumentException(concat("Unknown QueryProcessor backend: ", backend));
+		throw ArgumentException(concat("Unknown QueryProcessor backend: ", backend), MappingExceptionType::TRANSIENT);
 
 	auto constructor = map->at(backend);
 	auto backend_instance = constructor(params);

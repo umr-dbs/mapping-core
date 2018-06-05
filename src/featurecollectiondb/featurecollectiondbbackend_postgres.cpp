@@ -118,7 +118,7 @@ FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::
 	} else if(type == "polygons") {
 		resultType = Query::ResultType::POLYGONS;
 	} else {
-		throw MustNotHappenException("Invalid type of feature collection");
+		throw MustNotHappenException("Invalid type of feature collection", MappingExceptionType::TRANSIENT);
 	}
 
 	Json::Value json;
@@ -211,7 +211,7 @@ FeatureCollectionDBBackend::datasetid_t PostgresFeatureCollectionDBBackend::crea
 	} else if(type == Query::ResultType::POLYGONS) {
 		typeString = "polygons";
 	} else {
-		throw ArgumentException("PostgresFeatureCollectionDBBacken: unknown result type");
+		throw ArgumentException("PostgresFeatureCollectionDBBackend: unknown result type", MappingExceptionType::PERMANENT);
 	}
 
 	pqxx::result result = work.prepared("insert_dataset")(user.userid)(dataSetName)(typeString)(writer.write(numeric_attributes))(writer.write(textual_attributes))(collection.hasTime()).exec();
@@ -410,7 +410,7 @@ void PostgresFeatureCollectionDBBackend::loadFeatures(SimpleFeatureCollection &c
 		} else if (type == Query::ResultType::POLYGONS) {
 			WKBUtil::addFeatureToCollection(dynamic_cast<PolygonCollection&>(collection), row["geom"].as<std::string>());
 		} else {
-			throw ArgumentException("PostgresFeatureCollectionDBBackend: Invalid type of feature collection");
+			throw ArgumentException("PostgresFeatureCollectionDBBackend: Invalid type of feature collection", MappingExceptionType::PERMANENT);
 		}
 
 		// attributes

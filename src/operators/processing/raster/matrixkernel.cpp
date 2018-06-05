@@ -134,8 +134,9 @@ std::unique_ptr<GenericRaster> MatrixOperator::getRaster(const QueryRectangle &r
 
 	}
 	catch (cl::Error &e) {
-		fprintf(stderr, "cl::Error %d: %s\n", e.err(), e.what());
-		throw;
+		std::stringstream ss;
+		ss << "cl::Error " << e.err() << ": " << e.what();
+		throw OpenCLException(ss.str(), MappingExceptionType::CONFIDENTIAL);
 	}
 
 	return raster_out;
