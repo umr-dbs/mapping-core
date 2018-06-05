@@ -35,6 +35,7 @@ find_path(JPEGTURBO_PREFIX "include/turbojpeg.h"
         /opt/local # DarwinPorts
         /opt/csw # Blastwave
         /opt
+        /opt/libjpeg-turbo/
         DOC "JPEGTURBO - Prefix"
         )
 
@@ -54,6 +55,7 @@ FIND_PATH(JPEGTURBO_INCLUDE_DIR "turbojpeg.h"
         /opt/local/include # DarwinPorts
         /opt/csw/include # Blastwave
         /opt/include
+        /opt/libjpeg-turbo/
         DOC "JPEGTURBO - Headers"
         )
 
@@ -80,6 +82,7 @@ FIND_LIBRARY(JPEGTURBO_LIBRARY NAMES jpeg
         /opt/local
         /opt/csw
         /opt
+        /opt/libjpeg-turbo/
         PATH_SUFFIXES lib lib64
         DOC "JPEGTURBO - Library"
         )
@@ -99,6 +102,7 @@ FIND_LIBRARY(TURBOJPEG_LIBRARY turbojpeg
         /opt/local
         /opt/csw
         /opt
+        /opt/libjpeg-turbo/
         PATH_SUFFIXES lib lib64
         DOC "JPEGTURBO - Library"
         )
