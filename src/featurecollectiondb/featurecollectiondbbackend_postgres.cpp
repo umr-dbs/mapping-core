@@ -118,7 +118,7 @@ FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::
 	} else if(type == "polygons") {
 		resultType = Query::ResultType::POLYGONS;
 	} else {
-		throw MustNotHappenException("Invalid type of feature collection", MappingExceptionType::TRANSIENT);
+		throw MustNotHappenException("Invalid type of feature collection", MappingExceptionType::PERMANENT);
 	}
 
 	Json::Value json;

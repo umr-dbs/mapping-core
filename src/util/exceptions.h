@@ -22,6 +22,13 @@ public:
 
     }
 
+    /**
+     * Constructor without arguments, type is set to SAME_AS_NESTED
+     */
+    MappingException() : std::runtime_error(""), type(MappingExceptionType::SAME_AS_NESTED){
+
+    }
+
     const MappingExceptionType getExceptionType() const {
         return type;
     }
