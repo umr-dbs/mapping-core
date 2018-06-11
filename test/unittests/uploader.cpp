@@ -23,6 +23,7 @@ protected:
     virtual void TearDown();
     std::string sessiontoken;
     std::string upl_dir;
+    std::string userID;
 };
 
 
@@ -47,6 +48,7 @@ void UploaderTest::SetUp() {
     user->addPermission(userpermission);
     auto session = UserDB::createSession(username, password);
     sessiontoken = session->getSessiontoken();
+    userID = user->getUserIDString();
 
     //set env variables for the http request
     setenv("REQUEST_METHOD", "POST", true);
@@ -110,7 +112,7 @@ TEST_F(UploaderTest, same_upload_twice){
         EXPECT_EQ(result_json["upload_name"], "test_upload");
 
         boost::filesystem::path path_test(temp_dir_name);
-        path_test /= "dummy";
+        path_test /= userID;
         path_test /= "test_upload";
         path_test /= "hello.csv";
 
@@ -153,7 +155,7 @@ std::string two_file_request_crash_p2 =
 std::string single_file_p2 =
                 "\n"
                 "--frontier\n"
-                "Content-Disposition: form-data; filename=\"iwillsuri.ve\"\n"
+                "Content-Disposition: form-data; filename=\"iwillsurvi.ve\"\n"
                 "Content-Type: text/plain\n"
                 "\n"
                 "\"WKT\",\"Integer\",\"String\",\"String\",\"DateTime\",\"DateTime\",\"DateTime\",\"Integer\"\n"
@@ -203,14 +205,14 @@ TEST_F(UploaderTest, upload_failed) {
 
     //check that both files from the upload do not exist, but the file from the first upload is still there
     boost::filesystem::path base_path(temp_dir_name);
-    base_path /= "dummy";
+    base_path /= userID;
     base_path /= "test_upload";
     boost::filesystem::path csv_path = base_path;
     csv_path /= "hello.csv";
     boost::filesystem::path csvt_path = base_path;
     csvt_path /= "hello.csvt";
     boost::filesystem::path survive_path = base_path;
-    survive_path /= "iwillsuri.ve";
+    survive_path /= "iwillsurvi.ve";
 
     EXPECT_FALSE(boost::filesystem::exists(csv_path));
     EXPECT_FALSE(boost::filesystem::exists(csvt_path));

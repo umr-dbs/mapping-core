@@ -63,6 +63,7 @@ class UserDB {
 			public:
 				User(userid_t userid, const std::string &username, const std::string &realname, const std::string &email, const std::string &externalid, Permissions &&user_permissions, std::vector<std::shared_ptr<Group>> &&groups);
 
+				const std::string getUserIDString() { return std::to_string(userid); }
 				const std::string &getUsername() { return username; }
 				const std::string &getRealname() { return realname; }
 				const std::string &getEmail() { return email; }
