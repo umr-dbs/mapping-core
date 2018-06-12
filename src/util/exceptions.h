@@ -42,7 +42,9 @@ private:
  * to CONFIDENTAL, so that not every exception usage has to be adapted at once. CONFIDENTAL is the default, so that
  * error information has to shared explicitly.
  */
-#define _CUSTOM_EXCEPTION_CLASS_PARENT(C, PARENT) class C : public PARENT { public: C(const std::string &msg, const MappingExceptionType type = MappingExceptionType::CONFIDENTIAL) : PARENT(#C ": " + msg, type) {}}
+#define _CUSTOM_EXCEPTION_CLASS_PARENT(C, PARENT) class C : public PARENT { \
+    public: C(const std::string &msg, const MappingExceptionType type = MappingExceptionType::CONFIDENTIAL) : PARENT(#C ": " + msg, type) {} \
+    public: C() : PARENT() {}}
 
 // This is just some magic to get around the fact that macros cannot have default parameters
 #define _CUSTOM_EXCEPTION_CLASS_DEFAULT(C) _CUSTOM_EXCEPTION_CLASS_PARENT(C, MappingException)
@@ -72,6 +74,7 @@ _CUSTOM_EXCEPTION_CLASS(FeatureException);
 _CUSTOM_EXCEPTION_CLASS(TimeParseException);
 _CUSTOM_EXCEPTION_CLASS(PermissionDeniedException);
 _CUSTOM_EXCEPTION_CLASS(NoRasterForGivenTimeException);
+_CUSTOM_EXCEPTION_CLASS(ProcessingException);
 
 // Added Micha
 _CUSTOM_EXCEPTION_CLASS(CacheException);

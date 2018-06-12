@@ -258,7 +258,12 @@ std::unique_ptr<QueryProcessor::QueryResult> HTTPService::processQuery(Query &qu
 	auto queryResult = QueryProcessor::getDefaultProcessor().process(query, true);
 
 	if(queryResult->isError()) {
-		throw OperatorException("HTTPService: query failed with error: " + queryResult->getErrorMessage(), queryResult->getErrorType());
+	    //throw, directly catch and throw with nested to get a nested exception structure:
+		try {
+            throw queryResult->getErrorException();
+        } catch (...){
+		    std::throw_with_nested(OperatorException("HTTPService: query failed with error.", MappingExceptionType::SAME_AS_NESTED));
+		}
 	}
 
 	ProvenanceCollection &provenance = queryResult->getProvenance();
