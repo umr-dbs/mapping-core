@@ -1,0 +1,14 @@
+# Ignore self
+.dockerignore
+Dockerfile
+
+# Build files
+target
+Testing
+cmake-build-debug
+
+# Misc
+.git
+.gitignore
+.gitattributes
+.idea
