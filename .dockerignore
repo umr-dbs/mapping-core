@@ -1,7 +1,3 @@
-# Ignore self
-.dockerignore
-Dockerfile
-
 # Build files
 target
 Testing

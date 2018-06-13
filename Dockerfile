@@ -1,33 +1,49 @@
+### 1. STAGE (BUILD)
 # Ubuntu 16.04 LTS with Baseimage and Runit
 FROM phusion/baseimage:0.10.1 AS builder
 
 WORKDIR /app/mapping-core
-COPY . /app/mapping-core
 
-RUN DEBIAN_FRONTEND=noninteractive \
-    # update packages and upgrade system
-    apt-get update && \
-    # install OpenCL
-    chmod +x docker-files/install-opencl-build.sh && \
-    docker-files/install-opencl-build.sh && \
-    # install MAPPING dependencies
-    chmod +x docker-files/ppas.sh && \
+# copy files
+COPY cmake cmake
+COPY conf conf
+COPY docker-files docker-files
+COPY src src
+COPY test test
+COPY CMakeLists.txt CMakeLists.txt
+
+# set terminal to noninteractive
+ARG DEBIAN_FRONTEND=noninteractive
+
+# update packages and upgrade system
+RUN apt-get update && \
+    apt-get upgrade --yes -o Dpkg::Options::="--force-confold"
+
+# install OpenCL
+RUN chmod +x docker-files/install-opencl-build.sh && \
+    docker-files/install-opencl-build.sh
+
+# install MAPPING dependencies
+RUN chmod +x docker-files/ppas.sh && \
     docker-files/ppas.sh && \
     python3 docker-files/read_dependencies.py docker-files/dependencies.csv "build dependencies" \
-        | xargs -d '\n' -- apt-get install --yes && \
-    # Build MAPPING
-    cmake -DCMAKE_BUILD_TYPE=Release . && \
+        | xargs -d '\n' -- apt-get install --yes
+
+# Build MAPPING
+RUN cmake -DCMAKE_BUILD_TYPE=Release . && \
     make -j$(cat /proc/cpuinfo | grep processor | wc -l)
 
+
+### 2. STAGE (RUNTIME)
 # Ubuntu 16.04 LTS with Baseimage and Runit
 FROM phusion/baseimage:0.10.1
 
 WORKDIR /app
-COPY --from=builder /app/mapping-core/target/bin /app
 
+COPY --from=builder /app/mapping-core/target/bin /app
 COPY docker-files /app/docker-files
 
-RUN DEBIAN_FRONTEND=noninteractive \
+RUN \
     # update packages and upgrade system
     apt-get update && \
     apt-get upgrade --yes -o Dpkg::Options::="--force-confold" && \
@@ -51,7 +67,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
     chown www-data:www-data ogrsources_data && \
     mkdir ogrsources_description && \
     chown www-data:www-data ogrsources_description && \
-    # Make servie available
+    # Make service available
     mkdir --parents /etc/service/mapping/ && \
     mv docker-files/mapping-service.sh /etc/service/mapping/run && \
     chmod +x /etc/service/mapping/run && \
