@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/umr-dbs/mapping-core.svg?branch=master)](https://travis-ci.org/umr-dbs/mapping.core)
+[![Build Status](https://travis-ci.org/umr-dbs/mapping-core.svg?branch=master)](https://travis-ci.org/umr-dbs/mapping-core)
 
 # MAPPING Core Module
 This module is part of MAPPING - Marburg's Analysis, Processing and Provenance of Information for Networked Geographics.
