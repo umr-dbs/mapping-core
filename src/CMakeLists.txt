@@ -220,8 +220,8 @@ target_link_libraries(mapping_core_base_lib ${GEOS_LIBRARY})
 target_link_libraries(mapping_core_base_lib geos) # TODO: extend find file for c++ lib
 target_include_directories(mapping_core_base_lib PRIVATE ${GEOS_INCLUDE_DIR})
 
-find_package(Boost COMPONENTS date_time REQUIRED)
-target_link_libraries(mapping_core_base_lib Boost::date_time)
+find_package(Boost COMPONENTS date_time filesystem REQUIRED)
+target_link_libraries(mapping_core_base_lib Boost::date_time Boost::filesystem)
 target_include_directories(mapping_core_base_lib PRIVATE ${Boost_INCLUDE_DIRS})
 
 find_package(GDAL REQUIRED)

@@ -2,6 +2,7 @@
 #include "gdal_timesnap.h"
 #include "configuration.h"
 #include <ogr_spatialref.h>
+#include <boost/filesystem.hpp>
 
 const std::string GDALDatasetImporter::placeholder = "%%%TIME_STRING%%%";
 
@@ -35,7 +36,7 @@ void GDALDatasetImporter::importDataset(std::string dataset_name,
 		
 	size_t placeholderPos =	dataset_filename_with_placeholder.find(placeholder);
 
-	std::string datasetJsonPath = Configuration::get<std::string>("gdalsource.datasetpath");
+	boost::filesystem::path dataset_json_path(Configuration::get<std::string>("gdalsource.datasetpath"));
 
 	if(placeholderPos == std::string::npos){
 		throw ImporterException("GDALDatasetImporter: Date placeholder " + placeholder + " not found in dataset filename " + dataset_filename_with_placeholder);
@@ -67,9 +68,10 @@ void GDALDatasetImporter::importDataset(std::string dataset_name,
 	datasetJson["time_start"] 	= time_start;
 	datasetJson["time_interval"]= timeIntervalJson;
 
-	std::string fileToOpen = dataset_filename_with_placeholder.replace(placeholderPos, placeholder.length(), time_start);
-
-	GDALDataset *dataset = openGDALDataset(dataset_file_path + "/" + fileToOpen);
+	std::string replaced_file_name = dataset_filename_with_placeholder.replace(placeholderPos, placeholder.length(), time_start);
+	boost::filesystem::path file_to_open(dataset_file_path);
+	file_to_open /= replaced_file_name;
+	GDALDataset *dataset = openGDALDataset(file_to_open.string());
 	
 	datasetJson["coords"]		= readCoords(dataset);
 	datasetJson["channels"]		= readChannels(dataset, measurement, unit, interpolation);
@@ -85,7 +87,8 @@ void GDALDatasetImporter::importDataset(std::string dataset_name,
 	//save Json to disk
 	Json::StyledWriter writer;	
 	std::ofstream file;
-	file.open(datasetJsonPath + dataset_name + ".json");
+	dataset_json_path /= dataset_name + ".json";
+	file.open(dataset_json_path.string());
 	file << writer.write(datasetJson);		
 	file.close();
 

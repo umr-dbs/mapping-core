@@ -1,4 +1,5 @@
 #include "gdal_timesnap.h"
+#include <boost/filesystem.hpp>
 
 constexpr int MAX_FILE_NAME_LENGTH = 255;
 
@@ -213,7 +214,9 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
     CrsId crsId = CrsId::from_srs_string(coords.get("crs", "").asString());
 
 
-	return GDALDataLoadingInfo(path + "/" + fileName, channel,
+    boost::filesystem::path file_path(path);
+    file_path /= fileName;
+	return GDALDataLoadingInfo(file_path.string(), channel,
                                TemporalReference(TIMETYPE_UNIX, time_start_mapping, time_end_mapping),
                                crsId, nodata, unit);
 }

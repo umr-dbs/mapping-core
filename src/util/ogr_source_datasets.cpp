@@ -1,26 +1,27 @@
 
-
-#include <dirent.h>
+#include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
 #include "ogr_source_datasets.h"
 #include "configuration.h"
 #include "ogr_source_util.h"
 
 std::vector<std::string> OGRSourceDatasets::getDatasetNames(){
-    const std::string path = Configuration::get<std::string>("ogrsource.files.path");
+    namespace bf = boost::filesystem;
+    bf::path path = Configuration::get<std::string>("ogrsource.files.path");
 
-    struct dirent *entry;
-    DIR *dir = opendir(path.c_str());
+    if(!bf::is_directory(path))
+        throw ArgumentException("ogrsource.files.path in configuration is not valid directory");
 
-    if (dir == nullptr) {
-        throw MustNotHappenException("OGR Source Datasets: Directory for OGR files could not be found -> " + path);
-    }
 
     std::vector<std::string> filenames;
-    std::string suffix(".json");
-    size_t suffix_length = suffix.length();
+    const std::string suffix(".json");
+    const size_t suffix_length = suffix.length();
 
-    while ((entry = readdir(dir)) != nullptr) {
-        std::string filename = entry->d_name;
+    for(auto it = bf::directory_iterator(path); it != bf::directory_iterator{}; ++it){
+        auto file = (*it).path();
+        if(!bf::is_regular_file(file))
+            continue;
+        auto filename = file.filename().string();
 
         //check if file ends with the suffix
         bool found = filename.find(suffix, filename.length() - suffix_length)  != std::string::npos;
@@ -30,9 +31,6 @@ std::vector<std::string> OGRSourceDatasets::getDatasetNames(){
             filenames.push_back(dataSetName);
         }
     }
-
-    closedir(dir);
-
     return filenames;
 }
 
@@ -110,9 +108,10 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
 
 Json::Value OGRSourceDatasets::getDatasetDescription(const std::string &name){
     std::string directory = Configuration::get<std::string>("ogrsource.files.path");
-    std::string filename = directory + "/" + name + ".json";
+    boost::filesystem::path file_path(directory);
+    file_path /= name + ".json";
 
-    std::ifstream file(filename);
+    std::ifstream file(file_path.string());
     if (!file.is_open()) {
         throw ArgumentException("OGR Source Datasets: File with given name not found -> " + name);
     }

@@ -12,7 +12,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <dirent.h>
+#include <boost/filesystem.hpp>
 
 
 class LocalRasterDBBackend : public RasterDBBackend {
@@ -66,22 +66,24 @@ static bool has_suffix(const std::string &str, const std::string &suffix) {
 }
 
 std::vector<std::string> LocalRasterDBBackend::enumerateSources() {
+	namespace bf = boost::filesystem;
+
 	std::vector<std::string> sourcenames;
-
 	std::string suffix = ".json";
+	const bf::path path(location);
 
-	DIR *dir = opendir(location.c_str());
-	struct dirent *ent;
-	if (dir == nullptr)
+	if(!bf::is_directory(path))
 		throw ArgumentException(concat("Could not open path for enumerating: ", location));
 
-	while ((ent = readdir(dir)) != nullptr) {
-		std::string name = ent->d_name;
+	for(auto it = bf::directory_iterator(path); it != bf::directory_iterator{}; ++it){
+		auto file = (*it).path();
+		if(!bf::is_regular_file(file))
+			continue;
+		auto name = file.filename().string();
+
 		if (has_suffix(name, suffix))
 			sourcenames.push_back(name.substr(0, name.length() - suffix.length()));
 	}
-	closedir(dir);
-
 	return sourcenames;
 }
 std::string LocalRasterDBBackend::readJSON(const std::string &sourcename) {
