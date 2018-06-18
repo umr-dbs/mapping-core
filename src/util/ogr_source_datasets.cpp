@@ -60,6 +60,8 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
         std::string layer_name(layer->GetName());
         Json::Value layer_object(Json::ValueType::objectValue);
         layer_object["name"] = layer_name;
+        layer_object["title"] = layer->GetMetadataItem("TITLE"); //will be empty string if TITLE does not exist.
+        layer_object["geometry_type"] = OGRGeometryTypeToName(layer->GetGeomType());
 
         Json::Value textual(Json::ValueType::arrayValue);
         Json::Value numeric(Json::ValueType::arrayValue);
