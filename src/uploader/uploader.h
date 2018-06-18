@@ -7,6 +7,7 @@
 #include <Poco/Base64Decoder.h>
 #include <Poco/Net/MultipartReader.h>
 #include <Poco/Net/MessageHeader.h>
+#include <boost/filesystem.hpp>
 #include "services/httpservice.h"
 
 using namespace Poco::Net;
@@ -33,7 +34,7 @@ public:
 private:
     void runInternal();
     Parameters parseParameters(Poco::Net::MultipartReader &mr);
-    void uploadFile(Poco::Net::MultipartReader &mr, std::string &base_path, std::vector<std::string> &files_writen);
+    void uploadFile(Poco::Net::MultipartReader &mr, const boost::filesystem::path &base_path, std::vector<std::string> &files_writen);
 
     std::istream input;
     std::ostream error;
