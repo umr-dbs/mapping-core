@@ -11,10 +11,10 @@
  */
 class UploaderUtil {
 public:
-    static void moveUpload(const std::string &username, const std::string &upload_name, boost::filesystem::path &target_dir);
-    static bool exists(const std::string &username, const std::string &upload_name);
-    static bool uploadHasFile(const std::string &username, const std::string &upload_name, const std::string &file_name);
-    static boost::filesystem::path getUploadPath(const std::string &username, const std::string &upload_name);
+    static void moveUpload(const std::string &user_id, const std::string &upload_name, boost::filesystem::path &target_dir);
+    static bool exists(const std::string &user_id, const std::string &upload_name);
+    static bool uploadHasFile(const std::string &user_id, const std::string &upload_name, const std::string &file_name);
+    static boost::filesystem::path getUploadPath(const std::string &user_id, const std::string &upload_name);
 };
 
 

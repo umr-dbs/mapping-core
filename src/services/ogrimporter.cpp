@@ -37,8 +37,8 @@ public:
     virtual ~OGRImporter() = default;
     virtual void run();
 private:
-    Json::Value createJson(const std::string &target_dir);
-    bool testFileValidity(const std::string &username, const std::string &upload_name, const std::string &main_file);
+    Json::Value createJson(const boost::filesystem::path &target_dir);
+    bool testFileValidity(const std::string &user_id, const std::string &upload_name, const std::string &main_file);
 };
 
 REGISTER_HTTP_SERVICE(OGRImporter, "IMPORTER_OGR");
@@ -48,14 +48,14 @@ void OGRImporter::run() {
     auto session = UserDB::loadSession(params.get("sessiontoken"));
 
     if(session->isExpired()){
-        throw UploaderException("Not a valid user session.");
+        throw ImporterException("Not a valid user session.");
     }
 
     auto user = session->getUser();
     if(!user.hasPermission("upload") || !user.hasPermission("import_ogr")) {
-        throw UploaderException("User does not have permission.");
+        throw ImporterException("User does not have permission.");
     }
-    const std::string username = user.getUsername();
+    const std::string user_id = user.getUserIDString();
 
     const std::string ogr_dir = Configuration::get<std::string>("ogrsource.files.path");
     boost::filesystem::path target_dir(ogr_dir);
@@ -66,8 +66,12 @@ void OGRImporter::run() {
     const std::string dataset_name = params.get("dataset_name");
 
     //check if upload and main file exist
-    UploaderUtil::exists(username, upload_name);
-    UploaderUtil::uploadHasFile(username, upload_name, main_file);
+    bool exists = UploaderUtil::exists(user_id, upload_name);
+    exists &= UploaderUtil::uploadHasFile(user_id, upload_name, main_file);
+
+    if(!exists){
+        throw ImporterException("Requested upload or main file does not exist.");
+    }
 
     //check if dataset with same name already exists
     boost::filesystem::path dataset_path(ogr_dir);
@@ -76,16 +80,16 @@ void OGRImporter::run() {
         throw ImporterException("OGRSource dataset with same name already exists.");
     
     // test if the dataset can be opened with OGR
-    bool valid = testFileValidity(username, upload_name, main_file);
+    bool valid = testFileValidity(user_id, upload_name, main_file);
     if(!valid)
         throw ImporterException("Uploaded files can not be opened with OGRSource.");
 
     //create dataset json
-    auto dataset_json = createJson(target_dir.string());
+    auto dataset_json = createJson(target_dir);
 
     //moves uploaded files to OGR location.
     try {
-        UploaderUtil::moveUpload(username, upload_name, target_dir);
+        UploaderUtil::moveUpload(user_id, upload_name, target_dir);
     } catch(std::exception &e){
         //could not move upload, delete already copied files and directory.
         boost::filesystem::remove_all(target_dir);
@@ -109,8 +113,8 @@ void OGRImporter::run() {
 /**
  * Tests if the given main file of the upload can be opened with OGR and has valid data
  */
-bool OGRImporter::testFileValidity(const std::string &username, const std::string &upload_name, const std::string &main_file) {
-    auto upload_path = UploaderUtil::getUploadPath(username, upload_name);
+bool OGRImporter::testFileValidity(const std::string &user_id, const std::string &upload_name, const std::string &main_file) {
+    auto upload_path = UploaderUtil::getUploadPath(user_id, upload_name);
     upload_path /= main_file;
 
     // opening the datasets needs filename, and x,y info if it is a csv file, as Json.
@@ -150,7 +154,7 @@ bool OGRImporter::testFileValidity(const std::string &username, const std::strin
 /**
  * write the needed parameters into the dataset json. Tests some conditions and throws exceptions when they are not met.
  */
-Json::Value OGRImporter::createJson(const std::string &target_dir) {
+Json::Value OGRImporter::createJson(const boost::filesystem::path &target_dir) {
     Json::Value dataset_json(Json::ValueType::objectValue);
 
     if(ErrorHandlingConverter.is_value(params.get("on_error")))
@@ -225,7 +229,9 @@ Json::Value OGRImporter::createJson(const std::string &target_dir) {
     provenance["uri"]      = params.get("uri");
     dataset_json["provenance"] = provenance;
 
-    dataset_json["filename"] = target_dir + "/" + params.get("main_file");
+    boost::filesystem::path file_path = target_dir;
+    file_path /= params.get("main_file");
+    dataset_json["filename"] = file_path.string();
 
     return dataset_json;
 }

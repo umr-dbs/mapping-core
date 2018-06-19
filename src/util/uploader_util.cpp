@@ -6,9 +6,9 @@
 
 using namespace boost::filesystem;
 
-void UploaderUtil::moveUpload(const std::string &username, const std::string &upload_name, boost::filesystem::path &target_dir)
+void UploaderUtil::moveUpload(const std::string &user_id, const std::string &upload_name, boost::filesystem::path &target_dir)
 {
-    path upload_path = getUploadPath(username, upload_name);
+    path upload_path = getUploadPath(user_id, upload_name);
 
     if(!boost::filesystem::exists(upload_path) || !is_directory(upload_path))
         throw UploaderException(concat("Requested upload '", upload_name,"' does not exist"));
@@ -28,19 +28,20 @@ void UploaderUtil::moveUpload(const std::string &username, const std::string &up
     }
 }
 
-bool UploaderUtil::exists(const std::string &username, const std::string &upload_name) {
-    path path = getUploadPath(username, upload_name);
+bool UploaderUtil::exists(const std::string &user_id, const std::string &upload_name) {
+    path path = getUploadPath(user_id, upload_name);
     return boost::filesystem::exists(path) & is_directory(path);
 }
 
-bool UploaderUtil::uploadHasFile(const std::string &username, const std::string &upload_name, const std::string &file_name) {
-    path path = getUploadPath(username, upload_name);
-    return boost::filesystem::exists(path) & is_directory(path);
+bool UploaderUtil::uploadHasFile(const std::string &user_id, const std::string &upload_name, const std::string &file_name) {
+    path path = getUploadPath(user_id, upload_name);
+    path /= file_name;
+    return boost::filesystem::exists(path) & is_regular_file(path);
 }
 
-boost::filesystem::path UploaderUtil::getUploadPath(const std::string &username, const std::string &upload_name) {
+boost::filesystem::path UploaderUtil::getUploadPath(const std::string &user_id, const std::string &upload_name) {
     path upload_path(Configuration::get<std::string>("uploader.directory"));
-    upload_path /= username;
+    upload_path /= user_id;
     upload_path /= upload_name;
     return upload_path;
 }
