@@ -115,38 +115,38 @@ void UserService::run() {
 		}
 
 		if(request == "uploadlist"){
-			using namespace boost::filesystem;
-			std::string username = user.getUsername();
+			namespace bf = boost::filesystem;
+			std::string user_id = user.getUserIDString();
 			Json::Value uploadlist_json(Json::ValueType::arrayValue);
 
 			auto upload_dir = Configuration::get<std::string>("uploader.directory");
-			path base_path(upload_dir);
-			base_path /= username;
+            bf::path base_path(upload_dir);
+			base_path /= user_id;
 
-			if(exists(base_path) && is_directory(base_path)){
+			if(bf::exists(base_path) && bf::is_directory(base_path)){
 				//in the users folder are folders again, one folder per upload.
-				for(auto it = directory_iterator(base_path); it != directory_iterator{}; ++it)
+				for(auto it = bf::directory_iterator(base_path); it != bf::directory_iterator{}; ++it)
 				{
 					auto upload_path = (*it).path();
-					if(!is_directory(upload_path))
+					if(!bf::is_directory(upload_path))
 						continue;
 
 					Json::Value upload_json(Json::ValueType::objectValue);
 					upload_json["upload_name"] = upload_path.filename().string();
-					std::time_t write_time 	= last_write_time(upload_path);
+					std::time_t write_time 	= bf::last_write_time(upload_path);
 					upload_json["last_write_time"] = write_time; //boost does not support creation time?
 					Json::Value upload_files_json(Json::ValueType::arrayValue);
 
 					//iterate all files in upload folder
-					for(auto it_inner = directory_iterator(upload_path); it_inner != directory_iterator{}; ++it_inner)
+					for(auto it_inner = bf::directory_iterator(upload_path); it_inner != bf::directory_iterator{}; ++it_inner)
 					{
 						Json::Value file_json(Json::ValueType::objectValue);
 						auto file_path 		= (*it_inner).path();
-						if(!is_regular_file(file_path))
+						if(!bf::is_regular_file(file_path))
 							continue;
 
 						file_json["name"] 	= file_path.filename().string();
-						file_json["size"]	= file_size(file_path);
+						file_json["size"]	= bf::file_size(file_path);
 
 						upload_files_json.append(file_json);
 					}
