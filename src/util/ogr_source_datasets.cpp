@@ -32,7 +32,7 @@ std::vector<std::string> OGRSourceDatasets::getDatasetNames(){
         }
     }
     return filenames;
-}
+}rasterdb
 
 Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name){
     Json::Value desc = getDatasetDescription(dataset_name);
@@ -58,6 +58,25 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
         std::string layer_name(layer->GetName());
         Json::Value layer_object(Json::ValueType::objectValue);
         layer_object["name"] = layer_name;
+
+        // if layer does not have a geometry type (eg CSV files), a field "geometry_type" in the dataset json should be defined
+        auto geom_type = layer->GetGeomType();
+        if(geom_type != OGRwkbGeometryType::wkbUnknown){
+            layer_object["geometry_type"] = OGRGeometryTypeToName(geom_type);
+        }
+        else{
+            layer_object["geometry_type"] = desc.get("geometry_type", "Unknown");
+        }
+
+        // To get the TITLE from meta data, check if metadata is not empty,
+        // than access the title that could still be Null.
+        layer_object["title"] = "";
+        char ** metadata = layer->GetMetadata(nullptr);
+        if( CSLCount(metadata) > 0 ){
+            const char* title = layer->GetMetadataItem("TITLE");
+            if(title != nullptr)
+                layer_object["title"] = title;
+        }
 
         Json::Value textual(Json::ValueType::arrayValue);
         Json::Value numeric(Json::ValueType::arrayValue);
