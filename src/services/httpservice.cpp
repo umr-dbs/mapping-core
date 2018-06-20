@@ -260,7 +260,7 @@ std::unique_ptr<QueryProcessor::QueryResult> HTTPService::processQuery(Query &qu
 	if(queryResult->isError()) {
 	    //throw, directly catch and throw with nested to get a nested exception structure:
 		try {
-            throw queryResult->getErrorException();
+            throw queryResult->getErrorException().value();
         } catch (...){
 		    std::throw_with_nested(OperatorException("HTTPService: query failed with error.", MappingExceptionType::SAME_AS_NESTED));
 		}
