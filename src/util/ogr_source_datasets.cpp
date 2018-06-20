@@ -21,13 +21,13 @@ std::vector<std::string> OGRSourceDatasets::getDatasetNames(){
         auto file = (*it).path();
         if(!bf::is_regular_file(file))
             continue;
-        auto filename = file.filename().string();
 
         //check if file ends with the suffix
-        bool found = filename.find(suffix, filename.length() - suffix_length)  != std::string::npos;
+        const std::string file_ext = bf::extension(file);
 
-        if (found) {
-            std::string dataSetName = filename.substr(0, filename.length() - suffix_length);
+        if (suffix == file_ext) {
+            const std::string filename = file.filename().string();
+            const std::string dataSetName = filename.substr(0, filename.length() - suffix_length);
             filenames.push_back(dataSetName);
         }
     }

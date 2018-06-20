@@ -59,12 +59,6 @@ LocalRasterDBBackend::~LocalRasterDBBackend() {
 	cleanup();
 }
 
-static bool has_suffix(const std::string &str, const std::string &suffix) {
-	if (suffix.length() > str.length())
-		return false;
-	return str.compare(str.length() - suffix.length(), suffix.length(), suffix) == 0;
-}
-
 std::vector<std::string> LocalRasterDBBackend::enumerateSources() {
 	namespace bf = boost::filesystem;
 
@@ -79,10 +73,12 @@ std::vector<std::string> LocalRasterDBBackend::enumerateSources() {
 		auto file = (*it).path();
 		if(!bf::is_regular_file(file))
 			continue;
-		auto name = file.filename().string();
 
-		if (has_suffix(name, suffix))
+		auto file_ext = bf::extension(file);
+		if(file_ext == suffix){
+			auto name = file.filename().string();
 			sourcenames.push_back(name.substr(0, name.length() - suffix.length()));
+		}
 	}
 	return sourcenames;
 }
