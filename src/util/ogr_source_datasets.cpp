@@ -32,7 +32,7 @@ std::vector<std::string> OGRSourceDatasets::getDatasetNames(){
         }
     }
     return filenames;
-}rasterdb
+}
 
 Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name){
     Json::Value desc = getDatasetDescription(dataset_name);
