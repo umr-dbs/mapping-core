@@ -154,7 +154,7 @@ void UserService::run() {
 					upload_json["files"] = upload_files_json;
 					uploadlist_json.append(upload_json);
 				}
-                response.sendSuccessJSON(uploadlist_json);
+                response.sendSuccessJSON("uploadlist", uploadlist_json);
                 return;
 			} else{
 				response.sendFailureJSON("No user uploads found.");
