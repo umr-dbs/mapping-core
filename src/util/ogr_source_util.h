@@ -1,7 +1,7 @@
 #ifndef UTIL_OGR_SOURCE_UTIL_H
 #define UTIL_OGR_SOURCE_UTIL_H
 
-#include <gdal/ogrsf_frmts.h>
+#include <ogrsf_frmts.h>
 #include "util/exceptions.h"
 #include "util/enumconverter.h"
 #include "util/timeparser.h"

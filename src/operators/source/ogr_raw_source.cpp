@@ -1,4 +1,4 @@
-#include <gdal/ogrsf_frmts.h>
+#include <ogrsf_frmts.h>
 #include "operators/operator.h"
 #include "datatypes/polygoncollection.h"
 #include "datatypes/linecollection.h"
