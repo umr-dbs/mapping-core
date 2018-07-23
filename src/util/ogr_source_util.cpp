@@ -127,7 +127,9 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
     OGRGeometry *default_geometry_raw = nullptr;
     if (hasDefaultGeometry) {
         OGRSpatialReference ref(nullptr);
-        OGRErr err = OGRGeometryFactory::createFromWkt(params["default"].asCString(), &ref, &default_geometry_raw);
+        std::string wkt = params.get("default", "").asString();
+        char *wktChar = (char *)wkt.c_str();
+        OGRErr err = OGRGeometryFactory::createFromWkt(&wktChar, &ref, &default_geometry_raw);
         if (err != OGRERR_NONE)
             throw OperatorException("OGR Source: default wkt-string could not be parsed.");
     }
