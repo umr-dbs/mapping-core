@@ -1,9 +1,0 @@
-
-{		
-    "filename": "WFS:http://localhost:8080/geoserver/wfs",
-    "on_error" : "abort",
-    "time": "none",
-    "columns" : {
-
-    }
-}
