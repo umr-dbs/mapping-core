@@ -18,9 +18,20 @@
 #include <boost/date_time/local_time/local_time.hpp>
 #include <boost/date_time/c_local_time_adjustor.hpp>
 
-OGRSourceUtil::OGRSourceUtil(Json::Value &params, Provenance provenance) : params(params), provenance(provenance) {
-    //read the different parameters
+OGRSourceUtil::OGRSourceUtil(Json::Value &params, const std::string &&local_id)
+        : params(params), local_identifier(local_id)
+{
+    initialization(params);
+}
 
+OGRSourceUtil::OGRSourceUtil(Json::Value &&params, const std::string &&local_id)
+        : params(params), local_identifier(local_id)
+{
+    initialization(this->params);
+}
+
+void OGRSourceUtil::initialization(Json::Value &params){
+    //read the different parameters
     errorHandling = ErrorHandlingConverter.from_json(params, "on_error");
 
     Json::Value columns = params.get("columns", Json::Value(Json::ValueType::objectValue));
@@ -66,7 +77,7 @@ OGRSourceUtil::OGRSourceUtil(Json::Value &params, Provenance provenance) : param
         time2Parser = TimeParser::createFromJson(time2Format);
     }
 
-    hasDefault = params.isMember("default");
+    hasDefaultGeometry = params.isMember("default");
 }
 
 // Wrapper to read the different collection types. The passed function addFeature handles the specifics of the reading
@@ -114,11 +125,9 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
     //createFromWkt allocates a geometry and writes its pointer into a local pointer, therefore the third parameter is a OGRGeometry **.
     //afterwards it is moved into a unique_ptr
     OGRGeometry *default_geometry_raw = nullptr;
-    if (hasDefault) {
-        std::string wkt = params.get("default", "").asString();
-        char *wktChar = (char *) wkt.c_str();
+    if (hasDefaultGeometry) {
         OGRSpatialReference ref(nullptr);
-        OGRErr err = OGRGeometryFactory::createFromWkt(&wktChar, &ref, &default_geometry_raw);
+        OGRErr err = OGRGeometryFactory::createFromWkt(params["default"].asCString(), &ref, &default_geometry_raw);
         if (err != OGRERR_NONE)
             throw OperatorException("OGR Source: default wkt-string could not be parsed.");
     }
@@ -155,7 +164,7 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
 
         if (geom != nullptr) {
             success = addFeature(geom);
-        } else if (hasDefault) {
+        } else if (hasDefaultGeometry) {
             success = addFeature(default_geometry.get());
         }
 
@@ -279,11 +288,20 @@ OGRSourceUtil::getPolygonCollection(const QueryRectangle &rect, const QueryTools
             polygons->finishPolygon();
             polygons->finishFeature();
 
-        } else if (type == wkbMultiPolygon) {
-            auto multiPolygon = static_cast<OGRMultiPolygon *>(geom);
+        } else if (type == wkbMultiPolygon || type == wkbMultiSurface) {
+            //only supports multisurfaces containing polygons.
+            auto multiPolygon = static_cast<OGRMultiSurface *>(geom);
 
             for (int l = 0; l < multiPolygon->getNumGeometries(); l++) {
                 auto polygon = static_cast<OGRPolygon *>(multiPolygon->getGeometryRef(l));
+
+                if(polygon->getGeometryType() != OGRwkbGeometryType::wkbPolygon){
+                    if(l > 0){ //writing already started, so remove feature.
+                        polygons->finishFeature();
+                        polygons->removeLastFeature();
+                    }
+                    return false;
+                }
 
                 const OGRLinearRing *extRing = polygon->getExteriorRing();
                 readRingToPolygonCollection(extRing, polygons);
@@ -295,7 +313,7 @@ OGRSourceUtil::getPolygonCollection(const QueryRectangle &rect, const QueryTools
                 polygons->finishPolygon();
             }
             polygons->finishFeature();
-        } else
+        }  else
             return false;
 
         return true;
@@ -459,8 +477,7 @@ bool OGRSourceUtil::trySettingTemporalFilter(OGRLayer *layer, const QueryRectang
     // can try to set the filter without the fields being of type Date/DateTime. But that is unsafe and
     // can result in empty collections. So the filter could be set on string data fields and still be a good query.
     // but both attributes still have to be present and be of a Date/DateTime structure (as a string).
-    bool hasSaveTypes = (time1Type == OGRFieldType::OFTDateTime || time1Type == OGRFieldType::OFTDate) &&
-                        (time2Type == OGRFieldType::OFTDateTime || time2Type == OGRFieldType::OFTDate);
+    bool hasSaveTypes = isDateOrDateTime(time1Type) && isDateOrDateTime(time2Type);
 
     // if this parameter is true, ignore if we have save types. e.g. WFS would still work, if the data on the wfs server
     // is Date/DateTime because the filtering happens there, but the file send to us will have String as data type,
@@ -503,38 +520,12 @@ bool OGRSourceUtil::readTimeIntoCollection(const QueryRectangle &rect, OGRFeatur
     if (timeSpecification == TimeSpecification::NONE)
         return true;
 
-    // only read time from the features time attributes. Filtering was done by
-    // SetAttributeFilter method in initTimeReading/trySettingTemporalFilter
-    // if the data types of the time attributes are not Date/DateTime, the filter was forced, so we read the time the old way.
-    if (timeAlreadyFiltered) {
-        if ((time1Type != OGRFieldType::OFTDateTime || time1Type != OGRFieldType::OFTDate) &&
-            (time2Type != OGRFieldType::OFTDateTime || time2Type != OGRFieldType::OFTDate)) {
-            try {
-                time_t unixtime1 = getFieldAsTime_t(feature, time1Index);
-                time_t unixtime2 = getFieldAsTime_t(feature, time2Index);
-                time.emplace_back(TimeInterval(unixtime1, unixtime2));
-                return true;
-
-            } catch (std::exception &e) {
-                switch (errorHandling) {
-                    case ErrorHandling::ABORT:
-                        throw OperatorException("OGR Source: Could not parse time.");
-                    case ErrorHandling::SKIP:
-                        return false;
-                    case ErrorHandling::KEEP:
-                        time.emplace_back(rect.beginning_of_time(), rect.end_of_time());
-                        return true;
-                }
-            }
-        }
-    }
-
-    // Filtering was not done already, so we do it here.
+    // read time attributes
     double t1 = 0.0, t2 = 0.0;
     bool error = false;
     if (timeSpecification == TimeSpecification::START) {
         try {
-            t1 = time1Parser->parse(feature->GetFieldAsString(time1Index));
+            t1 = getTime1(feature);
             if (timeDuration >= 0.0)
                 t2 = t1 + timeDuration;
             else
@@ -546,21 +537,22 @@ bool OGRSourceUtil::readTimeIntoCollection(const QueryRectangle &rect, OGRFeatur
         }
     } else if (timeSpecification == TimeSpecification::START_END) {
         try {
-            t1 = time1Parser->parse(feature->GetFieldAsString(time1Index));
+            t1 = getTime1(feature);
         } catch (const TimeParseException &e) {
             t1 = rect.beginning_of_time();
             error = true;
         }
         try {
-            t2 = time2Parser->parse(feature->GetFieldAsString(time2Index));
+            t2 = getTime2(feature);
         } catch (const TimeParseException &e) {
             t2 = rect.end_of_time();
             error = true;
         }
     } else if (timeSpecification == TimeSpecification::START_DURATION) {
         try {
-            t1 = time1Parser->parse(feature->GetFieldAsString(time1Index));
-            t2 = t1 + time2Parser->parse(feature->GetFieldAsString(time2Index));
+            t1 = getTime1(feature);
+            t2 = getTime2(feature);
+            t2 += t1;
         } catch (const TimeParseException &e) {
             t1 = rect.beginning_of_time();
             t2 = rect.end_of_time();
@@ -579,12 +571,34 @@ bool OGRSourceUtil::readTimeIntoCollection(const QueryRectangle &rect, OGRFeatur
         }
     }
 
-    //check if features time stamps have overlap with query rectangle times
-    if (t1 < rect.t1 && t2 < rect.t1 || t1 > rect.t2 && t2 > rect.t2)
-        return false;
+    if(!timeAlreadyFiltered){
+        //check if features time stamps have overlap with query rectangle times
+        if (t1 < rect.t1 && t2 < rect.t1 || t1 > rect.t2 && t2 > rect.t2)
+            return false;
+    }
 
     time.emplace_back(TimeInterval(t1, t2));
     return true;
+}
+
+double OGRSourceUtil::getTime1(OGRFeature *feature){
+    if(isDateOrDateTime(time1Type)){
+        return getFieldAsTime_t(feature, time1Index);
+    } else {
+        return time1Parser->parse(feature->GetFieldAsString(time1Index));
+    }
+}
+
+double OGRSourceUtil::getTime2(OGRFeature *feature){
+    if(isDateOrDateTime(time2Type)){
+        return getFieldAsTime_t(feature, time2Index);
+    } else {
+        return time2Parser->parse(feature->GetFieldAsString(time2Index));
+    }
+}
+
+bool OGRSourceUtil::isDateOrDateTime(OGRFieldType type){
+    return type == OGRFieldType::OFTDateTime || type == OGRFieldType::OFTDate;
 }
 
 time_t OGRSourceUtil::getFieldAsTime_t(OGRFeature *feature, int featureIndex) {
@@ -624,14 +638,14 @@ time_t OGRSourceUtil::getFieldAsTime_t(OGRFeature *feature, int featureIndex) {
     }
 }
 
-
-void OGRSourceUtil::writeSemanticParametersRaw(std::ostringstream &stream) {
-    Json::FastWriter writer;
-    stream << writer.write(params);
-}
-
 void OGRSourceUtil::getProvenance(ProvenanceCollection &pc) {
-    pc.add(provenance);
+
+    Json::Value &provenanceInfo = params["provenance"];
+    pc.add(Provenance(provenanceInfo.get("citation", "").asString(),
+                      provenanceInfo.get("license", "").asString(),
+                      provenanceInfo.get("uri", "").asString(),
+                      local_identifier));
+
 }
 
 GDALDataset *OGRSourceUtil::openGDALDataset(Json::Value &params) {
