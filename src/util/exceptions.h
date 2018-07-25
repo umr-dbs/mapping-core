@@ -47,6 +47,7 @@ _CUSTOM_EXCEPTION_CLASS(DeliveryException, CacheException);
 _CUSTOM_EXCEPTION_CLASS(IllegalStateException, CacheException);
 _CUSTOM_EXCEPTION_CLASS(NodeFailedException, CacheException);
 
+_CUSTOM_EXCEPTION_CLASS(UploaderException);
 
 
 #undef _CUSTOM_EXCEPTION_CLASS
