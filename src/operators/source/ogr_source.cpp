@@ -161,12 +161,7 @@ Json::Value OGRSourceOperator::constructParameters(Json::Value &params){
 }
 
 Json::Value OGRSourceOperator::getTimeFormatJson(Json::Value &layer_json, Json::Value &dataset_json, const std::string &time_format_name){
-    Json::Value time_format_source;
-    if(layer_json.isMember(time_format_name)) {
-        time_format_source = layer_json[time_format_name];
-    } else {
-        time_format_source = dataset_json[time_format_name];
-    }
+    Json::Value time_format_source = OGRSourceDatasets::getJsonParameter(layer_json, dataset_json, time_format_name);
 
     Json::Value time_format_assembled;
     std::string format = time_format_source["format"].asString();
