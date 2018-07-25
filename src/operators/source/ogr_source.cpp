@@ -47,6 +47,7 @@ OGRSourceOperator::OGRSourceOperator(int sourcecounts[], GenericOperator *source
         : GenericOperator(sourcecounts, sources)
 {
     assumeSources(0);
+    dataset_name = params["name"].asString();
     std::string local_id = "data.ogr_source.";
     local_id.append(dataset_name); //todo: does this need the layer_name added?
     ogrUtil = make_unique<OGRSourceUtil>(constructParameters(params), std::move(local_id));
@@ -88,7 +89,6 @@ void OGRSourceOperator::getProvenance(ProvenanceCollection &pc) {
 
 
 Json::Value OGRSourceOperator::constructParameters(Json::Value &params){
-    dataset_name                        = params["name"].asString();
     Json::Value dataset_json            = OGRSourceDatasets::getDatasetDescription(dataset_name);
     const std::string layer_name        = params["layer_name"].asString();
     Json::Value layer_json              = dataset_json["layers"][layer_name];
