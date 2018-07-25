@@ -38,11 +38,6 @@ private:
      * @return Json object containing the query parameters.
      */
     Json::Value constructParameters(Json::Value &params);
-    /**
-     * Selects time format information either from the layer or the dataset definition. It is expected that one of
-     * them will have this information. time_format_name is expected to be "time1_format" or "time2_format".
-     */
-    Json::Value getTimeFormatJson(Json::Value &layer_json, Json::Value &dataset_json, const std::string &time_format_name);
 
     std::unique_ptr<OGRSourceUtil> ogrUtil;
     std::string dataset_name;
@@ -109,10 +104,10 @@ Json::Value OGRSourceOperator::constructParameters(Json::Value &params){
         constructed_params["duration"] = OGRSourceDatasets::getJsonParameter(layer_json, dataset_json, "duration");
 
     if(OGRSourceDatasets::hasJsonParameter(layer_json, dataset_json, "time1_format"))
-        constructed_params["time1_format"] = getTimeFormatJson(layer_json, dataset_json, "time1_format");
+        constructed_params["time1_format"] = OGRSourceDatasets::getJsonParameter(layer_json, dataset_json, "time1_format");
 
     if(OGRSourceDatasets::hasJsonParameter(layer_json, dataset_json, "time2_format"))
-        constructed_params["time2_format"] = getTimeFormatJson(layer_json, dataset_json, "time2_format");
+        constructed_params["time2_format"] = OGRSourceDatasets::getJsonParameter(layer_json, dataset_json, "time2_format");
 
     if(OGRSourceDatasets::hasJsonParameter(layer_json, dataset_json, "default"))
         constructed_params["default"] = OGRSourceDatasets::getJsonParameter(layer_json, dataset_json, "default");
@@ -158,17 +153,4 @@ Json::Value OGRSourceOperator::constructParameters(Json::Value &params){
     constructed_params["provenance"] = provenanceInfo;
 
     return constructed_params;
-}
-
-Json::Value OGRSourceOperator::getTimeFormatJson(Json::Value &layer_json, Json::Value &dataset_json, const std::string &time_format_name){
-    Json::Value time_format_source = OGRSourceDatasets::getJsonParameter(layer_json, dataset_json, time_format_name);
-
-    Json::Value time_format_assembled;
-    std::string format = time_format_source["format"].asString();
-    time_format_assembled["format"] = format;
-    if(format == "custom"){
-        time_format_assembled["custom_format"] = time_format_source["custom_format"];
-    }
-
-    return time_format_assembled;
 }
