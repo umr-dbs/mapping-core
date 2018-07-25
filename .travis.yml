@@ -1,0 +1,42 @@
+language: cpp
+dist: trusty
+sudo: required
+
+services:
+  - docker
+
+addons:
+  apt:
+    packages:
+      - docker-ce
+
+script:
+  - export TAG=`
+      if [[ $TRAVIS_PULL_REQUEST == "false" ]] && [[ $TRAVIS_BRANCH == "master" ]]; then
+        echo "dev";
+      elif [[ $TRAVIS_PULL_REQUEST == "true" ]]; then
+        echo $TRAVIS_PULL_REQUEST_BRANCH;
+      else
+        echo $TRAVIS_BRANCH;
+      fi`
+  - docker build --tag $REPO:$TAG --file Dockerfile .
+  # TODO: add test
+  # docker run -t $REPO:$TAG make test
+
+after_success:
+  - echo "$DOCKER_PASS" | docker login --username "$DOCKER_USER" --password-stdin
+  - if [[ $TRAVIS_PULL_REQUEST == "false" ]]; then
+      docker push $REPO:$TAG;
+    fi
+
+notifications:
+  slack:
+    secure: "hyx14THblpZz9sVWjtegBpy77sOtksJvrqMdo7hYJrgLi3naZLV4McMcIanqegIdrCl+RUNC9QyV9F3pJadUhOGK6Dq82fYA/octiT3YvOfr8QB5z0PuzMFEuWWP0xiWJDL5ezRKo7OX1lIOJDq/BGz1gLjQKlI0IzRq9gId0+SddYPNtqMjdu6QjqGL8LS07tMSZMeUbhhMKyZ90eWlmvrzEdQmRrxwgS2FvZc4JJa+8YJR1V6d0bC27Gck41DxJyWzcE88rUljYmFkZEAA3OFb3MtVdmo5vSfU5Sdf8B2NxZBxGSiAsUyBlWZ5StS3VrhcwFZwYGwfuZLBIqYsDq2jc2ovyMj765+1v3VW6QJs6YfBoYZe2wCewOH1dcaAphZPWombwgRFJkxFn3FXAj95/vP74MbNxNy6ABAQed8suo5aTxHQ6Fu4PKdB9lw9xLQ+RPG/y3MIL1qHvJ6YO8Fte3aT0JCf9LVBW3+KmIRzxvbiy55yeP/nmbvSR1iQi88+dRuzf+bHn+CHlKwBxzhetd391gJPc9+PHzlOCZFSlYf5phv74RuzXUebWk3OlQ3pz0w2agNNE8McyMKJlHwe6NqTJ2KbNHREFx6TbImBi/OwaHVSwqfx3gly9hhhGJVWRpgtsFOzPXHATdO/YQNsC8iHyUVb8RBMcL+mIRQ="
+
+env:
+  global:
+  - REPO="umrdbs/mapping-core"
+    # $DOCKER_USER
+  - secure: "CvV5t/6vk2zLFflGtmZOXWdRftsfwIpq3OAoVnnlj3/BI81O2DvMFBIhhkUwVm+kjC/jcxQRnJWIoWgvBSD3jLPiGGbt0vYFyyQU3AHye86GbYbwMdvOFsmjwN6QbZbOLjEYVahyjvCqmTMPJ0NvToW3G8MpEgfNpcfKo6NF8fhYfP54MczPLPSoCFX3jw/7X5IWdsjReRVhESqFEGz0PGPQraXnR0gVgrEQGxTRTN8enK5skqwmXfvQ4W108kKoclqKZMPTWE5eu7sargWnb7h/JKYl6oSvW2beCTPL7HhWiHoBO/8zF1Xf2N+KG14QOMrEWme3Tbcq+lbydqcVHlYBEAGbPdX5cmT7BSsTqW0gXxLUCC32lf6zDkGPWeke23wIUvfxkmXZYRL5CSlQPEz0TCVwizfw4pi3IIhnxRElMTqd/wUxobd77DDhZ32NERoOnACYM49io+nL7vNpJwWrAvIoLCSm2SMQmuqCfTNmSQhPKwcnpCrjQWnXDCS3JuQLg+laPsGN4ckOg5x/Vde0NW4OcgFW9BCXbBTEnsWOV1yP2A+JCe0yiMPml7YfqoKAJgZAyDBIqs98kuhHvA8Ll6N/ADpGbLmOZBj5ZczauyoA4LvO5nfqLCGq7t51PxHrttKTYI0/T75GEwIFOqVnegm0HZze6vqf2D+ym3E="
+    # $DOCKER_PASS
+  - secure: "UFxnOD6p4yvQXffmFH/1on0LJRewcqprV0QTYWoPKfBZwWYIJEfhzs6fHn+MF3FBxzuF8H5VSdiRtTbVrqqZoNF/YHyWjv5edVJsxerw5v/hFcqtq6lQk4gdpy+EPexPEk4CCAy4yicXiT4sXHr5xdcHTYotJ6Xfe2s9zqldmmG5bwIn9FtA/qPsjtISBfwkP4tQWCVdbC+/lmseUKNXSWjxWScVl1bAzWlUhf/2BJpEncCnPECLK2M6nyGe2IOPHs5D0uF0V6wUwjBPqbx6DP9nkPDKOmg1xk+S98tOP/cPeK310+oWhRis+ZWHgw3pud4PioVLhRlh6gVD5wCIbIG9unyewQz8NbwKWTE8Zt0GwbODzyRczQekrvdjzwBGZuTDygLfuxAhEjduuPnZ3yxujDk2BKydO9OkuFUG70sNI/TP+EKE2jvhbx2OyC6R9RuVUp1vaOGPWEjHcgW8jj5Z657lNU/6Oyl81I31vpc2uOgADkQiBF9RDGZGeI+spH5H5xzBiv7RWs7RsWVncbIx6Kkyi3d3+AQZf1lvBCremQgaIVZm18i5DSEVJV5Wm8JImYRAGO9V+JXBxQvqU1BfTHiOGeylIply4T+qGVG5cmpTxgAViItkoY25d5cIDReoW8yYv4/UxWaPSlhYsZso5ZY4W2mO1XOCIzg1Bus="
