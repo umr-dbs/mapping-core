@@ -3,14 +3,15 @@
 	"query_result": "points",
     "temporal_reference": {
         "type": "UNIX",
-        "start": 1438387200
+        "start": 1438387200,
+        "end" : 1441058400
     },
     "spatial_reference": {
         "projection": "EPSG:4326",
-        "x1": -180,
-        "x2": 180,
-        "y1": -90,
-        "y2": 90
+        "x1": -10,
+        "x2": 10,
+        "y1": -30,
+        "y2": 30
     },
     "query": {
         "params": {

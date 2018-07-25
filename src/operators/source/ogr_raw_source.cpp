@@ -67,24 +67,18 @@ private:
 
 OGRRawSourceOperator::OGRRawSourceOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params) : GenericOperator(sourcecounts, sources) {
 	assumeSources(0);
-
-	Provenance provenance;
-	std::string filename = params.get("filename", "").asString();
-	Json::Value provenanceInfo = params["provenance"];
-	if (provenanceInfo.isObject()) {
-		provenance = Provenance(provenanceInfo.get("citation", "").asString(),
-								provenanceInfo.get("license", "").asString(),
-								provenanceInfo.get("uri", "").asString(),
-								"data.ogr_raw_source." + filename); //todo: does this need the layer_name added?
-	}
-	ogrUtil = make_unique<OGRSourceUtil>(params, provenance);
+	std::string local_id = "data.ogr_raw_source.";
+	local_id.append(params.get("filename", "").asString()); //todo: does this need the layer_name added?
+	ogrUtil = make_unique<OGRSourceUtil>(params, std::move(local_id));
 }
 
 REGISTER_OPERATOR(OGRRawSourceOperator, "ogr_raw_source");
 
 void OGRRawSourceOperator::writeSemanticParameters(std::ostringstream& stream)
 {
-	ogrUtil->writeSemanticParametersRaw(stream);
+	Json::Value &params = ogrUtil->getParameters();
+	Json::FastWriter writer;
+	stream << writer.write(params);
 }
 
 void OGRRawSourceOperator::getProvenance(ProvenanceCollection &pc)

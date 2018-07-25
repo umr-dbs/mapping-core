@@ -1,9 +1,9 @@
 {
     "name": "test",
-	"query_result": "points",
+	"query_result": "polygons",
     "temporal_reference": {
         "type": "UNIX",
-        "start": 1438387200
+        "start": 0
     },
     "spatial_reference": {
         "projection": "EPSG:4326",
@@ -14,10 +14,10 @@
     },
     "query": {
         "params": {
-            "name": "ogr_source_dataset2",
-            "layer_name" : "ne_10m_ports",
-            "numeric" : [ "scalerank" ],
-            "textual" : [ "name", "website" ]
+            "name": "nyu",
+            "layer_name" : "sdr:nyu_2451_38681",
+            "textual" : [ "type" ],
+            "numeric" : [ "current" ]
         },
         "type": "ogr_source"
     }
