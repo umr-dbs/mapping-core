@@ -126,7 +126,7 @@ std::unique_ptr<T> ClientCacheWrapper<T>::query(
 		idx_resp = idx_con->write_and_read(ClientConnection::CMD_GET, req);
 	} catch ( const NetworkException &ne ) {
 		Log::error("Could not talk to index-server (%s:%d): %s", idx_host.c_str(), idx_port, ne.what());
-		throw OperatorException(ne.what());
+		std::throw_with_nested(OperatorException());
 	}
 
 	uint8_t idx_rc = idx_resp->read<uint8_t>();
@@ -157,7 +157,7 @@ std::unique_ptr<T> ClientCacheWrapper<T>::query(
 				}
 			} catch ( const NetworkException &ne ) {
 					Log::error("Could not retrieve result from delivery: %s", dr.to_string().c_str());
-					throw OperatorException(ne.what());
+					std::throw_with_nested(OperatorException());
 			}
 			break;
 		}

@@ -5,6 +5,7 @@
 #include "operators/provenance.h"
 #include <memory>
 #include <util/configuration.h>
+#include <boost/optional.hpp>
 
 
 class GenericRaster;
@@ -40,22 +41,22 @@ class QueryProcessor {
 				std::string getPlot();
 				ProvenanceCollection& getProvenance();
 				bool isError();
-				std::string getErrorMessage();
+				boost::optional<MappingException> getErrorException();
 
-				static std::unique_ptr<QueryResult> raster(std::unique_ptr<GenericRaster> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
+			static std::unique_ptr<QueryResult> raster(std::unique_ptr<GenericRaster> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
 				static std::unique_ptr<QueryResult> points(std::unique_ptr<PointCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
 				static std::unique_ptr<QueryResult> lines(std::unique_ptr<LineCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
 				static std::unique_ptr<QueryResult> polygons(std::unique_ptr<PolygonCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
 				static std::unique_ptr<QueryResult> plot(const std::string &plot, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
-				static std::unique_ptr<QueryResult> error(const std::string &error, const QueryRectangle &qrect);
+				static std::unique_ptr<QueryResult> error(const MappingException &exception, const QueryRectangle &qrect);
 			private:
-				QueryResult(Query::ResultType result_type, std::unique_ptr<SpatioTemporalResult> result, std::unique_ptr<ProvenanceCollection> provenance, const std::string &result_plot, const std::string &error, const QueryRectangle &qrect);
+				QueryResult(Query::ResultType result_type, std::unique_ptr<SpatioTemporalResult> result, std::unique_ptr<ProvenanceCollection> provenance, const std::string &result_plot, boost::optional<MappingException> exception, const QueryRectangle &qrect);
 				Query::ResultType result_type;
 				std::unique_ptr<SpatioTemporalResult> result;
 				std::unique_ptr<ProvenanceCollection> provenance;
 				std::string result_plot;
-				std::string result_error;
 				QueryRectangle qrect;
+				boost::optional<MappingException> result_exception;
 		};
 
 		class QueryProgress {

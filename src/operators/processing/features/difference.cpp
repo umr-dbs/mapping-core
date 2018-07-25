@@ -103,8 +103,9 @@ std::unique_ptr<PointCollection> DifferenceOperator::getPointCollection(const Qu
 		prog.run();
 	}
 	catch (cl::Error &e) {
-		printf("cl::Error %d: %s\n", e.err(), e.what());
-		throw;
+		std::stringstream ss;
+		ss << "cl::Error " << e.err() << ": " << e.what();
+		throw OpenCLException(ss.str(), MappingExceptionType::CONFIDENTIAL);
 	}
 
 #endif
