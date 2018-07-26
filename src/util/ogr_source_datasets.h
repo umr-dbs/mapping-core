@@ -3,7 +3,7 @@
 #define MAPPING_CORE_OGR_SOURCE_DATASETS_H
 
 #include <json/json.h>
-#include <gdal/ogrsf_frmts.h>
+#include <ogrsf_frmts.h>
 
 /**
  * This class provides information about available OGR datasets that can be opened with the OGRSourceOperator.

@@ -3,6 +3,8 @@
 
 constexpr int MAX_FILE_NAME_LENGTH = 255;
 
+const std::string GDALTimesnap::placeholder = "%%%TIME_STRING%%%";
+
 const std::map<std::string, TimeUnit> GDALTimesnap::string_to_TimeUnit = {
         {"Second", 	TimeUnit::Second},
         {"Minute", 	TimeUnit::Minute},
@@ -106,8 +108,10 @@ ptime GDALTimesnap::snapToInterval(TimeUnit snapUnit, int intervalValue, ptime s
 // calculates the filename for queried time by snapping the wanted time to the 
 // nearest smaller timestamp that exists for the dataset
 // TODO: move general parameter parsing to a more appropriate function
-GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value datasetJson, int channel, const TemporalReference &tref)
+GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(const std::string &sourcename, int channel, const TemporalReference &tref)
 {
+    Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+
     // get parameters
     Json::Value channelJson = datasetJson["channels"][channel];
 
@@ -126,78 +130,81 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
     double time_start_mapping;
     double time_end_mapping;
 
-    if(time_start.empty()) {
+    if (time_start.empty()) {
         time_start_mapping = tref.beginning_of_time();
     } else {
         time_start_mapping = timeParser->parse(time_start);
     }
 
-    if(time_end.empty()) {
+    if (time_end.empty()) {
         time_end_mapping = tref.end_of_time();
     } else {
         time_end_mapping = timeParser->parse(time_end);
     }
 
-    double wantedTimeUnix = tref.t1;
+    const bool has_placeholder = fileName.find(placeholder) != std::string::npos;
 
-    //check if requested time is in range of dataset timestamps
-    //a dataset only has start not end time. if wantedtime is past the last file of dataset, it can simply not be loaded.
-    if(wantedTimeUnix < time_start_mapping || wantedTimeUnix > time_end_mapping)
-        throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
+    if(has_placeholder) {
+        double wantedTimeUnix = tref.t1;
 
-    if(datasetJson.isMember("time_interval") || channelJson.isMember("time_interval")) {
-        Json::Value timeInterval = channelJson.get("time_interval", datasetJson.get("time_interval", Json::Value(Json::objectValue)));
-        TimeUnit intervalUnit 	 = GDALTimesnap::createTimeUnit(timeInterval.get("unit", "Month").asString());
-        int intervalValue 		 = timeInterval.get("value", 1).asInt();
+        //check if requested time is in range of dataset timestamps
+        //a dataset only has start not end time. if wantedtime is past the last file of dataset, it can simply not be loaded.
+        if (wantedTimeUnix < time_start_mapping || wantedTimeUnix > time_end_mapping)
+            throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
+
+        if (datasetJson.isMember("time_interval") || channelJson.isMember("time_interval")) {
+            Json::Value timeInterval = channelJson.get("time_interval", datasetJson.get("time_interval", Json::Value(
+                    Json::objectValue)));
+            TimeUnit intervalUnit = GDALTimesnap::createTimeUnit(timeInterval.get("unit", "Month").asString());
+            int intervalValue = timeInterval.get("value", 1).asInt();
 
 
-		ptime start = from_time_t(static_cast<time_t>(time_start_mapping));
-        ptime wanted = from_time_t(static_cast<time_t>(wantedTimeUnix));
+            ptime start = from_time_t(static_cast<time_t>(time_start_mapping));
+            ptime wanted = from_time_t(static_cast<time_t>(wantedTimeUnix));
 
-		//snap the time to the given interval
-        ptime snappedTimeStart = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, start, wanted);
+            //snap the time to the given interval
+            ptime snappedTimeStart = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, start, wanted);
 
-        // snap end to the next interval
-		ptime snappedTimeEnd(snappedTimeStart);
-		switch (intervalUnit) {
-			case TimeUnit::Year:
-				snappedTimeEnd += boost::gregorian::years(intervalValue);
-                break;
-			case TimeUnit::Month:
-				snappedTimeEnd += boost::gregorian::months(intervalValue);
-                break;
-			case TimeUnit::Day:
-				snappedTimeEnd += boost::gregorian::days(intervalValue);
-                break;
-			case TimeUnit::Hour:
-				snappedTimeEnd += boost::posix_time::hours(intervalValue);
-                break;
-			case TimeUnit::Minute:
-				snappedTimeEnd += boost::posix_time::minutes(intervalValue);
-                break;
-			case TimeUnit::Second:
-				snappedTimeEnd += boost::posix_time::seconds(intervalValue);
-                break;
-		}
+            // snap end to the next interval
+            ptime snappedTimeEnd(snappedTimeStart);
+            switch (intervalUnit) {
+                case TimeUnit::Year:
+                    snappedTimeEnd += boost::gregorian::years(intervalValue);
+                    break;
+                case TimeUnit::Month:
+                    snappedTimeEnd += boost::gregorian::months(intervalValue);
+                    break;
+                case TimeUnit::Day:
+                    snappedTimeEnd += boost::gregorian::days(intervalValue);
+                    break;
+                case TimeUnit::Hour:
+                    snappedTimeEnd += boost::posix_time::hours(intervalValue);
+                    break;
+                case TimeUnit::Minute:
+                    snappedTimeEnd += boost::posix_time::minutes(intervalValue);
+                    break;
+                case TimeUnit::Second:
+                    snappedTimeEnd += boost::posix_time::seconds(intervalValue);
+                    break;
+            }
 
-        time_start_mapping = boost::posix_time::to_time_t(snappedTimeStart);
-        time_end_mapping = boost::posix_time::to_time_t(snappedTimeEnd);
+            time_start_mapping = boost::posix_time::to_time_t(snappedTimeStart);
+            time_end_mapping = boost::posix_time::to_time_t(snappedTimeEnd);
 
-        // format date to determine file
-        auto snappedTimeT = static_cast<time_t>(time_start_mapping);
-        tm snappedTimeTm = {};
-        gmtime_r(&snappedTimeT, &snappedTimeTm);
+            // format date to determine file
+            auto snappedTimeT = static_cast<time_t>(time_start_mapping);
+            tm snappedTimeTm = {};
+            gmtime_r(&snappedTimeT, &snappedTimeTm);
 
-        char date[MAX_FILE_NAME_LENGTH] = {0};
-        strftime(date, sizeof(date), time_format.c_str(), &snappedTimeTm);
-        std::string snappedTimeString(date);
+            char date[MAX_FILE_NAME_LENGTH] = {0};
+            strftime(date, sizeof(date), time_format.c_str(), &snappedTimeTm);
+            std::string snappedTimeString(date);
 
-        std::string placeholder = "%%%TIME_STRING%%%";
-        size_t placeholderPos = fileName.find(placeholder);
+            size_t placeholderPos = fileName.find(placeholder);
 
-        fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
+            fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
+        }
     }
-
 
     // other GDAL parameters
     Unit unit = Unit::unknown();
@@ -213,10 +220,15 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
     auto coords = channelJson.get("coords", datasetJson["coords"]);
     CrsId crsId = CrsId::from_srs_string(coords.get("crs", "").asString());
 
-
-    boost::filesystem::path file_path(path);
-    file_path /= fileName;
-	return GDALDataLoadingInfo(file_path.string(), channel,
-                               TemporalReference(TIMETYPE_UNIX, time_start_mapping, time_end_mapping),
-                               crsId, nodata, unit);
+    if(path.empty()) {
+        return GDALDataLoadingInfo(fileName, channel,
+                                   TemporalReference(TIMETYPE_UNIX, time_start_mapping, time_end_mapping),
+                                   std::move(crsId), nodata, unit);
+    } else {
+        boost::filesystem::path file_path(path);
+        file_path /= fileName;
+        return GDALDataLoadingInfo(file_path.string(), channel,
+                                   TemporalReference(TIMETYPE_UNIX, time_start_mapping, time_end_mapping),
+                                   std::move(crsId), nodata, unit);
+    }
 }

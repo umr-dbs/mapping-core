@@ -11,6 +11,7 @@
 #include "util/timeparser.h"
 #include "datatypes/spatiotemporal.h"
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include "util/gdal_source_datasets.h"
 
 using namespace boost::posix_time;
 
@@ -34,7 +35,7 @@ class GDALTimesnap {
 	public:
 		class GDALDataLoadingInfo {
 		public:
-			GDALDataLoadingInfo(std::string fileName, int channel, const TemporalReference &tref, const CrsId &crsId,
+			GDALDataLoadingInfo(const std::string &fileName, int channel, const TemporalReference &tref, CrsId &&crsId,
                                 double nodata, const Unit &unit):
 					fileName(std::move(fileName)), channel(channel), tref(tref), crsId(crsId), nodata(nodata), unit(unit) {}
 
@@ -49,10 +50,11 @@ class GDALTimesnap {
 
         static ptime snapToInterval(TimeUnit unit, int unitValue, ptime startTime, ptime wantedTime);
 
-		static GDALDataLoadingInfo getDataLoadingInfo(Json::Value datasetJson, int channel, const TemporalReference &tref);
+		static GDALDataLoadingInfo getDataLoadingInfo(const std::string &sourcename, int channel, const TemporalReference &tref);
 		
 		static TimeUnit createTimeUnit(std::string value);
 		static const std::map<std::string, TimeUnit> string_to_TimeUnit;
+		static const std::string placeholder;
 };
 
 #endif

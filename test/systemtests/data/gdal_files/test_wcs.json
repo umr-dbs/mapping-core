@@ -1,0 +1,25 @@
+{
+	"dataset_name" : "test_wcs",
+	"path" : "",
+	
+	"channels" : [
+		{
+			
+		},		
+		{
+			"coords" : {
+				"crs" : "EPSG:4326"
+			},
+			"file_name" : "WCS:https://demo.geo-solutions.it/geoserver/ows?version=2.0.1&coverage=geosolutions:NaturalEarth",
+			"channel" : 1
+		},
+		{
+			"coords" : {
+				"crs" : "EPSG:4326"
+			},			
+			"file_name" : "WCS:https://maps.dwd.de/geoserver/ows?version=2.0.1&coverage=dwd:GRAY_HR_SR_OB_DR",
+			"channel" : 1
+		}
+	],	
+	"description" : "test wcs requests"
+}
