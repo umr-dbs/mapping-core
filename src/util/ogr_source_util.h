@@ -67,19 +67,17 @@ static EnumConverter<ErrorHandling>ErrorHandlingConverter(ErrorHandlingMap);
 class OGRSourceUtil
 {
 public:
-	OGRSourceUtil(Json::Value &params, Provenance provenance);
+    OGRSourceUtil(Json::Value &params, const std::string &&local_id);
+    /**
+     * Move params, used in OGRSource, that construct params so ownership can be moved.
+     */
+    OGRSourceUtil(Json::Value &&params, const std::string &&local_id);
 	~OGRSourceUtil() = default;
 	std::unique_ptr<PointCollection> getPointCollection(const QueryRectangle &rect, const QueryTools &tools);
 	std::unique_ptr<LineCollection> getLineCollection(const QueryRectangle &rect, const QueryTools &tools);
 	std::unique_ptr<PolygonCollection> getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools);
 	void getProvenance(ProvenanceCollection &pc);
     Json::Value& getParameters();
-
-    /**
-     * Writes all parameters into the stream, suitable for OGR Raw Source.
-     * OGR Source does not provide all the parameters in the query, so it's not used there.
-     */
-    void writeSemanticParametersRaw(std::ostringstream& stream);
 
     /**
      * Opens a GDALDataset with GDAL API for vector files.
@@ -95,8 +93,8 @@ public:
 
 private:
 	std::unique_ptr<GDALDataset, std::function<void(GDALDataset *)>> dataset;
-	Provenance provenance;
-	bool hasDefault;
+	std::string local_identifier;
+	bool hasDefaultGeometry;
 	Json::Value params;
 	std::vector<std::string> attributeNames;
 	std::unordered_map<std::string, AttributeType> wantedAttributes;
@@ -111,8 +109,9 @@ private:
 	ErrorHandling errorHandling;
 	double timeDuration;
 	TimeSpecification timeSpecification;
-
     bool timeAlreadyFiltered;
+
+    void initialization(Json::Value &params);
 
 	void readAnyCollection(const QueryRectangle &rect, SimpleFeatureCollection *collection, std::function<bool(OGRGeometry *)> addFeature);
 	void readLineStringToLineCollection(const OGRLineString *line, std::unique_ptr<LineCollection> &collection);
@@ -132,6 +131,16 @@ private:
      * Reads a OGRDateTime attribute from the feature. Creates and returns a time_t unix timestamp from it.
      */
     time_t getFieldAsTime_t(OGRFeature *feature, int featureIndex);
+	bool isDateOrDateTime(OGRFieldType type);
+	/**
+	 * Reads the time attribute of the feature parameter. If the time1 attribute is of type Date or DateTime it
+	 * will be read from OGR directly. Else it will be parsed with the time1parser.
+	 */
+    double getTime1(OGRFeature *feature);
+    /**
+     * Same as getTime1 but for the time2 attribute.
+     */
+    double getTime2(OGRFeature *feature);
 };
 
 #endif

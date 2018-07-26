@@ -35,6 +35,7 @@ The CGI mode is specified via an environment variable. If the variable `FCGI_WEB
 | gdalsource.datasets.path | \<string\> | | The path to the JSON data set descriptions for the GDALSource |
 | crsdirectory.location | \<string\> | | The location of the file containing the definitions of the supported CRS |
 | operators.r.location |\<string\> || The connection string for the R-Operator to use when connecting to the rserver. e.g. `tcp:127.0.0.1:20200`. |
+| uploader.directory | \<string\> | | Path to the directory where the uploader stores the files. |
 
 ### Distributed mode
 Specific configurations for distributed mode where the CGI connects to index node and workers compute results.

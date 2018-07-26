@@ -85,9 +85,9 @@ void init() {
 				);
 			}
 			catch (const cl::Error &e) {
-				printf("Error %d: %s\n", e.err(), e.what());
-
-				throw;
+				std::stringstream ss;
+				ss << "Error " << e.err() << ": " << e.what();
+				throw OpenCLException(ss.str(), MappingExceptionType::CONFIDENTIAL);
 			}
 
 			// Device
@@ -230,7 +230,7 @@ std::unique_ptr<cl::Buffer> getBufferWithRasterinfo(GenericRaster *raster) {
 	catch (cl::Error &e) {
 		std::stringstream ss;
 		ss << "CL Error in getBufferWithRasterinfo(): " << e.err() << ": " << e.what();
-		throw OpenCLException(ss.str());
+		throw OpenCLException(ss.str(), MappingExceptionType::CONFIDENTIAL);
 	}
 }
 
@@ -267,7 +267,9 @@ cl::Program compileSource(const std::string &sourcecode) {
 		program.build(deviceList,""); // "-cl-std=CL2.0"
 	}
 	catch (const cl::Error &e) {
-		throw OpenCLException(concat("Error building cl::Program: ", e.what(), " ", program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(deviceList[0])));
+		std::stringstream ss;
+		ss << "Error building cl::Program: " << e.what() << " " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(deviceList[0]);
+		throw OpenCLException(ss.str(), MappingExceptionType::CONFIDENTIAL);
 	}
 
 	program_cache[sourcecode] = program;
@@ -376,7 +378,7 @@ void CLProgram::compile(const std::string &sourcecode, const char *kernelname) {
 		kernel.reset(nullptr);
 		std::stringstream msg;
 		msg << "CL Error in compile(): " << e.err() << ": " << e.what();
-		throw OpenCLException(msg.str());
+		throw OpenCLException(msg.str(), MappingExceptionType::CONFIDENTIAL);
 	}
 
 }
@@ -397,7 +399,7 @@ void CLProgram::run() {
 	catch (cl::Error &e) {
 		std::stringstream ss;
 		ss << "CL Error: " << e.err() << ": " << e.what();
-		throw OpenCLException(ss.str());
+		throw OpenCLException(ss.str(), MappingExceptionType::CONFIDENTIAL);
 	}
 }
 
@@ -432,7 +434,7 @@ cl::Event CLProgram::run(std::vector<cl::Event>* events_to_wait_for) {
 	catch (cl::Error &e) {
 		std::stringstream ss;
 		ss << "CL Error: " << e.err() << ": " << e.what();
-		throw OpenCLException(ss.str());
+		throw OpenCLException(ss.str(), MappingExceptionType::CONFIDENTIAL);
 	}
 	cleanScratch();
 }

@@ -63,3 +63,6 @@ location="conf/crs.json" # The location of the file containing the definitions o
 
 [operators.r]
 location= "tcp:127.0.0.1:10200" # The connection string for the R-Operator to use when connecting to the rserver.
+
+[uploader]
+directory="uploader" # The name of the directory where the uploader stores the files

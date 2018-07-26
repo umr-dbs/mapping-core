@@ -6,6 +6,7 @@
 #include <pwd.h>
 #include <unistd.h>
 #include <string.h>
+#include <boost/filesystem.hpp>
 
 extern char **environ;
 
@@ -119,9 +120,8 @@ void Configuration::loadFromDefaultPaths() {
 
     auto homedir = getHomeDirectory();
     if (homedir && strlen(homedir) > 0) {
-        std::string path = "";
-        path += homedir;
-        path += "/mapping.conf";
+        boost::filesystem::path path(homedir);
+        path /= "mapping.conf";
         loadFromFile(path.c_str());
     }
 

@@ -40,27 +40,27 @@ QueryProcessor::~QueryProcessor() {
 /*
  * QueryResult
  */
-QueryProcessor::QueryResult::QueryResult(Query::ResultType result_type, std::unique_ptr<SpatioTemporalResult> result, std::unique_ptr<ProvenanceCollection> provenance, const std::string &result_plot, const std::string &result_error, const QueryRectangle &qrect)
-	: result_type(result_type), result(std::move(result)), provenance(std::move(provenance)), result_plot(result_plot), result_error(result_error), qrect(qrect) {
+QueryProcessor::QueryResult::QueryResult(Query::ResultType result_type, std::unique_ptr<SpatioTemporalResult> result, std::unique_ptr<ProvenanceCollection> provenance, const std::string &result_plot, boost::optional<MappingException> exception, const QueryRectangle &qrect)
+	: result_type(result_type), result(std::move(result)), provenance(std::move(provenance)), result_plot(result_plot), result_exception(std::move(exception)), qrect(qrect) {
 }
 
 std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::raster(std::unique_ptr<GenericRaster> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::RASTER, std::move(result), std::move(provenance), "", "", qrect));
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::RASTER, std::move(result), std::move(provenance), "", boost::none, qrect));
 }
 std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::points(std::unique_ptr<PointCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::POINTS, std::move(result), std::move(provenance), "", "", qrect));
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::POINTS, std::move(result), std::move(provenance), "", boost::none, qrect));
 }
 std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::lines(std::unique_ptr<LineCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::LINES, std::move(result), std::move(provenance), "", "", qrect));
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::LINES, std::move(result), std::move(provenance), "", boost::none, qrect));
 }
 std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::polygons(std::unique_ptr<PolygonCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::POLYGONS, std::move(result), std::move(provenance), "", "", qrect));
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::POLYGONS, std::move(result), std::move(provenance), "", boost::none, qrect));
 }
 std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::plot(const std::string &plot, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::PLOT, nullptr, std::move(provenance), plot, "", qrect));
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::PLOT, nullptr, std::move(provenance), plot, boost::none, qrect));
 }
-std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::error(const std::string &error, const QueryRectangle &qrect) {
-	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::ERROR, nullptr, nullptr, "", error, qrect));
+std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::error(const MappingException &exception, const QueryRectangle &qrect) {
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::ERROR, nullptr, nullptr, "", exception, qrect));
 }
 
 
@@ -79,9 +79,9 @@ std::unique_ptr<T> cast_unique_ptr(std::unique_ptr<SpatioTemporalResult> &src) {
 
 std::unique_ptr<GenericRaster> QueryProcessor::QueryResult::getRaster(GenericOperator::RasterQM query_mode) {
 	if (result_type == Query::ResultType::ERROR)
-		throw std::runtime_error(result_error);
+		throw result_exception.value();
 	if (result_type != Query::ResultType::RASTER)
-		throw std::runtime_error("QueryResult::getRaster(): result is not a raster");
+		throw ProcessingException("QueryResult::getRaster(): result is not a raster", MappingExceptionType::PERMANENT);
 
 	auto raster = cast_unique_ptr<GenericRaster>(result);
 	if (query_mode == GenericOperator::RasterQM::EXACT)
@@ -91,9 +91,9 @@ std::unique_ptr<GenericRaster> QueryProcessor::QueryResult::getRaster(GenericOpe
 
 std::unique_ptr<PointCollection> QueryProcessor::QueryResult::getPointCollection(GenericOperator::FeatureCollectionQM query_mode) {
 	if (result_type == Query::ResultType::ERROR)
-		throw std::runtime_error(result_error);
+		throw result_exception.value();
 	if (result_type != Query::ResultType::POINTS)
-		throw std::runtime_error("QueryResult::getPointCollection(): result is not a PointCollection");
+		throw ProcessingException("QueryResult::getPointCollection(): result is not a PointCollection", MappingExceptionType::PERMANENT);
 
 	auto points = cast_unique_ptr<PointCollection>(result);
 	if (query_mode == GenericOperator::FeatureCollectionQM::SINGLE_ELEMENT_FEATURES && !points->isSimple())
@@ -103,9 +103,9 @@ std::unique_ptr<PointCollection> QueryProcessor::QueryResult::getPointCollection
 
 std::unique_ptr<LineCollection> QueryProcessor::QueryResult::getLineCollection(GenericOperator::FeatureCollectionQM query_mode) {
 	if (result_type == Query::ResultType::ERROR)
-		throw std::runtime_error(result_error);
+		throw result_exception.value();
 	if (result_type != Query::ResultType::LINES)
-		throw std::runtime_error("QueryResult::getLineCollection(): result is not a LineCollection");
+		throw ProcessingException("QueryResult::getLineCollection(): result is not a LineCollection", MappingExceptionType::PERMANENT);
 
 	auto lines = cast_unique_ptr<LineCollection>(result);
 	if (query_mode == GenericOperator::FeatureCollectionQM::SINGLE_ELEMENT_FEATURES && !lines->isSimple())
@@ -115,9 +115,9 @@ std::unique_ptr<LineCollection> QueryProcessor::QueryResult::getLineCollection(G
 
 std::unique_ptr<PolygonCollection> QueryProcessor::QueryResult::getPolygonCollection(GenericOperator::FeatureCollectionQM query_mode) {
 	if (result_type == Query::ResultType::ERROR)
-		throw std::runtime_error(result_error);
+		throw result_exception.value();
 	if (result_type != Query::ResultType::POLYGONS)
-		throw std::runtime_error("QueryResult::getPolygonCollection(): result is not a PolygonCollection");
+		throw ProcessingException("QueryResult::getPolygonCollection(): result is not a PolygonCollection", MappingExceptionType::PERMANENT);
 
 	auto polygons = cast_unique_ptr<PolygonCollection>(result);
 	if (query_mode == GenericOperator::FeatureCollectionQM::SINGLE_ELEMENT_FEATURES && !polygons->isSimple())
@@ -127,9 +127,9 @@ std::unique_ptr<PolygonCollection> QueryProcessor::QueryResult::getPolygonCollec
 
 std::unique_ptr<SimpleFeatureCollection> QueryProcessor::QueryResult::getAnyFeatureCollection(GenericOperator::FeatureCollectionQM query_mode) {
 	if (result_type == Query::ResultType::ERROR)
-		throw std::runtime_error(result_error);
+		throw result_exception.value();
 	if (result_type != Query::ResultType::POINTS && result_type != Query::ResultType::LINES && result_type != Query::ResultType::POLYGONS)
-		throw std::runtime_error("QueryResult::getAnyFeatureCollection(): result is not a SimpleFeatureCollection");
+		throw ProcessingException("QueryResult::getAnyFeatureCollection(): result is not a SimpleFeatureCollection", MappingExceptionType::PERMANENT);
 
 	auto features = cast_unique_ptr<SimpleFeatureCollection>(result);
 	if (query_mode == GenericOperator::FeatureCollectionQM::SINGLE_ELEMENT_FEATURES && !features->isSimple())
@@ -139,16 +139,16 @@ std::unique_ptr<SimpleFeatureCollection> QueryProcessor::QueryResult::getAnyFeat
 
 std::string QueryProcessor::QueryResult::getPlot() {
 	if (result_type == Query::ResultType::ERROR)
-		throw std::runtime_error(result_error);
+		throw result_exception.value();
 	if (result_type != Query::ResultType::PLOT)
-		throw std::runtime_error("QueryResult::getPlot(): result is not a plot");
+		throw ProcessingException("QueryResult::getPlot(): result is not a plot", MappingExceptionType::PERMANENT);
 
 	return std::move(result_plot);
 }
 
 ProvenanceCollection& QueryProcessor::QueryResult::getProvenance() {
 	if (provenance.get() == nullptr) {
-		throw std::runtime_error("QueryProcessor: getProvenance not available");
+		throw ProcessingException("QueryProcessor: getProvenance not available", MappingExceptionType::PERMANENT);
 	}
 	return *provenance;
 }
@@ -157,7 +157,7 @@ bool QueryProcessor::QueryResult::isError() {
 	return result_type == Query::ResultType::ERROR;
 }
 
-std::string QueryProcessor::QueryResult::getErrorMessage() {
-	return result_error;
+boost::optional<MappingException> QueryProcessor::QueryResult::getErrorException(){
+	return result_exception;
 }
 

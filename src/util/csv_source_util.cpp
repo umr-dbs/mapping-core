@@ -229,7 +229,7 @@ void CSVSourceUtil::readAnyCollection(SimpleFeatureCollection *collection, std::
 		catch (const std::exception &e) {
 			switch(errorHandling) {
 				case ErrorHandling::ABORT:
-					throw OperatorException(concat("Geometry in CSV could not be parsed: '", x_str, "', '", y_str, "' ", e.what()));
+					std::throw_with_nested(OperatorException(concat("Geometry in CSV could not be parsed: '", x_str, "', '", y_str, "' "), MappingExceptionType::SAME_AS_NESTED));
 				case ErrorHandling::SKIP:
 					continue;
 				case ErrorHandling::KEEP:

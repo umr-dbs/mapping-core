@@ -16,7 +16,7 @@
 /**
  * std::string wrapper for getenv(). Throws exceptions if environment variable is not set.
  */
-static std::string getenv_str(const std::string& varname, bool to_lower = false) {
+std::string getenv_str(const std::string& varname, bool to_lower = false) {
 	const char* val = getenv(varname.c_str());
 
 	if (!val)

@@ -1,82 +1,91 @@
 
-#include <dirent.h>
+#include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
 #include "ogr_source_datasets.h"
 #include "configuration.h"
 #include "ogr_source_util.h"
 
 std::vector<std::string> OGRSourceDatasets::getDatasetNames(){
-    const std::string path = Configuration::get<std::string>("ogrsource.files.path");
+    namespace bf = boost::filesystem;
+    bf::path path = Configuration::get<std::string>("ogrsource.files.path");
 
-    struct dirent *entry;
-    DIR *dir = opendir(path.c_str());
+    if(!bf::is_directory(path))
+        throw ArgumentException("ogrsource.files.path in configuration is not valid directory");
 
-    if (dir == nullptr) {
-        throw MustNotHappenException("OGR Source Datasets: Directory for OGR files could not be found -> " + path);
-    }
 
     std::vector<std::string> filenames;
-    std::string suffix(".json");
-    size_t suffix_length = suffix.length();
+    const std::string suffix(".json");
+    const size_t suffix_length = suffix.length();
 
-    while ((entry = readdir(dir)) != nullptr) {
-        std::string filename = entry->d_name;
+    for(auto it = bf::directory_iterator(path); it != bf::directory_iterator{}; ++it){
+        auto file = (*it).path();
+        if(!bf::is_regular_file(file))
+            continue;
 
         //check if file ends with the suffix
-        bool found = filename.find(suffix, filename.length() - suffix_length)  != std::string::npos;
+        const std::string file_ext = bf::extension(file);
 
-        if (found) {
-            std::string dataSetName = filename.substr(0, filename.length() - suffix_length);
+        if (suffix == file_ext) {
+            const std::string filename = file.filename().string();
+            const std::string dataSetName = filename.substr(0, filename.length() - suffix_length);
             filenames.push_back(dataSetName);
         }
     }
-
-    closedir(dir);
-
     return filenames;
 }
 
 Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name){
-    Json::Value desc = getDatasetDescription(dataset_name);
-    Json::Value root;
-    Json::Value columns = desc["columns"];
-
-    bool isCsv = OGRSourceUtil::hasSuffix(desc["filename"].asString(), ".csv") || OGRSourceUtil::hasSuffix(desc["filename"].asString(), ".tsv");
-
-    Json::Value layer_array(Json::ValueType::arrayValue);
+    Json::Value dataset_def = getDatasetDescription(dataset_name);
 
     GDALAllRegister();
-    GDALDataset *dataset = OGRSourceUtil::openGDALDataset(desc);
+    GDALDataset *dataset = OGRSourceUtil::openGDALDataset(dataset_def);
 
     if(dataset == nullptr){
         throw OperatorException("OGR Source Datasets: Can not load dataset");
     }
 
-    const int layer_count = dataset->GetLayerCount();
+    const std::string filename = dataset_def["filename"].asString();
+    const bool isCsv = OGRSourceUtil::hasSuffix(filename, ".csv") || OGRSourceUtil::hasSuffix(filename, ".tsv");
 
-    for(int i = 0; i < layer_count; i++){
-        OGRLayer *layer = dataset->GetLayer(i);
+    Json::Value listing_array(Json::ValueType::arrayValue);
+    Json::Value all_layers_def = dataset_def["layers"];
+    Json::Value columns_dataset = dataset_def["columns"];
+    Json::Value root;
 
+    for(auto &curr_layer_name : all_layers_def.getMemberNames()){
+        OGRLayer *layer = dataset->GetLayerByName(curr_layer_name.c_str());
         std::string layer_name(layer->GetName());
-        Json::Value layer_object(Json::ValueType::objectValue);
-        layer_object["name"] = layer_name;
+        Json::Value layer_def = all_layers_def[layer_name];
+        Json::Value columns_layer = layer_def["columns"];
 
-        // if layer does not have a geometry type (eg CSV files), a field "geometry_type" in the dataset json should be defined
+        Json::Value listing_json(Json::ValueType::objectValue);
+        listing_json["name"]  = layer_name;
+
+        // if layer does not have a geometry type (eg CSV files), check "geometry_type" in the layer/dataset json
         auto geom_type = layer->GetGeomType();
         if(geom_type != OGRwkbGeometryType::wkbUnknown){
-            layer_object["geometry_type"] = OGRGeometryTypeToName(geom_type);
+            listing_json["geometry_type"] = OGRGeometryTypeToName(geom_type);
         }
-        else{
-            layer_object["geometry_type"] = desc.get("geometry_type", "Unknown");
+        else if(layer_def.isMember("geometry_type")){
+            listing_json["geometry_type"] = layer_def["geometry_type"];
+        } else {
+            listing_json["geometry_type"] = dataset_def.get("geometry_type", "Unknown");
         }
 
-        // To get the TITLE from meta data, check if metadata is not empty,
-        // than access the title that could still be Null.
-        layer_object["title"] = "";
-        char ** metadata = layer->GetMetadata(nullptr);
-        if( CSLCount(metadata) > 0 ){
-            const char* title = layer->GetMetadataItem("TITLE");
-            if(title != nullptr)
-                layer_object["title"] = title;
+        if(layer_def.isMember("description")){
+            listing_json["title"] = layer_def["description"];
+        } else if(dataset_def.isMember("description")){
+            listing_json["title"] = dataset_def["description"];
+        } else {
+            // To get the TITLE from meta data, check if metadata is not empty,
+            // than access the title that could still be Null.
+            listing_json["title"] = "";
+            char ** metadata = layer->GetMetadata(nullptr); //documentation does not mentions that this has to be freed.
+            if( CSLCount(metadata) > 0 ){
+                const char* title = layer->GetMetadataItem("TITLE");
+                if(title != nullptr)
+                    listing_json["title"] = title;
+            }
         }
 
         Json::Value textual(Json::ValueType::arrayValue);
@@ -88,38 +97,40 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
             OGRFieldDefn *field = attributeDefn->GetFieldDefn(j);
             std::string field_name  = field->GetNameRef();
 
-            //make sure not to add geometry columns if it is csv file
             if(isCsv)
             {
-                if(field_name == columns["x"].asString() ||
-                   columns.isMember("y") && field_name == columns["y"].asString())
+                //skip geometry attributes of csv files
+                if(field_name == getJsonParameter(columns_layer, columns_dataset, "x").asString() ||
+                        hasJsonParameter(columns_layer, columns_dataset, "y") &&
+                   field_name == getJsonParameter(columns_layer, columns_dataset, "y").asString())
                 {
                     continue;
                 }
             }
 
-            //don't add time columns
-            if(columns.isMember("time1") && field_name == columns["time1"].asString() ||
-               columns.isMember("time2") && field_name == columns["time2"].asString())
+            //skip time attributes
+            if(hasJsonParameter(columns_layer, columns_dataset, "time1") &&
+               field_name == getJsonParameter(columns_layer, columns_dataset, "time1").asString() ||
+                    hasJsonParameter(columns_layer, columns_dataset, "time2") &&
+               field_name == getJsonParameter(columns_layer, columns_dataset, "time2").asString())
             {
                 continue;
             }
 
             OGRFieldType type = field->GetType();
 
-            //TODO: what to do with different types for the attributes, eg time? Right now it's added as textual
             if(type == OFTInteger || type == OFTInteger64 || type == OFTReal)
                 numeric.append(field_name);
             else
                 textual.append(field_name);
         }
 
-        layer_object["textual"] = textual;
-        layer_object["numeric"] = numeric;
-        layer_array.append(layer_object);
+        listing_json["textual"] = textual;
+        listing_json["numeric"] = numeric;
+        listing_array.append(listing_json);
     }
 
-    root["layer"] = layer_array;
+    root["layer"] = listing_array;
 
     GDALClose(dataset);
 
@@ -128,9 +139,10 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
 
 Json::Value OGRSourceDatasets::getDatasetDescription(const std::string &name){
     std::string directory = Configuration::get<std::string>("ogrsource.files.path");
-    std::string filename = directory + "/" + name + ".json";
+    boost::filesystem::path file_path(directory);
+    file_path /= name + ".json";
 
-    std::ifstream file(filename);
+    std::ifstream file(file_path.string());
     if (!file.is_open()) {
         throw ArgumentException("OGR Source Datasets: File with given name not found -> " + name);
     }
@@ -139,8 +151,29 @@ Json::Value OGRSourceDatasets::getDatasetDescription(const std::string &name){
     Json::Value root;
     bool success = reader.parse(file, root);
     if (!success) {
-        throw ArgumentException("OGR Source Datasets: invalid json file");
+        throw ArgumentException("OGR Source Datasets: invalid json file: " + name);
     }
 
     return root;
+}
+
+bool OGRSourceDatasets::hasJsonParameter(Json::Value &layer, Json::Value &dataset, const std::string &key){
+    return layer.isMember(key) || dataset.isMember(key);
+}
+
+Json::Value OGRSourceDatasets::getJsonParameterDefault(Json::Value &layer, Json::Value &dataset, const std::string &key,
+                                                const Json::Value &def){
+    if(layer.isMember(key))
+        return layer[key];
+    else if(dataset.isMember(key))
+        return dataset[key];
+    else
+        return def;
+}
+
+Json::Value OGRSourceDatasets::getJsonParameter(Json::Value &layer, Json::Value &dataset, const std::string &key){
+    if(layer.isMember(key))
+        return layer[key];
+    else
+        return dataset[key];
 }
