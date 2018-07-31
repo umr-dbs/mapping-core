@@ -233,9 +233,11 @@ find_package(Boost COMPONENTS date_time filesystem REQUIRED)
 target_link_libraries(mapping_core_base_lib Boost::date_time Boost::filesystem)
 target_include_directories(mapping_core_base_lib PRIVATE ${Boost_INCLUDE_DIRS})
 
-find_package(GDAL REQUIRED)
-target_link_libraries(mapping_core_base_lib ${GDAL_LIBRARY})
-target_include_directories(mapping_core_base_lib PUBLIC ${GDAL_INCLUDE_DIR})
+target_link_libraries(mapping_core_base_lib /usr/local/lib/libgdal.so) #linking self build GDAL 2.3
+target_include_directories(mapping_core_base_lib PRIVATE /usr/local/include)
+#find_package(GDAL REQUIRED)
+#target_link_libraries(mapping_core_base_lib ${GDAL_LIBRARY})
+#target_include_directories(mapping_core_base_lib PUBLIC ${GDAL_INCLUDE_DIR})
 
 find_package(PNG REQUIRED)
 target_link_libraries(mapping_core_base_lib PNG::PNG)

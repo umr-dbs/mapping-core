@@ -85,8 +85,7 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 
 // load the json definition of the dataset, then get the file to be loaded from GDALTimesnap. Finally load the raster.
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
-	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
-	GDALTimesnap::GDALDataLoadingInfo loadingInfo = GDALTimesnap::getDataLoadingInfo(datasetJson, channel, rect);
+	GDALTimesnap::GDALDataLoadingInfo loadingInfo = GDALTimesnap::getDataLoadingInfo(sourcename, channel, rect);
 	auto raster = loadDataset(loadingInfo, rect.crsId, true, rect);
 	//flip here so the tiff result will not be flipped
 	return raster->flip(false, true);
@@ -268,7 +267,17 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(const GDALT
 	
 	GDAL::init();
 
-	auto dataset = (GDALDataset *) GDALOpen(loadingInfo.fileName.c_str(), GA_ReadOnly);
+    const bool isWCS = loadingInfo.fileName.find("WCS:") == 0;
+    GDALDataset *dataset = nullptr;
+
+    if(isWCS){
+        //WCS requests seem to need NoGridAxisSwap set to true, else the request throws an error.
+        std::string opt = "NoGridAxisSwap=true";
+        const char *const strs[] = {opt.c_str(), nullptr };
+        dataset = (GDALDataset *) GDALOpenEx(loadingInfo.fileName.c_str(), GDAL_OF_RASTER, nullptr, strs, nullptr);
+    } else {
+        dataset = (GDALDataset *) GDALOpen(loadingInfo.fileName.c_str(), GA_ReadOnly);
+    }
 
 	if (dataset == nullptr)
 		throw OperatorException(concat("GDAL Source: Could not open dataset ", loadingInfo.fileName));

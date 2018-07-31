@@ -1,0 +1,29 @@
+{
+    "name": "Load world raster",
+	"query_result": "raster",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1409596200
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -160,
+        "x2": 160,
+        "y1": -70,
+        "y2": 70
+    },
+    "resolution": {
+    	"type": "pixels",
+        "x": 3600,
+        "y": 1800
+    },
+    "query_mode": "exact",
+    "query": {        
+        "params": {
+       		"channel": 3,
+            "sourcename": "test_no_snapping"
+        },
+        "type": "gdal_source"
+    },
+    "query_expected_hash": ""
+}
