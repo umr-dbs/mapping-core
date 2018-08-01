@@ -1,0 +1,25 @@
+    
+{		
+    "filename": "WFS:https://maps-public.geo.nyu.edu/geoserver/wfs",
+    "on_error" : "abort",
+    "time" : "start",
+    "columns" : {
+
+    },
+    "provenance" : {
+
+    },
+    "description" : "nyu geoserver layers",
+
+    "layers" : {    	       
+        "sdr:nyu_2451_35023" : {
+            "time" : "none"
+        },
+        "sdr:nyu_2451_35659" : {
+            "time" : "none"            
+        },
+        "sdr:nyu_2451_38681" : {
+            "time" : "none"
+        }
+    }
+}

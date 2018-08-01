@@ -4,7 +4,6 @@
 #include <map>
 #include <ctime>
 #include <json/json.h>
-#include <dirent.h>
 #include <sstream>
 #include <fstream>
 #include <gdal.h>

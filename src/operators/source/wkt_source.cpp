@@ -22,7 +22,7 @@ class WKTSourceOperator : public GenericOperator {
 			type = params.get("type", "").asString();
 
 			if(type != "points" && type != "lines" && type != "polygons")
-				throw ArgumentException("WKTSource: Invalid type given");
+				throw ArgumentException("WKTSource: Invalid type given", MappingExceptionType::PERMANENT);
 		}
 
 #ifndef MAPPING_OPERATOR_STUBS

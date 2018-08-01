@@ -5,11 +5,49 @@
 
 #include <stdexcept>
 
+enum class MappingExceptionType{
+    TRANSIENT,
+    PERMANENT,
+    CONFIDENTIAL,
+    SAME_AS_NESTED
+};
 
-#define _CUSTOM_EXCEPTION_CLASS_PARENT(C, PARENT) class C : public PARENT { public: C(const std::string &msg) : PARENT(#C ": " + msg) {}}
+/**
+ *
+ */
+class MappingException : public std::runtime_error {
+public:
+    MappingException(const std::string &msg, const MappingExceptionType type) : std::runtime_error(msg), type(type)
+    {
+
+    }
+
+    /**
+     * Constructor without arguments, type is set to SAME_AS_NESTED
+     */
+    MappingException() : std::runtime_error(""), type(MappingExceptionType::SAME_AS_NESTED){
+
+    }
+
+    const MappingExceptionType getExceptionType() const {
+        return type;
+    }
+
+private:
+    const MappingExceptionType type;
+};
+
+/**
+ * Macro creating the exception classes. Important here: The MappingExceptionType is set as a default parameter
+ * to CONFIDENTAL, so that not every exception usage has to be adapted at once. CONFIDENTAL is the default, so that
+ * error information has to shared explicitly.
+ */
+#define _CUSTOM_EXCEPTION_CLASS_PARENT(C, PARENT) class C : public PARENT { \
+    public: C(const std::string &msg, const MappingExceptionType type = MappingExceptionType::CONFIDENTIAL) : PARENT(#C ": " + msg, type) {} \
+    public: C() : PARENT() {}}
 
 // This is just some magic to get around the fact that macros cannot have default parameters
-#define _CUSTOM_EXCEPTION_CLASS_DEFAULT(C) _CUSTOM_EXCEPTION_CLASS_PARENT(C, std::runtime_error)
+#define _CUSTOM_EXCEPTION_CLASS_DEFAULT(C) _CUSTOM_EXCEPTION_CLASS_PARENT(C, MappingException)
 
 #define _CUSTOM_EXCEPTION_CLASS_GET_3RD_PARAM(p1, p2, p3, ...) p3
 #define _CUSTOM_EXCEPTION_CLASS_CHOOSER(...) _CUSTOM_EXCEPTION_CLASS_GET_3RD_PARAM(__VA_ARGS__, _CUSTOM_EXCEPTION_CLASS_PARENT, _CUSTOM_EXCEPTION_CLASS_DEFAULT, 0)
@@ -36,6 +74,7 @@ _CUSTOM_EXCEPTION_CLASS(FeatureException);
 _CUSTOM_EXCEPTION_CLASS(TimeParseException);
 _CUSTOM_EXCEPTION_CLASS(PermissionDeniedException);
 _CUSTOM_EXCEPTION_CLASS(NoRasterForGivenTimeException);
+_CUSTOM_EXCEPTION_CLASS(ProcessingException);
 
 // Added Micha
 _CUSTOM_EXCEPTION_CLASS(CacheException);

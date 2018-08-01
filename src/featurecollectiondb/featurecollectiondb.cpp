@@ -48,7 +48,7 @@ void FeatureCollectionDB::init(const std::string &backend, const std::string &lo
 
 	auto map = getRegisteredConstructorsMap();
 	if (map->count(backend) != 1)
-		throw ArgumentException(concat("Unknown featurecollectiondb backend: ", backend));
+		throw ArgumentException(concat("Unknown featurecollectiondb backend: ", backend), MappingExceptionType::TRANSIENT);
 
 
 	auto constructor = map->at(backend);
