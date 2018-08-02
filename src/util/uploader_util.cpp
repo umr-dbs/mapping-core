@@ -4,43 +4,42 @@
 #include "util/exceptions.h"
 #include "util/configuration.h"
 
-using namespace boost::filesystem;
+namespace bf = boost::filesystem;
 
-void UploaderUtil::moveUpload(const std::string &user_id, const std::string &upload_name, boost::filesystem::path &target_dir)
+void UploaderUtil::moveUpload(const std::string &user_id, const std::string &upload_name, bf::path &target_dir, std::vector<std::string> &copied_files)
 {
-    path upload_path = getUploadPath(user_id, upload_name);
+    bf::path upload_path = getUploadPath(user_id, upload_name);
 
-    if(!boost::filesystem::exists(upload_path) || !is_directory(upload_path))
+    if(!bf::exists(upload_path) || !bf::is_directory(upload_path))
         throw UploaderException(concat("Requested upload '", upload_name,"' does not exist"));
 
-    if(!boost::filesystem::exists(target_dir))
-        create_directory(target_dir);
+    if(!bf::exists(target_dir))
+        bf::create_directory(target_dir);
 
-    for(auto it = directory_iterator(upload_path); it != directory_iterator{}; ++it){
-        std::cout << it->path() << std::endl;
-
-        path file_target(target_dir);
-        file_target /= it->path().filename();
-
-        std::cout << file_target << std::endl;
-
-        copy_file(it->path(), file_target, copy_option::fail_if_exists);
+    for(auto it = bf::directory_iterator(upload_path); it != bf::directory_iterator{}; ++it){
+        std::string filename = it->path().filename().string();
+        bf::path file_target(target_dir);
+        file_target /= filename;
+        if(!bf::exists(file_target)){
+            bf::copy_file(it->path(), file_target, bf::copy_option::fail_if_exists);
+            copied_files.emplace_back(filename);
+        }
     }
 }
 
 bool UploaderUtil::exists(const std::string &user_id, const std::string &upload_name) {
-    path path = getUploadPath(user_id, upload_name);
-    return boost::filesystem::exists(path) & is_directory(path);
+    bf::path path = getUploadPath(user_id, upload_name);
+    return bf::exists(path) & bf::is_directory(path);
 }
 
 bool UploaderUtil::uploadHasFile(const std::string &user_id, const std::string &upload_name, const std::string &file_name) {
-    path path = getUploadPath(user_id, upload_name);
+    bf::path path = getUploadPath(user_id, upload_name);
     path /= file_name;
-    return boost::filesystem::exists(path) & is_regular_file(path);
+    return bf::exists(path) & bf::is_regular_file(path);
 }
 
-boost::filesystem::path UploaderUtil::getUploadPath(const std::string &user_id, const std::string &upload_name) {
-    path upload_path(Configuration::get<std::string>("uploader.directory"));
+bf::path UploaderUtil::getUploadPath(const std::string &user_id, const std::string &upload_name) {
+    bf::path upload_path(Configuration::get<std::string>("uploader.directory"));
     upload_path /= user_id;
     upload_path /= upload_name;
     return upload_path;

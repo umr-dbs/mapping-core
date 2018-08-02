@@ -4,6 +4,7 @@
 
 #include <boost/filesystem.hpp>
 #include "userdb/userdb.h"
+#include <vector>
 
 /**
  * Functionality for the import services to interact with uploads.
@@ -11,7 +12,7 @@
  */
 class UploaderUtil {
 public:
-    static void moveUpload(const std::string &user_id, const std::string &upload_name, boost::filesystem::path &target_dir);
+    static void moveUpload(const std::string &user_id, const std::string &upload_name, boost::filesystem::path &target_dir, std::vector<std::string> &copied_files);
     static bool exists(const std::string &user_id, const std::string &upload_name);
     static bool uploadHasFile(const std::string &user_id, const std::string &upload_name, const std::string &file_name);
     static boost::filesystem::path getUploadPath(const std::string &user_id, const std::string &upload_name);
