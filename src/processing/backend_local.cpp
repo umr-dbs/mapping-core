@@ -51,10 +51,10 @@ std::unique_ptr<QueryProcessor::QueryResult> LocalQueryProcessor::process(const 
 		}
 	}
 	catch (MappingException &me){
-		return QueryProcessor::QueryResult::error(me.what(), q.rectangle, me.getExceptionType());
+		return QueryProcessor::QueryResult::error(me, q.rectangle);
 	}
 	catch (const std::exception &e) {
-		return QueryProcessor::QueryResult::error(e.what(), q.rectangle, MappingExceptionType::CONFIDENTIAL);
+		return QueryProcessor::QueryResult::error(MappingException(e.what(), MappingExceptionType::CONFIDENTIAL), q.rectangle);
 	}
 }
 

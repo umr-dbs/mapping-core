@@ -165,21 +165,25 @@ void HTTPService::readNestedException(Json::Value &exceptionJson, const MappingE
 
 bool HTTPService::clearExceptionJsonFromConfidential(Json::Value &exceptionJson){
 
-    if(exceptionJson["type"].asString() == "CONFIDENTIAL")
+    const std::string type = exceptionJson["type"].asString();
+
+    if(type == "CONFIDENTIAL")
         return true;
 
     const bool hasNested = exceptionJson.isMember("nested_exception");
 
-    if(exceptionJson["type"].asString() == "SAME_AS_NESTED"){
+    if(type == "SAME_AS_NESTED"){
         if(hasNested)
             return clearExceptionJsonFromConfidential(exceptionJson["nested_exception"]);
         else
             return true; //SAME_AS_NESTED but no nested exception exists, so remove it just in case.
     } else {
         //TRANSIENT or PERMANENT as type. If a nested confidential exception exists, remove it.
-        const bool nestedIsConfidential = clearExceptionJsonFromConfidential(exceptionJson["nested_exception"]);
-        if(hasNested && nestedIsConfidential){
-            exceptionJson.removeMember("nested_exception");
+        if(hasNested){
+            const bool nestedIsConfidential = clearExceptionJsonFromConfidential(exceptionJson["nested_exception"]);
+            if(nestedIsConfidential){
+                exceptionJson.removeMember("nested_exception");
+            }
         }
         return false;
     }
@@ -254,7 +258,12 @@ std::unique_ptr<QueryProcessor::QueryResult> HTTPService::processQuery(Query &qu
 	auto queryResult = QueryProcessor::getDefaultProcessor().process(query, true);
 
 	if(queryResult->isError()) {
-		throw OperatorException("HTTPService: query failed with error: " + queryResult->getErrorMessage(), queryResult->getErrorType());
+	    //throw, directly catch and throw with nested to get a nested exception structure:
+		try {
+            throw queryResult->getErrorException().value();
+        } catch (...){
+		    std::throw_with_nested(OperatorException("HTTPService: query failed with error.", MappingExceptionType::SAME_AS_NESTED));
+		}
 	}
 
 	ProvenanceCollection &provenance = queryResult->getProvenance();

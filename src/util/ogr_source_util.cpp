@@ -12,7 +12,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <json/json.h>
-#include <dirent.h>
 #include <iostream>
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include <boost/date_time/local_time/local_time.hpp>

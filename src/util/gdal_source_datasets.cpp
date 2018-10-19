@@ -1,7 +1,7 @@
 
-#include <dirent.h>
 #include <fstream>
 #include <json/reader.h>
+#include <boost/filesystem.hpp>
 
 #include "gdal_source_datasets.h"
 #include "configuration.h"
@@ -12,41 +12,39 @@ const std::string suffix(".json");
 const size_t suffix_length = suffix.length();
 
 std::vector<std::string> GDALSourceDataSets::getDataSetNames() {
-    const std::string path = Configuration::get<std::string>("gdalsource.datasets.path");
+    namespace bf = boost::filesystem;
+    const bf::path path(Configuration::get<std::string>("gdalsource.datasets.path"));
 
-    struct dirent *entry;
-    DIR *dir = opendir(path.c_str());
-
-    if (dir == nullptr) {
+    if(!bf::is_directory(path))
         throw MustNotHappenException("GDAL_Service: Directory for gdal dataset files could not be found.");
-    }
 
     std::vector<std::string> dataSetNames;
 
-    while ((entry = readdir(dir)) != nullptr) {
-        std::string filename = entry->d_name;
+    for(auto it = bf::directory_iterator(path); it != bf::directory_iterator{}; ++it){
+        auto file = (*it).path();
+        if(!bf::is_regular_file(file))
+            continue;
 
         //check if file ends with the suffix
-        bool found = filename.find(suffix, filename.length() - suffix_length)  != std::string::npos;
+        const std::string file_ext = bf::extension(file);
 
-        if (found) {
-            std::string dataSetName = filename.substr(0, filename.length() - suffix_length);
+        if(suffix == file_ext){
+            const std::string filename = file.filename().string();
+            const std::string dataSetName = filename.substr(0, filename.length() - suffix_length);
             dataSetNames.push_back(dataSetName);
         }
+
     }
-
-    closedir(dir);
-
     return dataSetNames;
 }
 
 Json::Value GDALSourceDataSets::getDataSetDescription(const std::string &dataSetName) {
-    const std::string path = Configuration::get<std::string>("gdalsource.datasets.path");
 
-    std::string fileName = path + "/" + dataSetName + suffix;
+    boost::filesystem::path file_path(Configuration::get<std::string>("gdalsource.datasets.path"));
+    file_path /= (dataSetName + suffix);
 
     //open file then read json object from it
-    std::ifstream file(fileName);
+    std::ifstream file(file_path.string());
     if (!file.is_open()) {
         throw ArgumentException("GDAlSourceDataSets: Data set with given name not found");
     }
