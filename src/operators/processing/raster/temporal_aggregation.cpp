@@ -46,6 +46,9 @@ protected:
 private:
 	double duration;
 	AggregationType aggregationType;
+
+	std::unique_ptr<GenericRaster>
+	sampleAggregation(std::unique_ptr<GenericRaster> unique_ptr, const QueryRectangle &rectangle, const QueryTools &tools);
 };
 
 TemporalAggregationOperator::TemporalAggregationOperator(int sourcecounts[],
@@ -180,6 +183,12 @@ std::unique_ptr<GenericRaster> TemporalAggregationOperator::getRaster(
 	// TODO: allow LOOSE computations
 
 	auto input = getRasterFromSource(0, rect, tools, RasterQM::EXACT);
+
+	if (input->stref.t2 == input->stref.t1 + input->stref.epsilon()) {
+		// TODO: refactor when raster time series are introduced
+		return sampleAggregation(std::move(input), rect, tools);
+	}
+
 	auto accumulator = createAccumulator(*input);
 
 	size_t n = 1;
@@ -201,9 +210,32 @@ std::unique_ptr<GenericRaster> TemporalAggregationOperator::getRaster(
 		n += 1;
 	}
 
-	auto output = callUnaryOperatorFunc<Output>(input.get(), accumulator.get(), aggregationType, n);
+	return callUnaryOperatorFunc<Output>(input.get(), accumulator.get(), aggregationType, n);
+}
 
-	return output;
+std::unique_ptr<GenericRaster>
+TemporalAggregationOperator::sampleAggregation(std::unique_ptr<GenericRaster> input, const QueryRectangle &rect, const QueryTools &tools) {
+	const size_t n = 3; // TODO: introduce (optional) parameter
+	double timeDelta = (rect.t2 - rect.t1) / n;
+
+	auto accumulator = createAccumulator(*input);
+
+	QueryRectangle nextRect = rect;
+	nextRect.t1 = input->stref.t1 + timeDelta;
+	nextRect.t2 = nextRect.t1 + nextRect.epsilon();
+
+	for (size_t i = 0; i < n; ++i) {
+		std::unique_ptr<GenericRaster> rasterFromSource = getRasterFromSource(0, nextRect, tools,
+																			  RasterQM::EXACT);
+
+		// accumulate
+		callUnaryOperatorFunc<Accumulate>(rasterFromSource.get(), accumulator.get(), aggregationType);
+
+		nextRect.t1 = rasterFromSource->stref.t1 + timeDelta;
+		nextRect.t2 = nextRect.t1 + nextRect.epsilon();
+	}
+
+	return callUnaryOperatorFunc<Output>(input.get(), accumulator.get(), aggregationType, n);
 }
 
 #endif
