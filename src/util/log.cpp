@@ -9,6 +9,7 @@
 #include "util/concat.h"
 #include "util/exceptions.h"
 #include "util/enumconverter.h"
+#include "util/configuration.h"
 
 #include <thread>
 #include <sstream>
@@ -16,6 +17,7 @@
 #include <chrono>
 #include <algorithm>
 #include <mutex>
+#include <boost/filesystem.hpp>
 
 
 /*
@@ -45,6 +47,8 @@ static Log::LogLevel streamlog_level = Log::LogLevel::OFF;
 
 static std::mutex log_mutex;
 
+static std::ofstream filelog_stream;
+static Log::LogLevel filelog_level = Log::LogLevel::OFF;
 
 static void log(Log::LogLevel level, const std::string &msg) {
 	// avoid assembling the message unless it is really needed
@@ -71,7 +75,9 @@ static void log(Log::LogLevel level, const std::string &msg) {
 	if (level <= memorylog_level)
 		memorylog.push_back(message);
 	if (level <= streamlog_level && streamlog)
-		(*streamlog) << message << std::endl;
+        (*streamlog) << message << std::endl;
+	if(level <= filelog_level)
+		filelog_stream << message << std::endl;
 }
 
 static Log::LogLevel levelFromString(const std::string &level) {
@@ -100,6 +106,36 @@ static std::string sprintf(const char *msg, va_list arglist) {
 /*
  * Initialize the logging
  */
+void Log::logToFile() {
+	std::lock_guard<std::mutex> guard(log_mutex);
+    Log::LogLevel level = levelFromString(Configuration::get<std::string>("log.logfilelevel"));
+    filelog_level = level;
+
+    if(filelog_level == LogLevel::OFF)
+    	return;
+
+    if(filelog_stream.is_open()){
+    	throw MustNotHappenException("File logging was already enabled.");
+    }
+
+	auto t = std::time(nullptr);
+	auto tm = *std::localtime(&t);
+	std::stringstream file_name;
+	file_name << "log_";
+	file_name << std::put_time(&tm, "%d-%m-%Y_%H-%M-%S");
+	file_name << ".txt";
+
+	namespace bf = boost::filesystem;
+	bf::path path(Configuration::get<std::string>("log.logfilelocation"));
+	if(!bf::exists(path)){
+        bf::create_directory(path);
+	}
+	path /= file_name.str();
+	filelog_stream.open(path.string());
+
+	maxLogLevel = std::max(filelog_level, maxLogLevel);
+}
+
 void Log::logToStream(const std::string &level, std::ostream *stream) {
 	logToStream(levelFromString(level), stream);
 }
@@ -107,7 +143,7 @@ void Log::logToStream(LogLevel level, std::ostream *stream) {
 	std::lock_guard<std::mutex> guard(log_mutex);
 	streamlog_level = level;
 	streamlog = stream;
-	maxLogLevel = std::max(memorylog_level, streamlog_level);
+	maxLogLevel = std::max(streamlog_level, maxLogLevel);
 }
 
 void Log::logToMemory(const std::string &level) {
@@ -117,7 +153,7 @@ void Log::logToMemory(const std::string &level) {
 void Log::logToMemory(LogLevel level) {
 	std::lock_guard<std::mutex> guard(log_mutex);
 	memorylog_level = level;
-	maxLogLevel = std::max(memorylog_level, streamlog_level);
+	maxLogLevel = std::max(memorylog_level, maxLogLevel);
 }
 
 std::vector<std::string> Log::getMemoryMessages() {
@@ -127,13 +163,21 @@ std::vector<std::string> Log::getMemoryMessages() {
 	return result;
 }
 
-void Log::off() {
+void Log::streamAndMemoryOff() {
 	std::lock_guard<std::mutex> guard(log_mutex);
 	memorylog_level = LogLevel::OFF;
 	memorylog.clear();
 	streamlog_level = LogLevel::OFF;
 	streamlog = nullptr;
-	maxLogLevel = LogLevel::OFF;
+	maxLogLevel = std::max(filelog_level, LogLevel::OFF);
+}
+
+
+void Log::fileOff() {
+	std::lock_guard<std::mutex> guard(log_mutex);
+	filelog_level = LogLevel::OFF;
+	filelog_stream.close();
+	maxLogLevel = std::max(streamlog_level, memorylog_level);
 }
 
 /*

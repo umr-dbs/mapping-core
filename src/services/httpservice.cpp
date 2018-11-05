@@ -71,7 +71,7 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
         }
 
 	}
-	Log::off();
+	Log::streamAndMemoryOff();
 }
 
 /**
@@ -106,7 +106,7 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
             response.send500("invalid request");
         }
 	}
-	Log::off();
+	Log::streamAndMemoryOff();
 }
 
 void HTTPService::catchExceptions(HTTPResponseStream& response, const MappingException &me){

@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <ostream>
+#include <fstream>
 #include <stdarg.h>
 
 
@@ -22,6 +23,13 @@ public:
 	enum class LogLevel {
 		OFF, ERROR, WARN, INFO, DEBUG, TRACE
 	};
+
+	/**
+	 * Logs to a file on disc. Parameters can be set in config (enable/disable, file location, log level).
+	 * It will not be disabled with the streamAndMemoryOff() call [former off()].
+	 * This allows logging on fcgi level without interfering with memory and stream logging.
+	 */
+	static void logToFile();
 
 	/**
 	 * Logs to a stream, usually std::cerr
@@ -42,9 +50,14 @@ public:
 	static std::vector<std::string> getMemoryMessages();
 
 	/**
-	 * Turns logging off.
+	 * Turns stream and memory logging off.
 	 */
-	static void off();
+	static void streamAndMemoryOff();
+
+    /**
+     * Turns file logging off.
+     */
+    static void fileOff();
 
 	static void error(const char *msg, ...);
 	static void error(const std::string &msg);

@@ -61,7 +61,11 @@ void fcgiThread(int fd) {
 
 int main() {
 	Configuration::loadFromDefaultPaths();
-	Log::off();
+	Log::streamAndMemoryOff();
+
+	if(Configuration::get<bool>("log.logtofile")){
+		Log::logToFile();
+	}
 
 	/*
 	 * Initialize Cache
@@ -129,4 +133,5 @@ int main() {
 			threads[i].join();
 		}
 	}
+	Log::fileOff();
 }

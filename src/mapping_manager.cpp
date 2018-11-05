@@ -791,6 +791,9 @@ int main(int argc, char *argv[]) {
 	NopCacheManager cm;
 	CacheManager::init(&cm);
 
+	if(Configuration::get<bool>("log.logtofile")){
+		Log::logToFile();
+	}
 	Log::logToStream(Log::LogLevel::WARN, &std::cerr);
 
 	const char *command = argv[1];
