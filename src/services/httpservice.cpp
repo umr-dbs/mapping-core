@@ -57,6 +57,8 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 		auto servicename = params.get("service");
 		auto service = HTTPService::getRegisteredService(servicename, params, response, error);
 
+		Log::debug("Running new service: " + servicename);
+		
 		service->run();
 	}
     catch(const MappingException &e){
@@ -64,6 +66,7 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
     }
 	catch (const std::exception &e) {
 		error << "Request failed with an exception: " << e.what() << "\n";
+        Log::debug(e.what());
 		if (Configuration::get<bool>("global.debug", false)) {
             response.send500(concat("invalid request: ", e.what()));
         } else {
@@ -93,6 +96,8 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 		auto servicename = params.get("service");
 		auto service = HTTPService::getRegisteredService(servicename, params, response, error);
 
+		Log::debug("Running new service: " + servicename);
+
 		service->run();
 	}
     catch(const MappingException &e){
@@ -100,6 +105,7 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
     }
 	catch (const std::exception &e) {
 		error << "Request failed with an exception: " << e.what() << "\n";
+		Log::debug(e.what());
 		if (Configuration::get<bool>("global.debug", false)) {
             response.send500(concat("invalid request: ", e.what()));
         } else {
@@ -126,6 +132,7 @@ void HTTPService::catchExceptions(HTTPResponseStream& response, const MappingExc
         }
         response.sendHeader("Status", "500 Internal Server Error");
         response.sendJSON(exceptionJson);
+        Log::debug(exceptionJson.asString());
     } else {
         response.send500("invalid request");
     }

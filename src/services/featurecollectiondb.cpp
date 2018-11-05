@@ -1,10 +1,10 @@
 
 #include "datatypes/plot.h"
 #include "operators/operator.h"
-
 #include "services/ogcservice.h"
 #include "featurecollectiondb/featurecollectiondb.h"
 #include "util/enumconverter.h"
+#include "util/log.h"
 
 static const std::vector< std::pair<Query::ResultType, std::string> > featureTypeMap = {
 	std::make_pair(Query::ResultType::POINTS, "points"),
@@ -80,6 +80,7 @@ Json::Value FeatureCollectionDBService::metaDataToJson(const FeatureCollectionDB
 void FeatureCollectionDBService::run() {
 	auto session = UserDB::loadSession(params.get("sessiontoken"));
 	auto& user = session->getUser();
+	Log::debug("User: " + user.getUserIDString());
 
 	if(!FeatureCollectionDB::isAvailable()){
 		throw SourceException("FeatureCollectionDB is not available.");

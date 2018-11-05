@@ -44,7 +44,12 @@ JPEG32: 120703 (90%)
  * A thread function that handles fcgi request
  */
 void fcgiThread(int fd) {
-	FCGX_Init();
+    std::stringstream id_stream;
+    id_stream << std::this_thread::get_id();
+    std::string thread_id(id_stream.str());
+    Log::debug("Start of fcgiThread. Thread thread_id: " + thread_id);
+
+    FCGX_Init();
 
 	FCGX_Request request;
 
@@ -54,9 +59,10 @@ void fcgiThread(int fd) {
 		fcgi_streambuf streambuf_in(request.in);
 		fcgi_streambuf streambuf_out(request.out);
 		fcgi_streambuf streambuf_err(request.err);
-
+        Log::debug("Thread is running new service: " + thread_id);
 		HTTPService::run(&streambuf_in, &streambuf_out, &streambuf_err, request);
 	}
+    Log::debug("End of fcgiThread. Thread thread_id: " + thread_id);
 }
 
 int main() {

@@ -27,6 +27,7 @@ REGISTER_HTTP_SERVICE(WMSService, "WMS");
 void WMSService::run() {
 	auto session = UserDB::loadSession(params.get("sessiontoken"));
 	auto user = session->getUser();
+	Log::debug("User: " + user.getUserIDString());
 
 	bool debug = params.getBool("debug", Configuration::get<bool>("global.debug", false));
 	auto query_crsId = parseCrsId(params, "crs");

@@ -3,6 +3,7 @@
 #include "operators/operator.h"
 #include "datatypes/raster.h"
 #include "util/timeparser.h"
+#include "util/log.h"
 
 /**
  * Implementation of the OGC WCS standard http://www.opengeospatial.org/standards/wcs
@@ -81,6 +82,7 @@ static int getWcsParameterInteger(const std::string &wcsParameterString){
 void WCSService::run() {
 	auto session = UserDB::loadSession(params.get("sessiontoken"));
 	auto user = session->getUser();
+	Log::debug("User: " + user.getUserIDString());
 
 	/*http://www.myserver.org:port/path?
 	 * service=WCS &version=2.0

@@ -6,6 +6,7 @@
 #include "pointvisualization/CircleClusteringQuadTree.h"
 #include "util/timeparser.h"
 #include "util/enumconverter.h"
+#include "util/log.h"
 
 #include <string>
 #include <cmath>
@@ -90,6 +91,7 @@ void WFSService::getCapabilities() {
 void WFSService::getFeature() {
 	auto session = UserDB::loadSession(params.get("sessiontoken"));
 	auto user = session->getUser();
+	Log::debug("User: " + user.getUserIDString());
 
 	if(!params.hasParam("typenames"))
 		throw ArgumentException("WFSService: typeNames parameter not specified");

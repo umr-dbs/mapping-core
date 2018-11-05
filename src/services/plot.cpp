@@ -1,7 +1,7 @@
 
 #include "datatypes/plot.h"
 #include "operators/operator.h"
-
+#include "util/log.h"
 #include "services/ogcservice.h"
 
 /*
@@ -24,6 +24,7 @@ REGISTER_HTTP_SERVICE(PlotService, "plot");
 void PlotService::run() {
 	auto session = UserDB::loadSession(params.get("sessiontoken"));
 	auto user = session->getUser();
+	Log::debug("User: " + user.getUserIDString());
 
 	std::string queryString = params.get("query", "");
 	if(queryString == "")

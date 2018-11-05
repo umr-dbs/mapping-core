@@ -9,6 +9,7 @@
 #include <util/gdal_source_datasets.h>
 #include <util/ogr_source_datasets.h>
 #include <boost/filesystem.hpp>
+#include <util/log.h>
 
 /**
  * This class provides user specific methods
@@ -47,6 +48,7 @@ void UserService::run() {
 		// anything except login is only allowed with a valid session, so check for it.
 		auto session = UserDB::loadSession(params.get("sessiontoken"));
 		auto user = session->getUser();
+		Log::debug("User: " + user.getUserIDString());
 
 		if (request == "logout") {
 			session->logout();
