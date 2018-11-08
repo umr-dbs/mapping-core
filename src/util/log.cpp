@@ -50,6 +50,10 @@ static std::mutex log_mutex;
 static std::ofstream filelog_stream;
 static Log::LogLevel filelog_level = Log::LogLevel::OFF;
 
+//init request id variables
+thread_local int Log::current_request_id = 0;
+bool Log::log_request_id = false;
+
 static void log(Log::LogLevel level, const std::string &msg) {
 	// avoid assembling the message unless it is really needed
 	if (level > maxLogLevel)
@@ -67,7 +71,13 @@ static void log(Log::LogLevel level, const std::string &msg) {
 	std::ostringstream ss;
 	ss << "[" << buf << std::setfill('0') << std::setw(3) << (millis % 1000) << "] ";
 	ss << "[" << LogLevelConverter.to_string(level) << "] ";
-	ss << "[" << std::hex << std::this_thread::get_id() << "] " << msg;
+	if(Log::log_request_id){
+		ss << "[" << std::hex << std::this_thread::get_id() << "] ";
+		ss << "[request: " << std::dec << Log::current_request_id << "] " << msg;
+	} else {
+		ss << "[" << std::hex << std::this_thread::get_id() << "] " << msg;
+	}
+
 
 	std::string message = ss.str();
 	// Do the actual logging
@@ -246,4 +256,14 @@ void Log::trace(const char* msg, ...) {
 }
 void Log::trace(const std::string &msg) {
 	log(LogLevel::TRACE, msg);
+}
+
+void Log::setThreadRequestId(int id) {
+	std::lock_guard<std::mutex> guard(log_mutex);
+	current_request_id = id;
+}
+
+void Log::logRequestId(bool value) {
+	std::lock_guard<std::mutex> guard(log_mutex);
+	log_request_id = value;
 }

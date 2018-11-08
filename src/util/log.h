@@ -69,6 +69,22 @@ public:
 	static void debug(const std::string &msg);
 	static void trace(const char *msg, ...);
 	static void trace(const std::string &msg);
+
+	/**
+	 * Sets the thread_local variable current_request_id. If logRequestId is set to true
+	 * the request id of the current thread will be written in front of the log messages.
+	 */
+	static void setThreadRequestId(int id);
+
+    static bool log_request_id;
+
+	/**
+	 * Set if the current request id will be written before logs. Call setThreadRequestId
+	 * to set the current id for the calling thread.
+	 */
+	static void logRequestId(bool value);
+
+	static thread_local int current_request_id;
 };
 
 #endif /* LOG_H_ */

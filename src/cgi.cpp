@@ -47,7 +47,7 @@ void fcgiThread(int fd) {
     std::stringstream id_stream;
     id_stream << std::this_thread::get_id();
     std::string thread_id(id_stream.str());
-    Log::debug("Start of fcgiThread. Thread thread_id: " + thread_id);
+    Log::debug("Start of thread: " + thread_id);
 
     FCGX_Init();
 
@@ -59,10 +59,12 @@ void fcgiThread(int fd) {
 		fcgi_streambuf streambuf_in(request.in);
 		fcgi_streambuf streambuf_out(request.out);
 		fcgi_streambuf streambuf_err(request.err);
-        Log::debug("Thread is running new service: " + thread_id);
+		Log::setThreadRequestId(request.requestId);
+		Log::debug(concat("New request ", request.requestId, ", on thread ", thread_id));
 		HTTPService::run(&streambuf_in, &streambuf_out, &streambuf_err, request);
+		Log::debug(concat("Finished request ", request.requestId));
 	}
-    Log::debug("End of fcgiThread. Thread thread_id: " + thread_id);
+    Log::debug("End of thread: " + thread_id);
 }
 
 int main() {
@@ -71,6 +73,7 @@ int main() {
 
 	if(Configuration::get<bool>("log.logtofile")){
 		Log::logToFile();
+		Log::logRequestId(true);
 	}
 
 	/*
