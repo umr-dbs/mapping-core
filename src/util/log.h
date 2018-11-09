@@ -25,11 +25,12 @@ public:
 	};
 
 	/**
-	 * Logs to a file on disc. Parameters can be set in config (enable/disable, file location, log level).
+	 * Logs to a file on disc. Parameters can be set in config (enable/disable, file location, log level, cgi log file name).
 	 * It will not be disabled with the streamAndMemoryOff() call [former off()].
 	 * This allows logging on fcgi level without interfering with memory and stream logging.
+	 * @param isCgi If isCgi is true every instance of mapping_cgi will log into the same file, else a new file will be created for this fcgi program instance.
 	 */
-	static void logToFile();
+	static void logToFile(bool isCgi);
 
 	/**
 	 * Logs to a stream, usually std::cerr
@@ -74,7 +75,7 @@ public:
 	 * Sets the thread_local variable current_request_id. If logRequestId is set to true
 	 * the request id of the current thread will be written in front of the log messages.
 	 */
-	static void setThreadRequestId(int id);
+	static void setThreadRequestId(long id);
 
     static bool log_request_id;
 
@@ -84,7 +85,7 @@ public:
 	 */
 	static void logRequestId(bool value);
 
-	static thread_local int current_request_id;
+	static thread_local long current_request_id;
 };
 
 #endif /* LOG_H_ */

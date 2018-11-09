@@ -51,7 +51,7 @@ static std::ofstream filelog_stream;
 static Log::LogLevel filelog_level = Log::LogLevel::OFF;
 
 //init request id variables
-thread_local int Log::current_request_id = 0;
+thread_local long Log::current_request_id = 0;
 bool Log::log_request_id = false;
 
 static void log(Log::LogLevel level, const std::string &msg) {
@@ -116,7 +116,7 @@ static std::string sprintf(const char *msg, va_list arglist) {
 /*
  * Initialize the logging
  */
-void Log::logToFile() {
+void Log::logToFile(bool isCgi) {
 	std::lock_guard<std::mutex> guard(log_mutex);
     Log::LogLevel level = levelFromString(Configuration::get<std::string>("log.logfilelevel"));
     filelog_level = level;
@@ -128,20 +128,37 @@ void Log::logToFile() {
     	throw MustNotHappenException("File logging was already enabled.");
     }
 
-	auto t = std::time(nullptr);
-	auto tm = *std::localtime(&t);
-	std::stringstream file_name;
-	file_name << "log_";
-	file_name << std::put_time(&tm, "%d-%m-%Y_%H-%M-%S");
-	file_name << ".txt";
-
 	namespace bf = boost::filesystem;
 	bf::path path(Configuration::get<std::string>("log.logfilelocation"));
 	if(!bf::exists(path)){
-        bf::create_directory(path);
+		bf::create_directory(path);
 	}
-	path /= file_name.str();
-	filelog_stream.open(path.string());
+	if(isCgi){
+		path /= Configuration::get<std::string>("log.cgilogfilename");
+		filelog_stream.open(path.string(), std::ios::app);
+	} else {
+        std::stringstream file_name;
+
+        //get time in nanoseconds and seconds.
+        auto time_point = std::chrono::high_resolution_clock::now();
+        auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(time_point.time_since_epoch());
+        auto s = std::chrono::duration_cast<std::chrono::seconds>(ns);
+        std::time_t t = s.count();
+        auto tm = *std::localtime(&t);
+        long fractional_seconds = ns.count() % 1000000;
+
+        //format date and time automatically and add ms and ns by hand with fixed width of 6 digits.
+        file_name << "log_";
+        file_name << std::put_time(&tm, "%d-%m-%Y_%H:%M:%S");
+        file_name << "." << std::setw(6) << std::setfill('0') << fractional_seconds;
+        file_name << ".txt";
+		path /= file_name.str();
+		filelog_stream.open(path.string());
+	}
+
+	if(filelog_stream.fail()){
+		throw MappingException("Could not create stream for file logging.", MappingExceptionType::TRANSIENT);
+	}
 
 	maxLogLevel = std::max(filelog_level, maxLogLevel);
 }
@@ -258,7 +275,7 @@ void Log::trace(const std::string &msg) {
 	log(LogLevel::TRACE, msg);
 }
 
-void Log::setThreadRequestId(int id) {
+void Log::setThreadRequestId(long id) {
 	std::lock_guard<std::mutex> guard(log_mutex);
 	current_request_id = id;
 }

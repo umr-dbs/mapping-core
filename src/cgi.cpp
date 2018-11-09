@@ -60,7 +60,9 @@ void fcgiThread(int fd) {
 		fcgi_streambuf streambuf_out(request.out);
 		fcgi_streambuf streambuf_err(request.err);
 		Log::setThreadRequestId(request.requestId);
-		Log::debug(concat("New request ", request.requestId, ", on thread ", thread_id));
+        char * ip_ptr = FCGX_GetParam("REMOTE_ADDR", request.envp);
+        std::string ip = ip_ptr != nullptr ? ip_ptr : "";
+		Log::debug(concat("New request ", request.requestId, " from ip ", ip,  ", on thread ", thread_id));
 		HTTPService::run(&streambuf_in, &streambuf_out, &streambuf_err, request);
 		Log::debug(concat("Finished request ", request.requestId));
 	}
@@ -71,8 +73,10 @@ int main() {
 	Configuration::loadFromDefaultPaths();
 	Log::streamAndMemoryOff();
 
+	const bool isCgiMode = getenv("FCGI_WEB_SERVER_ADDRS") == nullptr;
+
 	if(Configuration::get<bool>("log.logtofile")){
-		Log::logToFile();
+		Log::logToFile(isCgiMode);
 		Log::logRequestId(true);
 	}
 
@@ -120,9 +124,13 @@ int main() {
 	FeatureCollectionDB::initFromConfiguration();
 
 
-	if (getenv("FCGI_WEB_SERVER_ADDRS") == nullptr) {
+	if (isCgiMode) {
 		// CGI mode
+        long time_id = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+		Log::setThreadRequestId(time_id); //time as request id, to differentiate the requests
+		Log::debug("New CGI request.");
 		HTTPService::run(std::cin.rdbuf(), std::cout.rdbuf(), std::cerr.rdbuf());
+        Log::debug("Finished Request.");
 	}
 	else {
 		// FCGI mode

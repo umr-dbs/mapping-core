@@ -68,6 +68,7 @@ location= "tcp:127.0.0.1:10200" # The connection string for the R-Operator to us
 directory="uploader" # The name of the directory where the uploader stores the files
 
 [log]
-logtofile=false #If logs should be written to file instead of error stream
-#logfilelocation="" #Location to store the logs
-logfilelevel="DEBUG" #The maximum level to be logged to file
+logtofile=false # If logs should be written to file instead of error stream
+#logfilelocation="" # Location to store the logs
+logfilelevel="DEBUG" # The maximum level to be logged to file
+cgilogfilename="gci_logs.txt" # The name for CGI log file, that is shared between program instances.
