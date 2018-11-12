@@ -46,6 +46,11 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 	std::ostream error(err);
 	HTTPResponseStream response(out);
 
+	//read query input to string and log it. reset input istream position to the beginning afterwards.
+	std::string query_string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	input.seekg(0, std::ios_base::beg);
+	Log::debug(query_string);
+
 	Log::logToStream(Log::LogLevel::WARN, &error);
 	Log::logToMemory(Log::LogLevel::INFO);
 	try {
@@ -84,6 +89,11 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 	std::istream input(in);
 	std::ostream error(err);
 	HTTPResponseStream response(out);
+
+	//read query input to string and log it. reset input istream position to the beginning afterwards.
+	std::string query_string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	input.seekg(0, std::ios_base::beg);
+	Log::debug(query_string);
 
 	Log::logToStream(Log::LogLevel::WARN, &error);
 	Log::logToMemory(Log::LogLevel::INFO);
