@@ -792,7 +792,7 @@ int main(int argc, char *argv[]) {
 	CacheManager::init(&cm);
 
 	if(Configuration::get<bool>("log.logtofile")){
-		Log::logToFile();
+		Log::logToFile(false);
 	}
 	Log::logToStream(Log::LogLevel::WARN, &std::cerr);
 
