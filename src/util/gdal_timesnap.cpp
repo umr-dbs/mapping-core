@@ -151,8 +151,12 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
         int intervalValue 		 = timeInterval.get("value", 1).asInt();
 
 
-		ptime start = from_time_t(static_cast<time_t>(time_start_mapping));
-        ptime wanted = from_time_t(static_cast<time_t>(wantedTimeUnix));
+        // doesn't work on older boost versions because seconds precision is limit to 32bit
+		// ptime start = from_time_t(static_cast<time_t>(time_start_mapping));
+        // ptime wanted = from_time_t(static_cast<time_t>(wantedTimeUnix));
+
+        ptime start = ptime(boost::gregorian::date(1970,1,1)) + milliseconds(static_cast<long>(time_start_mapping * 1000));
+        ptime wanted = ptime(boost::gregorian::date(1970,1,1)) + milliseconds(static_cast<long>(wantedTimeUnix * 1000));
 
 		//snap the time to the given interval
         ptime snappedTimeStart = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, start, wanted);
