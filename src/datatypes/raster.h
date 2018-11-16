@@ -66,7 +66,7 @@ class DataDescription {
 				return false;
 			if (std::isnan(no_data) && std::isnan(val))
 				return true;
-			return (val == no_data);
+			return std::fabs(val - no_data) < std::numeric_limits<double>::epsilon();
 		}
 
 		friend std::ostream& operator<< (std::ostream &out, const DataDescription &dd);
