@@ -5,7 +5,15 @@
     "layers" : {
     	"ne_10m_ports" : {
     		"time" : "none",
-    		"description" : "Ahoi"
+    		"description" : "Ahoi",
+    		"columns" : {
+    			"textual" : [
+    				"website"
+    			],
+    			"numeric" : [
+					"natlscale"
+    			]
+    		}
     	}
     }
 }

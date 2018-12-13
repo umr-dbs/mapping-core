@@ -1,4 +1,5 @@
 
+#include <unordered_set>
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 #include "ogr_source_datasets.h"
@@ -91,6 +92,27 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
         Json::Value textual(Json::ValueType::arrayValue);
         Json::Value numeric(Json::ValueType::arrayValue);
 
+        //read the wanted attributes from the layer or dataset definition.
+        std::unordered_set<std::string> requested_attributes_numeric;
+        std::unordered_set<std::string> requested_attributes_textual;
+        requested_attributes_numeric.reserve(32);
+        requested_attributes_textual.reserve(32);
+        if(!columns_layer.isNull()){
+            for(auto &att : columns_layer["numeric"]){
+                requested_attributes_numeric.insert(att.asString());
+            }
+            for(auto &att : columns_layer["textual"]){
+                requested_attributes_textual.insert(att.asString());
+            }
+        } else {
+            for(auto &att : columns_dataset["numeric"]){
+                requested_attributes_numeric.insert(att.asString());
+            }
+            for(auto &att : columns_dataset["textual"]){
+                requested_attributes_textual.insert(att.asString());
+            }
+        }
+
         OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
 
         for(int j = 0; j < attributeDefn->GetFieldCount(); j++){
@@ -101,28 +123,29 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
             {
                 //skip geometry attributes of csv files
                 if(field_name == getJsonParameter(columns_layer, columns_dataset, "x").asString() ||
-                        hasJsonParameter(columns_layer, columns_dataset, "y") &&
-                   field_name == getJsonParameter(columns_layer, columns_dataset, "y").asString())
+                        (hasJsonParameter(columns_layer, columns_dataset, "y") &&
+                   field_name == getJsonParameter(columns_layer, columns_dataset, "y").asString()))
                 {
                     continue;
                 }
             }
 
             //skip time attributes
-            if(hasJsonParameter(columns_layer, columns_dataset, "time1") &&
-               field_name == getJsonParameter(columns_layer, columns_dataset, "time1").asString() ||
-                    hasJsonParameter(columns_layer, columns_dataset, "time2") &&
-               field_name == getJsonParameter(columns_layer, columns_dataset, "time2").asString())
+            if((hasJsonParameter(columns_layer, columns_dataset, "time1") &&
+               field_name == getJsonParameter(columns_layer, columns_dataset, "time1").asString()) ||
+                    (hasJsonParameter(columns_layer, columns_dataset, "time2") &&
+               field_name == getJsonParameter(columns_layer, columns_dataset, "time2").asString()))
             {
                 continue;
             }
 
             OGRFieldType type = field->GetType();
-
-            if(type == OFTInteger || type == OFTInteger64 || type == OFTReal)
+            //only add the attribute to available attributes if it is requested in dataset/layer.
+            if(requested_attributes_numeric.find(field_name) != requested_attributes_numeric.end()){
                 numeric.append(field_name);
-            else
+            } else if(requested_attributes_textual.find(field_name) != requested_attributes_textual.end()){
                 textual.append(field_name);
+            }
         }
 
         listing_json["textual"] = textual;

@@ -4,17 +4,34 @@
     "on_error" : "keep",
     "description" : "It's all about the cities",
     "time": "start",
-    "duration" : 2678400,   
+    "columns" : {
+                "x" : "wkt",
+                "time1" : "time_start",
+                "numeric" : [
+                    "population"
+                ],
+                "textual" : [
+                    "name",
+                    "is_in"
+                ]
+            },
+    "duration" : 2678400,
     "layers" : {
-        "osm_large_cities" : {                        
+        "osm_large_cities" : {
             "columns" : {
                 "x" : "wkt",
-                "time1" : "time_start"                             
+                "time1" : "time_start",
+                "numeric" : [
+                    "population"
+                ],
+                "textual" : [
+                    "name"
+                ]
             },
             "time1_format" : {
                 "format" : "iso"
-            },       
-            "geometry_type" : "points"            
+            },
+            "geometry_type" : "points"
         }
     }
 }

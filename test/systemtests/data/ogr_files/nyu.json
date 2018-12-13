@@ -13,13 +13,44 @@
 
     "layers" : {    	       
         "sdr:nyu_2451_35023" : {
-            "time" : "none"
+            "time" : "none",
+            "columns" : {
+                "textual" : [
+                    "exsdesc",
+                    "f_code",
+                    "f_codedesc"
+                ],
+                "numeric" : [
+                    "tile_id",
+                    "end_id"
+                ]
+            }
         },
         "sdr:nyu_2451_35659" : {
-            "time" : "none"            
+            "time" : "none",
+            "columns" : {
+                "textual" : [
+                    "f_code",
+                    "f_codedesc",
+                    "textstring"
+                ],
+                "numeric" : [
+                    "tile_id",
+                    "txt_id"
+                ]
+            }
         },
         "sdr:nyu_2451_38681" : {
-            "time" : "none"
+            "time" : "none",
+            "columns" : {
+                "textual" : [
+                    "type",
+                    "link"
+                ],
+                "numeric" : [
+                    "current"
+                ]
+            }
         }
     }
 }
