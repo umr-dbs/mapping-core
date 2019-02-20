@@ -33,7 +33,7 @@ void UploaderTest::SetUp() {
     Configuration::loadFromDefaultPaths();
 
     time_t now = time(nullptr);
-    UserDB::init("sqlite", ":memory:", make_unique<UserDBTestClock_Uploader>(&now), 0);
+    UserDB::init("sqlite", ":memory:", std::make_unique<UserDBTestClock_Uploader>(&now), 0);
 
     //change upload dir parameter to a test directory
     Configuration::loadFromString("[uploader]\ndirectory=\""+ temp_dir_name + "\"");

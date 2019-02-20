@@ -35,9 +35,9 @@ std::unique_ptr<RelevanceFunction> RelevanceFunction::by_name(
 	std::transform(name.begin(),name.end(),lower.begin(),::tolower);
 
 	if ( lower == "lru" )
-		return make_unique<LRU>();
+		return std::make_unique<LRU>();
 	else if ( lower == "costlru" )
-		return make_unique<CostLRU>();
+		return std::make_unique<CostLRU>();
 	throw ArgumentException(concat("Unknown Relevance-Function: ", name));
 }
 
@@ -115,11 +115,11 @@ std::unique_ptr<ReorgStrategy> ReorgStrategy::by_name(const IndexCache& cache,
 	double target_capacity = 0.8;
 	std::unique_ptr<RelevanceFunction> rel = RelevanceFunction::by_name(relevance);
 	if ( lower == "capacity" )
-		return make_unique<CapacityReorgStrategy>(cache,target_capacity,std::move(rel));
+		return std::make_unique<CapacityReorgStrategy>(cache,target_capacity,std::move(rel));
 	else if ( lower == "geo" )
-		return make_unique<GeographicReorgStrategy>(cache,target_capacity,std::move(rel));
+		return std::make_unique<GeographicReorgStrategy>(cache,target_capacity,std::move(rel));
 	else if ( lower == "graph" )
-		return make_unique<GraphReorgStrategy>(cache,target_capacity,std::move(rel));
+		return std::make_unique<GraphReorgStrategy>(cache,target_capacity,std::move(rel));
 	throw ArgumentException(concat("Unknown Reorg-Strategy: ", name));
 }
 

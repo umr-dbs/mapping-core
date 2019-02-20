@@ -2,7 +2,6 @@
 #include "simplefeaturecollection.h"
 #include "util/exceptions.h"
 #include "util/binarystream.h"
-#include "util/make_unique.h"
 #include "util/sizeutil.h"
 
 #include <sstream>

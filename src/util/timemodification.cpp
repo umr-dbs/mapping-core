@@ -2,7 +2,6 @@
 
 #include "util/exceptions.h"
 
-#include "util/make_unique.h"
 
 auto TimeShift::toPTime(time_t time) -> PTime {
 	return boost::posix_time::from_time_t(time);
@@ -170,25 +169,25 @@ auto Snap::apply(const double& input) -> double {
 				std::unique_ptr<boost::gregorian::greg_weekday> weekday;
 				switch (value) {
 					case 1:
-						weekday = make_unique<boost::gregorian::greg_weekday>(boost::date_time::Monday);
+						weekday = std::make_unique<boost::gregorian::greg_weekday>(boost::date_time::Monday);
 						break;
 					case 2:
-						weekday = make_unique<boost::gregorian::greg_weekday>(boost::date_time::Tuesday);
+						weekday = std::make_unique<boost::gregorian::greg_weekday>(boost::date_time::Tuesday);
 						break;
 					case 3:
-						weekday = make_unique<boost::gregorian::greg_weekday>(boost::date_time::Wednesday);
+						weekday = std::make_unique<boost::gregorian::greg_weekday>(boost::date_time::Wednesday);
 						break;
 					case 4:
-						weekday = make_unique<boost::gregorian::greg_weekday>(boost::date_time::Thursday);
+						weekday = std::make_unique<boost::gregorian::greg_weekday>(boost::date_time::Thursday);
 						break;
 					case 5:
-						weekday = make_unique<boost::gregorian::greg_weekday>(boost::date_time::Friday);
+						weekday = std::make_unique<boost::gregorian::greg_weekday>(boost::date_time::Friday);
 						break;
 					case 6:
-						weekday = make_unique<boost::gregorian::greg_weekday>(boost::date_time::Saturday);
+						weekday = std::make_unique<boost::gregorian::greg_weekday>(boost::date_time::Saturday);
 						break;
 					case 7:
-						weekday = make_unique<boost::gregorian::greg_weekday>(boost::date_time::Sunday);
+						weekday = std::make_unique<boost::gregorian::greg_weekday>(boost::date_time::Sunday);
 						break;
 				}
 

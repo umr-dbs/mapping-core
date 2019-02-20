@@ -259,17 +259,17 @@ RemoteCacheManager::RemoteCacheManager(const std::string &strategy,
 		size_t line_cache_size, size_t polygon_cache_size,
 		size_t plot_cache_size, size_t provenance_cache_size) :
 		NodeCacheManager(strategy,
-				make_unique<RemoteCacheWrapper<GenericRaster>>(*this,
+				std::make_unique<RemoteCacheWrapper<GenericRaster>>(*this,
 						raster_cache_size, CacheType::RASTER),
-				make_unique<RemoteCacheWrapper<PointCollection>>(*this,
+				std::make_unique<RemoteCacheWrapper<PointCollection>>(*this,
 						point_cache_size, CacheType::POINT),
-				make_unique<RemoteCacheWrapper<LineCollection>>(*this,
+				std::make_unique<RemoteCacheWrapper<LineCollection>>(*this,
 						line_cache_size, CacheType::LINE),
-				make_unique<RemoteCacheWrapper<PolygonCollection>>(*this,
+				std::make_unique<RemoteCacheWrapper<PolygonCollection>>(*this,
 						polygon_cache_size, CacheType::POLYGON),
-				make_unique<RemoteCacheWrapper<GenericPlot>>(*this,
+				std::make_unique<RemoteCacheWrapper<GenericPlot>>(*this,
 						plot_cache_size, CacheType::PLOT),
-				make_unique<RemoteCacheWrapper<ProvenanceCollection>>(*this,
+				std::make_unique<RemoteCacheWrapper<ProvenanceCollection>>(*this,
 						provenance_cache_size, CacheType::UNKNOWN)) {
 }
 

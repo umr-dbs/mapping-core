@@ -1,7 +1,6 @@
 #include "datatypes/colorizer.h"
 #include "datatypes/unit.h"
 #include "util/exceptions.h"
-#include "util/make_unique.h"
 
 #include <cmath>
 #include <vector>
@@ -165,13 +164,13 @@ std::unique_ptr<Colorizer> Colorizer::fromJson(const Json::Value &json) {
         throw ArgumentException("Unknown type for colorizer");
     }
 
-    return make_unique<Colorizer>(breakpoints, interpolation, nodataColor, defaultColor);
+    return std::make_unique<Colorizer>(breakpoints, interpolation, nodataColor, defaultColor);
 }
 
 std::unique_ptr<Colorizer> Colorizer::greyscale(double min, double max) {
 	Colorizer::ColorTable breakpoints {Breakpoint {min, color_from_rgba(0, 0, 0, 255)},
                                        Breakpoint {max, color_from_rgba(0, 0, 0, 255)}};
-    return make_unique<Colorizer>(breakpoints, Interpolation::LINEAR);
+    return std::make_unique<Colorizer>(breakpoints, Interpolation::LINEAR);
 }
 
 static Colorizer::ColorTable errorBreakpoints {Colorizer::Breakpoint {1, color_from_rgba(255, 0, 0, 255)}};

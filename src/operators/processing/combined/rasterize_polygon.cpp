@@ -60,7 +60,7 @@ auto RasterizePolygonOperator::getRaster(const QueryRectangle &rect,
         unit.setMinMax(0, number_of_polygons);
 
         DataDescription data_description(GDT_UInt32, unit, true, 0);
-        return make_unique<Raster2D<uint32_t>>(
+        return std::make_unique<Raster2D<uint32_t>>(
                 data_description,
                 rect,
                 rect.xres,

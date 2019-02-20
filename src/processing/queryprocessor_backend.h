@@ -22,7 +22,7 @@ class QueryProcessorBackendRegistration {
 		QueryProcessorBackendRegistration(const char *name, std::unique_ptr<QueryProcessor::QueryProcessorBackend> (*constructor)(const ConfigurationTable& params));
 };
 
-#define REGISTER_QUERYPROCESSOR_BACKEND(classname, name) static std::unique_ptr<QueryProcessor::QueryProcessorBackend> create##classname(const ConfigurationTable& params) { return make_unique<classname>(params); } static QueryProcessorBackendRegistration register_##classname(name, create##classname)
+#define REGISTER_QUERYPROCESSOR_BACKEND(classname, name) static std::unique_ptr<QueryProcessor::QueryProcessorBackend> create##classname(const ConfigurationTable& params) { return std::make_unique<classname>(params); } static QueryProcessorBackendRegistration register_##classname(name, create##classname)
 
 
 #endif

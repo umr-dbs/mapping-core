@@ -905,12 +905,12 @@ TEST(PolygonCollection, removeLastFeature){
 }
 
 TEST(PolygonCollection, removeLastFeatureEmptyCollection){
-	auto polygons = make_unique<PolygonCollection>(SpatioTemporalReference::unreferenced());
+	auto polygons = std::make_unique<PolygonCollection>(SpatioTemporalReference::unreferenced());
 
 	polygons->removeLastFeature();
 	polygons->validate();
 
-	auto result = make_unique<PolygonCollection>(SpatioTemporalReference::unreferenced());
+	auto result = std::make_unique<PolygonCollection>(SpatioTemporalReference::unreferenced());
 
 	CollectionTestUtil::checkEquality(*result, *polygons);
 }

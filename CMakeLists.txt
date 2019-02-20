@@ -11,7 +11,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
 # C++ Standard
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Output directory
@@ -46,6 +46,14 @@ download_project(PROJ       cpptoml
         PREFIX CMakeFiles/Download
         )
 add_subdirectory(${cpptoml_SOURCE_DIR} ${cpptoml_BINARY_DIR} EXCLUDE_FROM_ALL)
+
+download_project(PROJ       cpp-jwt
+        GIT_REPOSITORY      https://github.com/michaelmattig/cpp-jwt.git
+        GIT_TAG             master
+        UPDATE_DISCONNECTED 1
+        PREFIX CMakeFiles/Download
+        )
+add_subdirectory(${cpp-jwt_SOURCE_DIR} ${cpp-jwt_BINARY_DIR} EXCLUDE_FROM_ALL)
 
 add_subdirectory(src)
 

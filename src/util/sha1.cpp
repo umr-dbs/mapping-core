@@ -1,6 +1,5 @@
 
 #include "util/sha1.h"
-#include "util/make_unique.h"
 
 #include <sstream>
 
@@ -27,7 +26,7 @@ std::string SHA1::SHA1Value::asHex() {
 
 
 SHA1::SHA1() {
-	s = make_unique<boost::uuids::detail::sha1>();
+	s = std::make_unique<boost::uuids::detail::sha1>();
 }
 
 SHA1::~SHA1() {

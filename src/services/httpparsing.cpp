@@ -6,7 +6,6 @@
 #include <vector>
 #include <algorithm>
 #include <fstream>
-#include "util/make_unique.h"
 #include "util/base64.h"
 #include <Poco/URI.h>
 #include <Poco/Net/MultipartReader.h>
@@ -81,7 +80,7 @@ static void parsePostUrlEncoded(Parameters &params, std::istream &in, int conten
  */
 std::unique_ptr<Poco::Net::MultipartReader> getMultipartPostDataReader(Parameters &params, std::istream &in) {
 
-    return make_unique<Poco::Net::MultipartReader>(in);
+    return std::make_unique<Poco::Net::MultipartReader>(in);
 }
 
 /**

@@ -95,7 +95,7 @@ protected:
 
 template<typename... Params>
 std::unique_ptr<BlockingConnection> BlockingConnection::create(const std::string &host, int port, bool no_delay, const Params &... params ) {
-	auto result = make_unique<BlockingConnection>(host,port,no_delay);
+	auto result = std::make_unique<BlockingConnection>(host,port,no_delay);
 	result->write(params...);
 	return result;
 }
@@ -130,7 +130,7 @@ public:
 	 */
 	template<typename... Params>
 	static std::unique_ptr<WakeableBlockingConnection> create(const std::string host, int port, BinaryStream &wakeup_pipe, bool consume_wakeup, bool no_delay, const Params &... params ) {
-		auto result = make_unique<WakeableBlockingConnection>(host,port,wakeup_pipe,consume_wakeup,no_delay);
+		auto result = std::make_unique<WakeableBlockingConnection>(host,port,wakeup_pipe,consume_wakeup,no_delay);
 		result->write(params...);
 		return result;
 	}

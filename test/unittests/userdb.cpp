@@ -1,7 +1,6 @@
 #include "userdb/userdb.h"
 #include "util/configuration.h"
 #include "util/exceptions.h"
-#include "util/make_unique.h"
 
 #include <gtest/gtest.h>
 
@@ -19,7 +18,7 @@ TEST(UserDB, testALL) {
 	// We must protect against overwriting the production DB, so make sure to use a custom configuration here!
 	// init() will throw if the UserDB was initialized before.
 	time_t now = time(nullptr);
-	UserDB::init("sqlite", ":memory:", make_unique<UserDBTestClock>(&now), 0);
+	UserDB::init("sqlite", ":memory:", std::make_unique<UserDBTestClock>(&now), 0);
 
 	const std::string username = "dummy";
 	const std::string password = "12345";

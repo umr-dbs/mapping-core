@@ -176,7 +176,7 @@ std::unique_ptr<T> ClientCacheWrapper<T>::query(
 template<typename T>
 std::unique_ptr<T> ClientCacheWrapper<T>::read_result(
 		BinaryReadBuffer &buffer ) {
-	return make_unique<T>(buffer);
+	return std::make_unique<T>(buffer);
 }
 
 template<>

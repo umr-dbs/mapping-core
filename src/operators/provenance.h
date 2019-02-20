@@ -1,8 +1,7 @@
 #ifndef OPERATORS_PROVENANCE_H
 #define OPERATORS_PROVENANCE_H
 
-#include "util/make_unique.h"
-
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -85,7 +84,7 @@ class ProvenanceCollection {
 		}
 
 		std::unique_ptr<ProvenanceCollection> clone() const {
-			std::unique_ptr<ProvenanceCollection> clone = make_unique<ProvenanceCollection>();
+			std::unique_ptr<ProvenanceCollection> clone = std::make_unique<ProvenanceCollection>();
 
 			for(const Provenance& provenance : items) {
 				clone->add(provenance);

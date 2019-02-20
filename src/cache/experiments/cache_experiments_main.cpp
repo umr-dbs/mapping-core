@@ -87,19 +87,19 @@ int main(int argc, const char* argv[]) {
 	std::cin >> num_runs;
 
 	std::vector<std::unique_ptr<CacheExperiment>> experiments;
-	experiments.push_back( make_unique<LocalCacheExperiment>(cache_exp::avg_temp, num_runs, 1.0/8, 1024) );
-	experiments.push_back( make_unique<LocalCacheExperiment>(cache_exp::cloud_detection, num_runs, 1.0/3, 1024) );
-	experiments.push_back( make_unique<PuzzleExperiment>(cache_exp::avg_temp, num_runs, 1.0/8, 1024) );
-	experiments.push_back( make_unique<PuzzleExperiment>(cache_exp::cloud_detection, num_runs, 1.0/3, 1024) );
-	experiments.push_back( make_unique<StrategyExperiment>(cache_exp::avg_temp, num_runs, 1.0/8, 1024) );
-	experiments.push_back( make_unique<StrategyExperiment>(cache_exp::cloud_detection, num_runs, 1.0/3, 1024) );
+	experiments.push_back( std::make_unique<LocalCacheExperiment>(cache_exp::avg_temp, num_runs, 1.0/8, 1024) );
+	experiments.push_back( std::make_unique<LocalCacheExperiment>(cache_exp::cloud_detection, num_runs, 1.0/3, 1024) );
+	experiments.push_back( std::make_unique<PuzzleExperiment>(cache_exp::avg_temp, num_runs, 1.0/8, 1024) );
+	experiments.push_back( std::make_unique<PuzzleExperiment>(cache_exp::cloud_detection, num_runs, 1.0/3, 1024) );
+	experiments.push_back( std::make_unique<StrategyExperiment>(cache_exp::avg_temp, num_runs, 1.0/8, 1024) );
+	experiments.push_back( std::make_unique<StrategyExperiment>(cache_exp::cloud_detection, num_runs, 1.0/3, 1024) );
 
-	experiments.push_back( make_unique<QueryBatchingExperiment>(cache_exp::avg_temp, num_runs, 1.0/8, 1024) );
-	experiments.push_back( make_unique<QueryBatchingExperiment>(cache_exp::cloud_detection, num_runs, 1.0/3, 1024) );
-	experiments.push_back( make_unique<ReorgExperiment>(qs1, num_runs) );
-	experiments.push_back( make_unique<ReorgExperiment>(qs2, num_runs) );
-	experiments.push_back( make_unique<RelevanceExperiment>(cache_exp::avg_temp, num_runs) );
-	experiments.push_back( make_unique<RelevanceExperiment>(cache_exp::srtm_ex, num_runs) );
+	experiments.push_back( std::make_unique<QueryBatchingExperiment>(cache_exp::avg_temp, num_runs, 1.0/8, 1024) );
+	experiments.push_back( std::make_unique<QueryBatchingExperiment>(cache_exp::cloud_detection, num_runs, 1.0/3, 1024) );
+	experiments.push_back( std::make_unique<ReorgExperiment>(qs1, num_runs) );
+	experiments.push_back( std::make_unique<ReorgExperiment>(qs2, num_runs) );
+	experiments.push_back( std::make_unique<RelevanceExperiment>(cache_exp::avg_temp, num_runs) );
+	experiments.push_back( std::make_unique<RelevanceExperiment>(cache_exp::srtm_ex, num_runs) );
 
 //	if ( exp < 1 || exp > experiments.size() ) {
 //		printf("Usage: %s #num_runs [1-%lu]\n", argv[0], experiments.size());

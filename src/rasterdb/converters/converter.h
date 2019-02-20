@@ -2,7 +2,6 @@
 #define RASTERDB_CONVERTERS_CONVERTER_H
 
 #include "datatypes/raster.h"
-#include "util/make_unique.h"
 
 
 class ByteBuffer {
@@ -39,7 +38,7 @@ class RasterConverterRegistration {
 		RasterConverterRegistration(const char *name, std::unique_ptr<RasterConverter> (*constructor)());
 };
 
-#define REGISTER_RASTERCONVERTER(classname, name) static std::unique_ptr<RasterConverter> create##classname() { return make_unique<classname>(); } static RasterConverterRegistration register_##classname(name, create##classname)
+#define REGISTER_RASTERCONVERTER(classname, name) static std::unique_ptr<RasterConverter> create##classname() { return std::make_unique<classname>(); } static RasterConverterRegistration register_##classname(name, create##classname)
 
 
 

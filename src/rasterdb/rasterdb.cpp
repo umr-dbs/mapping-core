@@ -6,7 +6,6 @@
 #include "converters/converter.h"
 #include "util/sqlite.h"
 #include "util/configuration.h"
-#include "util/make_unique.h"
 #include "operators/operator.h"
 
 
@@ -267,7 +266,7 @@ void RasterDB::init() {
 
 	Json::Value provenanceinfo = root["provenance"];
 	if (provenanceinfo.isObject()) {
-		provenance = make_unique<Provenance>(
+		provenance = std::make_unique<Provenance>(
 			provenanceinfo.get("citation", "").asString(),
 			provenanceinfo.get("license", "").asString(),
 			provenanceinfo.get("uri", "").asString(),

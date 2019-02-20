@@ -7,7 +7,6 @@
 #include "wkbutil.h"
 #include "datatypes/simplefeaturecollections/geosgeomutil.h"
 #include <sstream>
-#include "util/make_unique.h"
 #include "util/exceptions.h"
 #include <memory>
 

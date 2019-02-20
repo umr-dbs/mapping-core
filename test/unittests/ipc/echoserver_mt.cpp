@@ -1,5 +1,4 @@
 #include "util/server_nonblocking.h"
-#include "util/make_unique.h"
 #include "util/log.h"
 
 #include <gtest/gtest.h>
@@ -50,14 +49,14 @@ void MTEchoServerConnection::processData(std::unique_ptr<BinaryReadBuffer> reque
 		enqueueForAsyncProcessing();
 	}
 	else {
-		auto response = make_unique<BinaryWriteBuffer>();
+		auto response = std::make_unique<BinaryWriteBuffer>();
 		response->write(data);
 		startWritingData(std::move(response));
 	}
 }
 
 void MTEchoServerConnection::processDataAsync() {
-	auto response = make_unique<BinaryWriteBuffer>();
+	auto response = std::make_unique<BinaryWriteBuffer>();
 	response->write(data);
 	startWritingData(std::move(response));
 }
@@ -72,7 +71,7 @@ class MTEchoServer : public NonblockingServer {
 };
 
 std::unique_ptr<NonblockingServer::Connection> MTEchoServer::createConnection(int fd, int id) {
-	return make_unique<MTEchoServerConnection>(*this, fd, id);
+	return std::make_unique<MTEchoServerConnection>(*this, fd, id);
 }
 
 /*
@@ -88,7 +87,7 @@ static void run_server() {
 
 		server_initialization_mutex.lock();
 
-		server = make_unique<MTEchoServer>();
+		server = std::make_unique<MTEchoServer>();
 		server->setWorkerThreads(SERVER_WORKER_THREADS);
 		server->listen(portnr);
 

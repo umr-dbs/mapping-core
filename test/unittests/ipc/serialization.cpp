@@ -4,7 +4,6 @@ static void compareBinaryReadBuffers(const BinaryReadBuffer &a, const BinaryRead
 
 
 #include "util/binarystream.h"
-#include "util/make_unique.h"
 
 #include "datatypes/raster.h"
 #include "datatypes/attributes.h"
@@ -32,7 +31,7 @@ std::unique_ptr<BinaryReadBuffer> getSerializedBuffer(T &&obj) {
 	wb.write(obj, true);
 	stream.write(wb);
 
-	auto rb = make_unique<BinaryReadBuffer>();
+	auto rb = std::make_unique<BinaryReadBuffer>();
 	stream.read(*rb);
 
 	return rb;

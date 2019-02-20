@@ -66,3 +66,9 @@ location= "tcp:127.0.0.1:10200" # The connection string for the R-Operator to us
 
 [uploader]
 directory="uploader" # The name of the directory where the uploader stores the files
+
+[jwt]
+provider_key='''-----BEGIN PUBLIC KEY-----
+FILL IN
+-----END PUBLIC KEY-----'''
+algorithm="es256"

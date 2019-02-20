@@ -3,7 +3,6 @@
 #include "datatypes/polygoncollection.h"
 
 #include "operators/operator.h"
-#include "util/make_unique.h"
 
 #include <string>
 #include <json/json.h>

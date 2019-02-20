@@ -1,11 +1,10 @@
 #include "linecollection.h"
 #include <sstream>
-#include "util/make_unique.h"
 #include "util/binarystream.h"
 
 
 std::unique_ptr<LineCollection> LineCollection::clone() const {
-	auto copy = make_unique<LineCollection>(stref);
+	auto copy = std::make_unique<LineCollection>(stref);
 	copy->global_attributes = global_attributes;
 	copy->feature_attributes = feature_attributes.clone();
 	copy->coordinates = coordinates;
@@ -46,7 +45,7 @@ std::unique_ptr<LineCollection> filter(const LineCollection &in, const std::vect
 		throw ArgumentException(concat("LineCollection::filter(): size of filter does not match (", keep.size(), " != ",count, ")"));
 	}
 
-	auto out = make_unique<LineCollection>(in.stref);
+	auto out = std::make_unique<LineCollection>(in.stref);
 	out->start_feature.reserve(kept_count);
 
 	// copy global attributes

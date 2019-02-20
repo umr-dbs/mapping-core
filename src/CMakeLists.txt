@@ -118,7 +118,8 @@ add_library(mapping_core_services_lib
         pointvisualization/FindResult.cpp
         pointvisualization/QuadTreeNode.cpp
         pointvisualization/CircleClusteringQuadTree.cpp
-        services/featurecollectiondb.cpp)
+        services/featurecollectiondb.cpp
+        services/jwt.cpp)
 target_link_libraries_internal(mapping_core_services_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_services_lib)
 target_link_libraries_internal(mapping_uploader mapping_core_services_lib)
@@ -207,10 +208,10 @@ endforeach(cl_file)
 
 
 target_link_libraries_internal(mapping_core_base_lib jsoncpp_lib_static)
-target_include_directories(mapping_core_base_lib PRIVATE ${JSONCPP_INCLUDE_DIRS})
 
 target_link_libraries_internal(mapping_core_base_lib cpptoml)
-target_include_directories(mapping_core_base_lib PRIVATE ${CPPTOML_SOURCE_DIRS})
+
+target_include_directories(mapping_core_base_lib PUBLIC ${cpp-jwt_SOURCE_DIR}/include)
 
 find_package(Threads REQUIRED)
 target_link_libraries(mapping_core_base_lib Threads::Threads)
@@ -279,6 +280,10 @@ target_include_directories(mapping_core_services_lib PRIVATE ${Fcgi_INCLUDE_DIRS
 find_package(Fcgi++ REQUIRED)
 target_link_libraries(mapping_core_services_lib ${Fcgi++_LIBRARIES})
 target_include_directories(mapping_core_services_lib PRIVATE ${Fcgi++_INCLUDE_DIRS})
+
+find_package(OpenSSL REQUIRED)
+include_directories(${OPENSSL_INCLUDE_DIR})
+target_link_libraries(mapping_core_base_lib OpenSSL::Crypto)
 
 # Modules
 set(MAPPING_CORE_PATH ${CMAKE_SOURCE_DIR} CACHE PATH "This is the mapping-core directory." FORCE)
