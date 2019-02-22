@@ -136,6 +136,7 @@ add_library(mapping_core_operators_lib
         operators/source/rasterdb_source.cpp
         operators/source/wkt_source.cpp
         operators/source/gdal_source.cpp
+        operators/source/ogr_raw_source_with_time.cpp
         operators/source/ogr_raw_source.cpp
         operators/source/ogr_source.cpp
         operators/processing/raster/matrixkernel.cpp
