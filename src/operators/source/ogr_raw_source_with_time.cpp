@@ -68,7 +68,7 @@ class OGRRawSourceWithTimeOperator : public GenericOperator {
         void getProvenance(ProvenanceCollection &pc) override;
 
     private:
-        auto extendFilenameWithTime(double t1, double t2) -> void;
+        auto extendFilenameWithTime(const QueryRectangle &rect) -> void;
 
         std::unique_ptr<OGRSourceUtil> ogrUtil;
         std::string filename;
@@ -100,21 +100,21 @@ void OGRRawSourceWithTimeOperator::getProvenance(ProvenanceCollection &pc) {
 
 std::unique_ptr<PointCollection>
 OGRRawSourceWithTimeOperator::getPointCollection(const QueryRectangle &rect, const QueryTools &tools) {
-    extendFilenameWithTime(rect.t1, rect.t2);
+    extendFilenameWithTime(rect);
 
     return ogrUtil->getPointCollection(rect, tools);
 }
 
 std::unique_ptr<LineCollection>
 OGRRawSourceWithTimeOperator::getLineCollection(const QueryRectangle &rect, const QueryTools &tools) {
-    extendFilenameWithTime(rect.t1, rect.t2);
+    extendFilenameWithTime(rect);
 
     return ogrUtil->getLineCollection(rect, tools);
 }
 
 std::unique_ptr<PolygonCollection>
 OGRRawSourceWithTimeOperator::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools) {
-    extendFilenameWithTime(rect.t1, rect.t2);
+    extendFilenameWithTime(rect);
 
     return ogrUtil->getPolygonCollection(rect, tools);
 }
@@ -125,7 +125,7 @@ constexpr size_t str_length( char const (&)[N] )
     return N-1;
 }
 
-auto OGRRawSourceWithTimeOperator::extendFilenameWithTime(double t1, double t2) -> void {
+auto OGRRawSourceWithTimeOperator::extendFilenameWithTime(const QueryRectangle &rect) -> void {
     bool first_param = filename.find('?') == std::string::npos;
 
     std::stringstream filename_with_params;
@@ -135,10 +135,12 @@ auto OGRRawSourceWithTimeOperator::extendFilenameWithTime(double t1, double t2) 
     filename_with_params.precision(4);
 
     filename_with_params << filename;
-    filename_with_params << (first_param ? "?" : "&") << "startTime=";
-    filename_with_params << t1;
-    filename_with_params << "&endTime=";
-    filename_with_params << t2;
+    filename_with_params << (first_param ? "?" : "&") << "startTime=" << rect.t1;
+    filename_with_params << "&endTime=" << rect.t2;
+    filename_with_params << "&xMin=" << rect.x1;
+    filename_with_params << "&xMax=" << rect.x2;
+    filename_with_params << "&yMin=" << rect.y1;
+    filename_with_params << "&yMax=" << rect.y2;
 
     ogrUtil->getParameters()["filename"] = filename_with_params.str();
 }
