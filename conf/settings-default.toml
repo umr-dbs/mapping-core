@@ -69,6 +69,12 @@ directory="uploader" # The name of the directory where the uploader stores the f
 
 [jwt]
 provider_key='''-----BEGIN PUBLIC KEY-----
-FILL IN
+
+FILL IN (after a new line)
 -----END PUBLIC KEY-----'''
-algorithm="es256"
+client_key=''''-----BEGIN EC PRIVATE KEY-----
+
+FILL IN (after a new line)
+-----END EC PRIVATE KEY-----'''
+algorithm="ES512"
+allowed_clock_skew_seconds=10
