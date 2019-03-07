@@ -254,8 +254,8 @@ void HTTPService::HTTPResponseStream::sendFailureJSON(const std::string &error) 
 	sendJSON(obj);
 }
 
-std::unique_ptr<QueryProcessor::QueryResult> HTTPService::processQuery(Query &query, UserDB::User &user) {
-	auto queryResult = QueryProcessor::getDefaultProcessor().process(query, true);
+std::unique_ptr<QueryProcessor::QueryResult> HTTPService::processQuery(Query &query, std::shared_ptr<UserDB::Session> session) {
+	auto queryResult = QueryProcessor::getDefaultProcessor().process(query, session,  true);
 
 	if(queryResult->isError()) {
 	    //throw, directly catch and throw with nested to get a nested exception structure:
@@ -268,8 +268,10 @@ std::unique_ptr<QueryProcessor::QueryResult> HTTPService::processQuery(Query &qu
 
 	ProvenanceCollection &provenance = queryResult->getProvenance();
 
+	UserDB::User &user = session->getUser();
 	for(std::string identifier : provenance.getLocalIdentifiers()) {
-		if(identifier != "" && !user.hasPermission(identifier)) {
+
+        if(identifier != "" && !user.hasPermission(identifier)) {
 			throw PermissionDeniedException("HTTPService: Permission denied for query result", MappingExceptionType::CONFIDENTIAL);
 		}
 	}

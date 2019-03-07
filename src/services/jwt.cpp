@@ -61,6 +61,14 @@ void JWTService::run() {
                 }
             }
 
+            // save jwt token
+            auto& user = session->getUser();
+            try {
+                user.loadArtifact(user.getUsername(), "jwt", "token")->updateValue(params.get("token"));
+            } catch(UserDB::artifact_error&) {
+                user.createArtifact("jwt", "token", params.get("token"));
+            }
+
             response.sendSuccessJSON("session", session->getSessiontoken());
             return;
         }

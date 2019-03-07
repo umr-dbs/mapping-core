@@ -7,8 +7,8 @@
 /*
  * Default implementations
  */
-std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryProcessorBackend::process(const Query &q, bool includeProvenance) {
-	auto progress = processAsync(q, includeProvenance);
+std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryProcessorBackend::process(const Query &q, std::shared_ptr<UserDB::Session> session, bool includeProvenance) {
+	auto progress = processAsync(q, session, includeProvenance);
 	progress->wait();
 	return progress->getResult();
 }

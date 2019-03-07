@@ -83,7 +83,7 @@ class HTTPService {
 		/**
 		 * Process the given query and validate the permissions of the user
 		 */
-		std::unique_ptr<QueryProcessor::QueryResult> processQuery(Query &query, UserDB::User &user);
+		std::unique_ptr<QueryProcessor::QueryResult> processQuery(Query &query, std::shared_ptr<UserDB::Session> session);
 
 		const Parameters &params;
 		HTTPResponseStream &response;

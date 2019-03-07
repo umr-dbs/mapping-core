@@ -53,7 +53,7 @@ void PlotService::run() {
 	);
 
 	Query query(queryString, Query::ResultType::PLOT, rect);
-	auto plot = processQuery(query, user)->getPlot();
+	auto plot = processQuery(query, session)->getPlot();
 
 	// TODO: check permissions
 

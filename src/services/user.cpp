@@ -9,6 +9,7 @@
 #include <util/gdal_source_datasets.h>
 #include <util/ogr_source_datasets.h>
 #include <boost/filesystem.hpp>
+#include <util/curl.h>
 
 /**
  * This class provides user specific methods
@@ -96,6 +97,64 @@ void UserService::run() {
 					v[name] = description;
 				}
 			}
+
+			// Natur 4.0
+			try {
+				std::string jwt = user.loadArtifact(user.getUsername(), "jwt", "token")->getLatestArtifactVersion()->getValue();
+
+				cURL curl;
+				std::stringstream data;
+				curl.setOpt(CURLOPT_PROXY, Configuration::get<std::string>("proxy", "").c_str());
+				curl.setOpt(CURLOPT_URL, concat("http://137.248.186.133:62134/rasterdbs.json?bands&code&JWS=", jwt).c_str());
+				curl.setOpt(CURLOPT_WRITEFUNCTION, cURL::defaultWriteFunction);
+				curl.setOpt(CURLOPT_WRITEDATA, &data);
+				curl.perform();
+
+				Json::Reader reader(Json::Features::strictMode());
+				Json::Value rasters;
+				if (!reader.parse(data.str(), rasters))
+					throw std::runtime_error("Could not parse rasters from Natur40 rasterdb");
+
+				for (auto &raster : rasters["rasterdbs"]) {
+					Json::Value source (Json::objectValue);
+
+					std::string sourceName = raster["name"].asString();
+
+					Json::Value channels(Json::arrayValue);
+
+					std::string crs = raster["code"].asString();
+					std::string epsg = crs.substr(5);
+
+					Json::Value coords(Json::objectValue);
+					coords["crs"] = crs;
+					coords["epsg"] = epsg;
+
+					source["coords"] = coords;
+
+
+					for(auto &band : raster["bands"]) {
+						Json::Value channel(Json::objectValue);
+
+						channel["name"] = band["title"];
+						channel["datatype"] = "Float32"; // TODO
+
+						channel["file"] = concat("http://137.248.186.133:62134/rasterdb/",
+								sourceName,
+								"/raster.tiff?band=",
+								band["index"].asInt(),
+								"&ext=%%%MINX%%% %%%MAXX%%% %%%MINY%%% %%%MAXY%%%",
+								"&JWS=%%%JWT%%%");
+
+						channels.append(channel);
+					}
+
+					source["channels"] = channels;
+
+					v[sourceName] = source;
+				}
+
+
+			} catch (UserDB::artifact_error&) {}
 
 			response.sendSuccessJSON("sourcelist", v);
 			return;
