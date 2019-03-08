@@ -150,6 +150,8 @@ void UserService::run() {
 
 					source["channels"] = channels;
 
+                    source["operator"] = "gdal_ext_source";
+
 					v[sourceName] = source;
 				}
 
