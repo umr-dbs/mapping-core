@@ -66,7 +66,17 @@ REGISTER_OPERATOR(RasterGDALSourceOperator, "gdal_source");
 
 void RasterGDALSourceOperator::getProvenance(ProvenanceCollection &pc) {
 	std::string local_identifier = "data.gdal_source." + sourcename;
-	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+
+    if(gdalParams.isMember("channels")) {
+        local_identifier = "data.gdal_source." + gdalParams["channels"][channel]["file_name"].asString();
+    }
+
+    Json::Value datasetJson;
+    if (gdalParams.isMember("channels")) {
+        datasetJson = gdalParams;
+    } else {
+        datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+    }
 
 	Json::Value provenanceinfo = datasetJson["provenance"];
 	if (provenanceinfo.isObject()) {
@@ -278,13 +288,16 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 }
 
 void injectParameters(std::string &file, const QueryRectangle &qrect, const QueryTools &tools) {
-    boost::replace_all(file, "%%%MINX%%%", concat(qrect.x1));
-    boost::replace_all(file, "%%%MINY%%%", concat(qrect.y1));
-    boost::replace_all(file, "%%%MAXX%%%", concat(qrect.x2));
-    boost::replace_all(file, "%%%MAXY%%%", concat(qrect.y2));
+    boost::replace_all(file, "%%%MINX%%%", std::to_string(qrect.x1));
+    boost::replace_all(file, "%%%MINY%%%", std::to_string(qrect.y1));
+    boost::replace_all(file, "%%%MAXX%%%", std::to_string(qrect.x2));
+    boost::replace_all(file, "%%%MAXY%%%", std::to_string(qrect.y2));
 
-    boost::replace_all(file, "%%%T1%%%", concat(qrect.t1));
-    boost::replace_all(file, "%%%T2%%%", concat(qrect.t2));
+    boost::replace_all(file, "%%%T1%%%", std::to_string(qrect.t1));
+    boost::replace_all(file, "%%%T2%%%", std::to_string(qrect.t2));
+
+	boost::replace_all(file, "%%%WIDTH%%%", std::to_string(qrect.xres));
+	boost::replace_all(file, "%%%HEIGHT%%%", std::to_string(qrect.yres));
 
     if(file.find("%%%JWT%%%")) {
         UserDB::User &user = tools.session->getUser();

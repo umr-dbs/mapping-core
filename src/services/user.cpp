@@ -136,14 +136,19 @@ void UserService::run() {
 						Json::Value channel(Json::objectValue);
 
 						channel["name"] = band["title"];
-						channel["datatype"] = "Float32"; // TODO
+						channel["datatype"] = band["datatype"];
 
-						channel["file"] = concat("http://137.248.186.133:62134/rasterdb/",
+						channel["file_name"] = concat("http://137.248.186.133:62134/rasterdb/",
 								sourceName,
 								"/raster.tiff?band=",
 								band["index"].asInt(),
-								"&ext=%%%MINX%%% %%%MAXX%%% %%%MINY%%% %%%MAXY%%%",
+								"&ext=%%%MINX%%%%20%%%MINY%%%%20%%%MAXX%%%%20%%%MAXY%%%",
+								"&width=%%%WIDTH%%%&height=%%%HEIGHT%%%"
 								"&JWS=%%%JWT%%%");
+
+                        user.addPermission(concat("data.gdal_source.", channel["file_name"].asString()));
+
+						channel["channel"] = 1;
 
 						channels.append(channel);
 					}
