@@ -91,6 +91,7 @@ apt-get install --yes \
 apt-get install --yes \
     libpng-dev \
     libjpeg-dev \
+    libturbojpeg0-dev \
     libgeos-dev \
     libgeos++-dev \
     libbz2-dev \
