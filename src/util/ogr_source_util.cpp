@@ -115,6 +115,11 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
     // a call suggested by OGR Tutorial as "just in case" (to start reading from first feature)
     layer->ResetReading();
 
+    // no need to process any further if result is empty
+    if (layer->GetFeatureCount() < 1) {
+        return;
+    }
+
     //start reading the FeatureCollection
     OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
     createAttributeArrays(attributeDefn, collection->feature_attributes);

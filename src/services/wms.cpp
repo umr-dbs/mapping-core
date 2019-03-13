@@ -120,7 +120,7 @@ void WMSService::run() {
 			}
 
 			outputImage(*result_raster, flipx, flipy, *createColorizer(*result_raster, colors), overlay.get());
-		}  catch (const std::exception &e) {
+		}  catch (const MappingException &e) {
 			// Alright, something went wrong.
 			// We're still in a WMS request though, so do our best to output an image with a clear error message.
 
@@ -129,7 +129,9 @@ void WMSService::run() {
 			auto errorraster = GenericRaster::create(dd, SpatioTemporalReference::unreferenced(), output_width, output_height);
 			errorraster->clear(0);
 
-			std::string msg(e.what());
+			Json::Value exceptionJson;
+			readNestedException(exceptionJson, e);
+			std::string msg(exceptionJson.toStyledString());
 
 			// determine exception type from error message. This is an ugly hack because the actual exception class gets lost in the QueryResult. Maybe needs refactoring.
 			if (msg.find("NoRasterForGivenTimeException") != std::string::npos) {
