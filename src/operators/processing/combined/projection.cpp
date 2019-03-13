@@ -4,7 +4,6 @@
 #include "datatypes/simplefeaturecollections/geosgeomutil.h"
 #include "operators/operator.h"
 #include "util/gdal.h"
-#include "util/make_unique.h"
 
 #include <memory>
 #include <sstream>

@@ -2,7 +2,6 @@
 #define USERDB_BACKEND_H
 
 #include "userdb/userdb.h"
-#include "util/make_unique.h"
 
 /**
  * Base class for UserDB backends
@@ -96,7 +95,7 @@ class UserDBBackendRegistration {
 		UserDBBackendRegistration(const char *name, std::unique_ptr<UserDBBackend> (*constructor)(const std::string &));
 };
 
-#define REGISTER_USERDB_BACKEND(classname, name) static std::unique_ptr<UserDBBackend> create##classname(const std::string &location) { return make_unique<classname>(location); } static UserDBBackendRegistration register_##classname(name, create##classname)
+#define REGISTER_USERDB_BACKEND(classname, name) static std::unique_ptr<UserDBBackend> create##classname(const std::string &location) { return std::make_unique<classname>(location); } static UserDBBackendRegistration register_##classname(name, create##classname)
 
 
 #endif // USERDB_BACKEND_H

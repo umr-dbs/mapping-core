@@ -72,13 +72,13 @@ int main() {
 
 	// Plug in Cache-Dummy if cache is disabled
 	if ( !cache_enabled ) {
-		cm = make_unique<NopCacheManager>();
+		cm = std::make_unique<NopCacheManager>();
 	}
 	else {
 		std::string cacheType = Configuration::get<std::string>("cache.type");
 
 		if(cacheType == "local") {
-			cm = make_unique<LocalCacheManager>(Configuration::get<std::string>("cache.strategy"), Configuration::get<std::string>("cache.replacement"),
+			cm = std::make_unique<LocalCacheManager>(Configuration::get<std::string>("cache.strategy"), Configuration::get<std::string>("cache.replacement"),
 					Configuration::get<int>("cache.raster.size"),
 					Configuration::get<int>("cache.points.size"),
 					Configuration::get<int>("cache.lines.size"),
@@ -89,7 +89,7 @@ int main() {
 		} else if(cacheType == "remote") {
 			std::string host = Configuration::get<std::string>("indexserver.host");
 			int port = Configuration::get<int>("indexserver.port");
-			cm = make_unique<ClientCacheManager>(host,port);
+			cm = std::make_unique<ClientCacheManager>(host,port);
 		} else {
 			throw ArgumentException("Invalid cache.type");
 		}

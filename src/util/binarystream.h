@@ -1,7 +1,6 @@
 #ifndef UTIL_SOCKET_H
 #define UTIL_SOCKET_H
 
-#include "util/make_unique.h"
 #include "util/sha1.h"
 
 #include <unistd.h>

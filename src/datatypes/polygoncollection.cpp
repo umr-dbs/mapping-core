@@ -1,13 +1,12 @@
 
 #include "datatypes/polygoncollection.h"
-#include "util/make_unique.h"
 #include "util/binarystream.h"
 
 #include <sstream>
 
 
 std::unique_ptr<PolygonCollection> PolygonCollection::clone() const {
-	auto copy = make_unique<PolygonCollection>(stref);
+	auto copy = std::make_unique<PolygonCollection>(stref);
 	copy->global_attributes = global_attributes;
 	copy->feature_attributes = feature_attributes.clone();
 	copy->coordinates = coordinates;
@@ -51,7 +50,7 @@ std::unique_ptr<PolygonCollection> filter(const PolygonCollection &in, const std
 	if (keep.size() != count)
 		throw ArgumentException(concat("PolygonCollection::filter(): size of filter does not match (", keep.size(), " != ", count, ")"));
 
-	auto out = make_unique<PolygonCollection>(in.stref);
+	auto out = std::make_unique<PolygonCollection>(in.stref);
 	out->start_feature.reserve(kept_count);
 
 	// copy global attributes

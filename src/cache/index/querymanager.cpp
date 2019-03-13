@@ -12,7 +12,6 @@
 #include "cache/index/query_manager/late_query_manager.h"
 #include "cache/index/indexserver.h"
 #include "cache/common.h"
-#include "util/make_unique.h"
 
 #include <algorithm>
 
@@ -22,15 +21,15 @@ std::unique_ptr<QueryManager> QueryManager::from_config( IndexCacheManager &mgr,
 	std::transform(config.scheduler.cbegin(), config.scheduler.cend(), lcname.begin(), ::tolower);
 
 	if ( lcname == "default" )
-		return make_unique<DefaultQueryManager>(nodes,mgr, config.batching_enabled);
+		return std::make_unique<DefaultQueryManager>(nodes,mgr, config.batching_enabled);
 	else if ( lcname == "late" )
-		return make_unique<LateQueryManager>(nodes,mgr, config.batching_enabled);
+		return std::make_unique<LateQueryManager>(nodes,mgr, config.batching_enabled);
 	else if ( lcname == "dema" )
-		return make_unique<DemaQueryManager>(nodes);
+		return std::make_unique<DemaQueryManager>(nodes);
 	else if ( lcname == "bema" )
-		return make_unique<BemaQueryManager>(nodes);
+		return std::make_unique<BemaQueryManager>(nodes);
 	else if ( lcname == "emkde" )
-		return make_unique<EMKDEQueryManager>(nodes);
+		return std::make_unique<EMKDEQueryManager>(nodes);
 	else throw ArgumentException(concat("Illegal scheduler name: ", config.scheduler));
 }
 

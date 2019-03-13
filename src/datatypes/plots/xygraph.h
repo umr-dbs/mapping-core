@@ -9,7 +9,6 @@
 #include <limits>
 
 #include "datatypes/plot.h"
-#include "util/make_unique.h"
 
 /**
  * This plot outputs n dimensional numeric attribute vectors as JSON
@@ -67,7 +66,7 @@ class XYGraph : public GenericPlot {
 		}
 
 	auto clone() const -> std::unique_ptr<GenericPlot> {
-		auto copy = make_unique<XYGraph>();
+		auto copy = std::make_unique<XYGraph>();
 
 		copy->points = points;
 		copy->nodata_count = nodata_count;

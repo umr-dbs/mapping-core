@@ -1,5 +1,4 @@
 #include "operators/operator.h"
-#include "util/make_unique.h"
 
 #include <string>
 #include <ctime>
@@ -233,48 +232,48 @@ auto TimeShiftOperator::createTimeModification(const TemporalReference& temporal
 
 	if(shift_has_from) {
 		if(shift_from_unit == "absolute") {
-			shift_from = make_unique<AbsoluteShift>(boost::posix_time::time_from_string(shift_from_value));
+			shift_from = std::make_unique<AbsoluteShift>(boost::posix_time::time_from_string(shift_from_value));
 		} else {
-			shift_from = make_unique<RelativeShift>(std::stoi(shift_from_value), RelativeShift::createUnit(shift_from_unit));
+			shift_from = std::make_unique<RelativeShift>(std::stoi(shift_from_value), RelativeShift::createUnit(shift_from_unit));
 		}
 	} else {
-		shift_from = make_unique<Identity>();
+		shift_from = std::make_unique<Identity>();
 	}
 
 	if(shift_has_to) {
 		if(shift_to_unit == "absolute") {
-			shift_to = make_unique<AbsoluteShift>(boost::posix_time::time_from_string(shift_to_value));
+			shift_to = std::make_unique<AbsoluteShift>(boost::posix_time::time_from_string(shift_to_value));
 		} else {
-			shift_to = make_unique<RelativeShift>(std::stoi(shift_to_value), RelativeShift::createUnit(shift_to_unit));
+			shift_to = std::make_unique<RelativeShift>(std::stoi(shift_to_value), RelativeShift::createUnit(shift_to_unit));
 		}
 	} else {
-		shift_to = make_unique<Identity>();
+		shift_to = std::make_unique<Identity>();
 	}
 
 	if(has_stretch) {
 		if(stretch_fixed_point == "start") {
-			stretch = make_unique<Stretch>(boost::posix_time::from_time_t(static_cast<time_t>(temporal_reference.t1)) ,stretch_factor);
+			stretch = std::make_unique<Stretch>(boost::posix_time::from_time_t(static_cast<time_t>(temporal_reference.t1)) ,stretch_factor);
 		} else if(stretch_fixed_point == "end") {
-			stretch = make_unique<Stretch>(boost::posix_time::from_time_t(static_cast<time_t>(temporal_reference.t2)), stretch_factor);
+			stretch = std::make_unique<Stretch>(boost::posix_time::from_time_t(static_cast<time_t>(temporal_reference.t2)), stretch_factor);
 		} else {
 			// center
 			auto center = boost::posix_time::from_time_t(static_cast<time_t>(temporal_reference.t1 + temporal_reference.t2) / 2);
-			stretch = make_unique<Stretch>(center, stretch_factor);
+			stretch = std::make_unique<Stretch>(center, stretch_factor);
 		}
 	} else {
-		stretch = make_unique<Identity>();
+		stretch = std::make_unique<Identity>();
 	}
 
 	if(snap_has_from) {
-		snap_from = make_unique<Snap>(Snap::createUnit(snap_from_unit), snap_from_value, snap_from_allow_reset);
+		snap_from = std::make_unique<Snap>(Snap::createUnit(snap_from_unit), snap_from_value, snap_from_allow_reset);
 	} else {
-		snap_from = make_unique<Identity>();
+		snap_from = std::make_unique<Identity>();
 	}
 
 	if(snap_has_to) {
-		snap_to = make_unique<Snap>(Snap::createUnit(snap_to_unit), snap_to_value, snap_to_allow_reset);
+		snap_to = std::make_unique<Snap>(Snap::createUnit(snap_to_unit), snap_to_value, snap_to_allow_reset);
 	} else {
-		snap_to = make_unique<Identity>();
+		snap_to = std::make_unique<Identity>();
 	}
 
 	return TimeModification{std::move(shift_from), std::move(shift_to), std::move(stretch), std::move(snap_from), std::move(snap_to)};

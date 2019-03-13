@@ -217,7 +217,7 @@ std::unique_ptr<cl::Buffer> getBufferWithRasterinfo(GenericRaster *raster) {
 	ri.has_no_data = raster->dd.has_no_data;
 
 	try {
-		auto buffer = make_unique<cl::Buffer>(
+		auto buffer = std::make_unique<cl::Buffer>(
 			*RasterOpenCL::getContext(),
 			CL_MEM_READ_ONLY,
 			sizeof(RasterInfo),
@@ -354,7 +354,7 @@ void CLProgram::compile(const std::string &sourcecode, const char *kernelname) {
 	cl::Program program = compileSource(assembled_source.str());
 
 	try {
-		kernel = make_unique<cl::Kernel>(program, kernelname);
+		kernel = std::make_unique<cl::Kernel>(program, kernelname);
 
 		for (decltype(in_rasters.size()) idx = 0; idx < in_rasters.size(); idx++) {
 			GenericRaster *raster = in_rasters[idx];

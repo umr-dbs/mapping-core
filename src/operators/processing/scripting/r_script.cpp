@@ -119,7 +119,7 @@ auto RScriptOperator::runScript(const QueryRectangle &rect, char requested_type,
 	stream.write(request);
 
 	while (true) {
-		auto response = make_unique<BinaryReadBuffer>();
+		auto response = std::make_unique<BinaryReadBuffer>();
 		stream.read(*response);
 		auto type = response->read<char>();
 
@@ -201,7 +201,7 @@ auto RScriptOperator::getPointCollection(const QueryRectangle &rect,
 
 	auto response = runScript(rect, RSERVER_TYPE_POINTS, tools);
 
-	auto points = make_unique<PointCollection>(*(response.get()));
+	auto points = std::make_unique<PointCollection>(*(response.get()));
 	return points;
 }
 
@@ -213,7 +213,7 @@ auto RScriptOperator::getLineCollection(const QueryRectangle &rect,
 
     auto response = runScript(rect, RSERVER_TYPE_LINES, tools);
 
-    return make_unique<LineCollection>(*response);
+    return std::make_unique<LineCollection>(*response);
 }
 
 auto RScriptOperator::getPolygonCollection(const QueryRectangle &rect,
@@ -224,7 +224,7 @@ auto RScriptOperator::getPolygonCollection(const QueryRectangle &rect,
 
 	auto response = runScript(rect, RSERVER_TYPE_POLYGONS, tools);
 
-	return make_unique<PolygonCollection>(*response);
+	return std::make_unique<PolygonCollection>(*response);
 }
 
 auto RScriptOperator::getPlot(const QueryRectangle &rect,

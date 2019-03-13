@@ -469,7 +469,7 @@ std::unique_ptr<ByteBuffer> LocalRasterDBBackend::readTile(const TileDescription
 	if (f < 0)
 		throw SourceException("Could not open data file");
 
-	auto buffer = make_unique<ByteBuffer>(tiledesc.size);
+	auto buffer = std::make_unique<ByteBuffer>(tiledesc.size);
 	if (lseek(f, (off_t) tiledesc.offset, SEEK_SET) != (off_t) tiledesc.offset) {
 		close(f);
 		throw SourceException("seek failed");
@@ -490,7 +490,7 @@ std::unique_ptr<ByteBuffer> LocalRasterDBBackend::readTile(const TileDescription
 		throw SourceException("seek failed");
 	}
 
-	auto buffer = make_unique<ByteBuffer>(tiledesc.size);
+	auto buffer = std::make_unique<ByteBuffer>(tiledesc.size);
 	if (fread(buffer->data, sizeof(unsigned char), tiledesc.size, f) != tiledesc.size) {
 		fclose(f);
 		throw SourceException("read failed");

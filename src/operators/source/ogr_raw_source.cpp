@@ -69,7 +69,7 @@ OGRRawSourceOperator::OGRRawSourceOperator(int sourcecounts[], GenericOperator *
 	assumeSources(0);
 	std::string local_id = "data.ogr_raw_source.";
 	local_id.append(params.get("filename", "").asString()); //todo: does this need the layer_name added?
-	ogrUtil = make_unique<OGRSourceUtil>(params, std::move(local_id));
+	ogrUtil = std::make_unique<OGRSourceUtil>(params, std::move(local_id));
 }
 
 REGISTER_OPERATOR(OGRRawSourceOperator, "ogr_raw_source");

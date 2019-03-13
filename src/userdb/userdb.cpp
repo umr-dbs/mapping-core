@@ -5,7 +5,6 @@
 #include "util/exceptions.h"
 #include "util/configuration.h"
 #include "util/concat.h"
-#include "util/make_unique.h"
 
 #include <time.h>
 #include <unordered_map>
@@ -319,7 +318,7 @@ void UserDB::init(const std::string &backend, const std::string &location, std::
 	if (_clock != nullptr)
 		clock = std::move(_clock);
 	else
-		clock = make_unique<UnixClock>();
+		clock = std::make_unique<UnixClock>();
 
 	sessioncache_timeout = _sessioncache_timeout;
 }

@@ -1,6 +1,5 @@
 #include "uriloader.h"
 #include "util/exceptions.h"
-#include "util/make_unique.h"
 
 #include <fstream>
 #include <string.h>
@@ -21,7 +20,7 @@ std::unique_ptr<std::istream> URILoader::loadFromURI(const std::string &uri) {
 
 	if (scheme == "file") {
 		// load data from file
-		std::unique_ptr<std::ifstream> data = make_unique<std::ifstream>(path);
+		std::unique_ptr<std::ifstream> data = std::make_unique<std::ifstream>(path);
 
 		if (!data->is_open()) {
 			throw OperatorException("URILoader: could not open file");
@@ -80,7 +79,7 @@ std::unique_ptr<std::istream> URILoader::loadFromURI(const std::string &uri) {
 		}
 
 		std::unique_ptr<std::istringstream> iss =
-				make_unique<std::istringstream>(data);
+				std::make_unique<std::istringstream>(data);
 
 		return std::unique_ptr<std::istream>(iss.release());
 

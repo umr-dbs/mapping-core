@@ -16,7 +16,7 @@
 ////////////////////////////////////////////////////////////
 
 IndexCacheManager::CacheInfo::CacheInfo(CacheType type, const std::string& reorg_strategy, const std::string& relevance_function) :
-	cache(make_unique<IndexCache>(type) ),
+	cache(std::make_unique<IndexCache>(type) ),
 	reorg_strategy( ReorgStrategy::by_name(*this->cache, reorg_strategy, relevance_function)){
 }
 

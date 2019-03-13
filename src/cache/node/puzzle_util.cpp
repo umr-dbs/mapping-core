@@ -17,7 +17,6 @@
 #include "datatypes/plot.h"
 #include "operators/provenance.h"
 
-#include "util/make_unique.h"
 #include "util/log.h"
 
 #include <limits>
@@ -366,7 +365,7 @@ std::unique_ptr<T> PuzzleUtil::puzzle_feature_collection(
 		const SpatioTemporalReference& bbox,
 		const std::vector<std::shared_ptr<const T> >& items) {
 	TIME_EXEC("Puzzler.puzzle");
-	auto result = make_unique<T>(bbox);
+	auto result = std::make_unique<T>(bbox);
 
 	T& target = *result;
 	target.global_attributes = items.at(0)->global_attributes;
@@ -529,7 +528,7 @@ std::unique_ptr<T> RemoteRetriever<T>::load(const std::string& semantic_id,
 template<class T>
 std::unique_ptr<T> RemoteRetriever<T>::read_item(
 		BinaryReadBuffer& buffer) const {
-	return make_unique<T>(buffer);
+	return std::make_unique<T>(buffer);
 }
 
 template<>

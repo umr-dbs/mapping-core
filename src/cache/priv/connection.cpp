@@ -17,7 +17,6 @@
 
 #include "util/exceptions.h"
 #include "util/log.h"
-#include "util/make_unique.h"
 #include "util/concat.h"
 
 
@@ -26,7 +25,7 @@
 
 
 std::unique_ptr<BinaryReadBuffer> BlockingConnection::read()  {
-	auto result = make_unique<BinaryReadBuffer>();
+	auto result = std::make_unique<BinaryReadBuffer>();
 	socket.read(*result);
 	return result;
 }
@@ -342,7 +341,7 @@ void ClientConnection::process_command(uint8_t cmd, BinaryReadBuffer& payload) {
 void ClientConnection::send_stats(const SystemStats& stats) {
 	ensure_state(ClientState::AWAIT_STATS);
 	set_state(ClientState::WRITING_STATS);
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(RESP_STATS);
 	buffer->write(stats);
 	begin_write(std::move(buffer));
@@ -351,7 +350,7 @@ void ClientConnection::send_stats(const SystemStats& stats) {
 void ClientConnection::confirm_reset() {
 	ensure_state(ClientState::AWAIT_RESET);
 	set_state(ClientState::WRITING_RST);
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(RESP_RESETTED);
 	begin_write(std::move(buffer));
 }
@@ -374,7 +373,7 @@ void ClientConnection::write_finished() {
 void ClientConnection::send_response(const DeliveryResponse& response) {
 	ensure_state(ClientState::AWAIT_RESPONSE);
 	set_state(ClientState::WRITING_RESPONSE);
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(RESP_OK);
 	buffer->write(response);
 	begin_write(std::move(buffer));
@@ -383,7 +382,7 @@ void ClientConnection::send_response(const DeliveryResponse& response) {
 void ClientConnection::send_error(const std::string& message) {
 	ensure_state(ClientState::AWAIT_RESPONSE);
 	set_state(ClientState::WRITING_RESPONSE);
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(RESP_ERROR);
 	buffer->write(message);
 	begin_write(std::move(buffer));
@@ -468,7 +467,7 @@ void WorkerConnection::write_finished() {
 void WorkerConnection::process_request(uint8_t command, const BaseRequest& request) {
 	ensure_state(WorkerState::IDLE);
 	set_state(WorkerState::SENDING_REQUEST);
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(command);
 	buffer->write(request);
 	begin_write(std::move(buffer));
@@ -483,7 +482,7 @@ void WorkerConnection::entry_cached() {
 void WorkerConnection::send_hit(const CacheRef& cr) {
 	ensure_state(WorkerState::QUERY_REQUESTED);
 	set_state(WorkerState::SENDING_QUERY_RESPONSE);
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(RESP_QUERY_HIT);
 	buffer->write(cr);
 	begin_write(std::move(buffer));
@@ -492,7 +491,7 @@ void WorkerConnection::send_hit(const CacheRef& cr) {
 void WorkerConnection::send_partial_hit(const PuzzleRequest& pr) {
 	ensure_state(WorkerState::QUERY_REQUESTED);
 	set_state(WorkerState::SENDING_QUERY_RESPONSE);
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(RESP_QUERY_PARTIAL);
 	buffer->write(pr);
 	begin_write(std::move(buffer));
@@ -501,7 +500,7 @@ void WorkerConnection::send_partial_hit(const PuzzleRequest& pr) {
 void WorkerConnection::send_miss() {
 	ensure_state(WorkerState::QUERY_REQUESTED);
 	set_state(WorkerState::SENDING_QUERY_RESPONSE);
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(RESP_QUERY_MISS);
 	begin_write(std::move(buffer));
 }
@@ -509,7 +508,7 @@ void WorkerConnection::send_miss() {
 void WorkerConnection::send_delivery_qty(uint32_t qty) {
 	ensure_state(WorkerState::DONE);
 	set_state(WorkerState::SENDING_DELIVERY_QTY);
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(RESP_DELIVERY_QTY);
 	buffer->write(qty);
 	begin_write(std::move(buffer));
@@ -574,7 +573,7 @@ const uint8_t WorkerConnection::RESP_DELIVERY_QTY;
 
 ControlConnection::ControlConnection(BinaryStream &&socket, uint32_t node_id, const std::string &hostname) :
 	BaseConnection(ControlState::SENDING_HELLO, "Control", std::move(socket)), node_id(node_id) {
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(CMD_HELLO);
 	buffer->write(node_id);
 	buffer->write(hostname);
@@ -628,7 +627,7 @@ void ControlConnection::write_finished() {
 void ControlConnection::send_reorg(const ReorgDescription& desc) {
 	ensure_state(ControlState::IDLE);
 	set_state(ControlState::SENDING_REORG);
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(CMD_REORG);
 	buffer->write(desc);
 	begin_write(std::move(buffer));
@@ -642,7 +641,7 @@ void ControlConnection::confirm_move() {
 void ControlConnection::send_get_stats() {
 	ensure_state(ControlState::IDLE);
 	set_state(ControlState::SENDING_STATS_REQUEST);
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(CMD_GET_STATS);
 	begin_write(std::move(buffer));
 }
@@ -760,7 +759,7 @@ void DeliveryConnection::send(std::shared_ptr<const T> item) {
 	ensure_state(DeliveryState::CACHE_REQUEST_READ, DeliveryState::DELIVERY_REQUEST_READ);
 	set_state(DeliveryState::SENDING);
 
-	auto buffer = make_unique<BinaryWriteBufferWithSharedObject<const T>>(item);
+	auto buffer = std::make_unique<BinaryWriteBufferWithSharedObject<const T>>(item);
 	buffer->write(RESP_OK);
 	write_data(*buffer,item);
 	begin_write(std::move(buffer));
@@ -772,7 +771,7 @@ void DeliveryConnection::send_cache_entry(const FetchInfo& info,
 	ensure_state(DeliveryState::CACHE_REQUEST_READ);
 	set_state(DeliveryState::SENDING_CACHE_ENTRY);
 
-	auto buffer = make_unique<BinaryWriteBufferWithSharedObject<const T>>(item);
+	auto buffer = std::make_unique<BinaryWriteBufferWithSharedObject<const T>>(item);
 	buffer->write(RESP_OK);
 	buffer->write(info);
 	write_data(*buffer,item);
@@ -785,7 +784,7 @@ void DeliveryConnection::send_move(const CacheEntry& info,
 
 	ensure_state(DeliveryState::MOVE_REQUEST_READ);
 	set_state(DeliveryState::SENDING_MOVE);
-	auto buffer = make_unique<BinaryWriteBufferWithSharedObject<const T>>(item);
+	auto buffer = std::make_unique<BinaryWriteBufferWithSharedObject<const T>>(item);
 	buffer->write(RESP_OK);
 	buffer->write(info);
 	write_data(*buffer,item);
@@ -800,7 +799,7 @@ void DeliveryConnection::send_error(const std::string& msg) {
 
 	set_state(DeliveryState::SENDING_ERROR);
 
-	auto buffer = make_unique<BinaryWriteBuffer>();
+	auto buffer = std::make_unique<BinaryWriteBuffer>();
 	buffer->write(RESP_ERROR);
 	buffer->write(msg);
 	begin_write(std::move(buffer));
@@ -861,7 +860,7 @@ std::unique_ptr<NBClientDeliveryConnection> NBClientDeliveryConnection::create(
 	req << DeliveryConnection::CMD_GET << dr.delivery_id;
 	skt.write(req);
 	skt.makeNonBlocking();
-	return make_unique<NBClientDeliveryConnection>(std::move(skt));
+	return std::make_unique<NBClientDeliveryConnection>(std::move(skt));
 }
 
 NBClientDeliveryConnection::NBClientDeliveryConnection(BinaryStream&& stream) : BaseConnection(ClientDeliveryState::REQUEST_SENT, "NBClient",std::move(stream)), _read(0) {
@@ -988,7 +987,7 @@ ConnectionPool& MultiConnectionPool::get_pool(const std::string& host,
 	std::lock_guard<std::mutex> g(mtx);
 	auto i = pool_map.find(key);
 	if ( i == pool_map.end() ) {
-		auto ires = pool_map.emplace(key,make_unique<ConnectionPool>(host,port,magic_number));
+		auto ires = pool_map.emplace(key,std::make_unique<ConnectionPool>(host,port,magic_number));
 		return *ires.first->second;
 	}
 	else

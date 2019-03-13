@@ -1,7 +1,6 @@
 #include "rasterdb/converters/converter.h"
 
 #include <memory>
-#include "util/make_unique.h"
 #include <bzlib.h>
 #include <zlib.h>
 
@@ -42,7 +41,7 @@ std::unique_ptr<ByteBuffer> RawConverter::encode(GenericRaster *raster) {
 	auto copy = new char[size];
 	memcpy(copy, raster->getData(), size);
 
-	return make_unique<ByteBuffer>(copy, size);
+	return std::make_unique<ByteBuffer>(copy, size);
 }
 
 std::unique_ptr<GenericRaster> RawConverter::decode(ByteBuffer &buffer, const DataDescription &datadescription, const SpatioTemporalReference &stref, uint32_t width, uint32_t height, uint32_t depth) {
@@ -87,7 +86,7 @@ std::unique_ptr<ByteBuffer> BzipConverter::encode(GenericRaster *raster) {
 		throw ConverterException("Error on BZ2 compress");
 	}
 
-	return make_unique<ByteBuffer>(compressed, compressed_size);
+	return std::make_unique<ByteBuffer>(compressed, compressed_size);
 }
 
 std::unique_ptr<GenericRaster> BzipConverter::decode(ByteBuffer &buffer, const DataDescription &datadescription, const SpatioTemporalReference &stref, uint32_t width, uint32_t height, uint32_t depth) {
@@ -159,7 +158,7 @@ std::unique_ptr<ByteBuffer> GzipConverter::encode(GenericRaster *raster) {
 	unsigned int real_size = compressed_size - stream.avail_out;
 	deflateEnd(&stream);
 
-	return make_unique<ByteBuffer>(compressed.release(), real_size);
+	return std::make_unique<ByteBuffer>(compressed.release(), real_size);
 }
 
 std::unique_ptr<GenericRaster> GzipConverter::decode(ByteBuffer &buffer, const DataDescription &datadescription, const SpatioTemporalReference &stref, uint32_t width, uint32_t height, uint32_t depth) {

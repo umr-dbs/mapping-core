@@ -623,12 +623,12 @@ TEST(LineCollection, removeLastFeature){
 }
 
 TEST(LineCollection, removeLastFeatureEmptyCollection){
-	auto lines = make_unique<LineCollection>(SpatioTemporalReference::unreferenced());
+	auto lines = std::make_unique<LineCollection>(SpatioTemporalReference::unreferenced());
 
 	lines->removeLastFeature();
 	lines->validate();
 
-	auto result = make_unique<LineCollection>(SpatioTemporalReference::unreferenced());
+	auto result = std::make_unique<LineCollection>(SpatioTemporalReference::unreferenced());
 
 	CollectionTestUtil::checkEquality(*result, *lines);
 }

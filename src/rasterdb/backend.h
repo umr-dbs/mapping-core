@@ -3,7 +3,6 @@
 
 #include "datatypes/attributes.h"
 #include "rasterdb/converters/converter.h"
-#include "util/make_unique.h"
 #include "util/configuration.h"
 
 #include <stdint.h>
@@ -80,7 +79,7 @@ class RasterDBBackendRegistration {
 		RasterDBBackendRegistration(const char *name, std::unique_ptr<RasterDBBackend> (*constructor)(const std::string &, const ConfigurationTable& params));
 };
 
-#define REGISTER_RASTERDB_BACKEND(classname, name) static std::unique_ptr<RasterDBBackend> create##classname(const std::string &location, const ConfigurationTable& params) { return make_unique<classname>(location, params); } static RasterDBBackendRegistration register_##classname(name, create##classname)
+#define REGISTER_RASTERDB_BACKEND(classname, name) static std::unique_ptr<RasterDBBackend> create##classname(const std::string &location, const ConfigurationTable& params) { return std::make_unique<classname>(location, params); } static RasterDBBackendRegistration register_##classname(name, create##classname)
 
 
 #endif

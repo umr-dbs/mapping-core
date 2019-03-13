@@ -47,7 +47,7 @@ std::unique_ptr<PendingQuery> EMKDEQueryManager::create_job(
 
 	double fsum = update_bins(hv);
 	update_bounds(fsum);
-	return make_unique<SimpleJob>(req, node);
+	return std::make_unique<SimpleJob>(req, node);
 }
 
 double EMKDEQueryManager::update_bins(uint32_t hv) {

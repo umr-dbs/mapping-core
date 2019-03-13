@@ -23,9 +23,9 @@ std::unique_ptr<LocalRelevanceFunction> LocalRelevanceFunction::by_name(
 	std::transform(name.cbegin(),name.cend(),lc.begin(),::tolower);
 
 	if ( lc == "lru" )
-		return make_unique<LocalLRU>();
+		return std::make_unique<LocalLRU>();
 	else if ( lc == "costlru" )
-		return make_unique<LocalCostLRU>();
+		return std::make_unique<LocalCostLRU>();
 	throw ArgumentException(concat("Unknown replacement: ", name));
 
 }

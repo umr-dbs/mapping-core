@@ -15,7 +15,6 @@
 #include "datatypes/plot.h"
 
 #include "util/sizeutil.h"
-#include "util/make_unique.h"
 #include "util/gdal.h"
 
 #include <chrono>
@@ -296,13 +295,13 @@ LocalTestSetup::LocalTestSetup(
 		const IndexConfig &icfg) :
 
 		ccm("127.0.0.1", icfg.port), idx_server(
-				make_unique<TestIdxServer>(icfg)) {
+				std::make_unique<TestIdxServer>(icfg)) {
 
 	uint nport = cfg.delivery_port;
 	for (int i = 1; i <= num_nodes; i++) {
 		NodeConfig ncfg(cfg);
 		ncfg.delivery_port = nport++;
-		nodes.push_back( make_unique<TestNodeServer>(ncfg) );
+		nodes.push_back( std::make_unique<TestNodeServer>(ncfg) );
 	}
 
 	for (auto &n : nodes)
@@ -310,12 +309,12 @@ LocalTestSetup::LocalTestSetup(
 	CacheManager::init(&mgr);
 
 	threads.push_back(
-			make_unique<std::thread>(&IndexServer::run, idx_server.get()));
+			std::make_unique<std::thread>(&IndexServer::run, idx_server.get()));
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
 	for (auto &n : nodes)
 		threads.push_back(
-				make_unique<std::thread>(TestNodeServer::run_node_thread,
+				std::make_unique<std::thread>(TestNodeServer::run_node_thread,
 						n.get()));
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
@@ -420,7 +419,7 @@ void ParallelExecutor::execute() {
 		std::lock_guard<std::mutex> lock(mtx);
 		for (int i = 0; i < num_threads; i++) {
 			threads.push_back(
-					make_unique<std::thread>(&ParallelExecutor::thread_exec,
+					std::make_unique<std::thread>(&ParallelExecutor::thread_exec,
 							this));
 		}
 	}

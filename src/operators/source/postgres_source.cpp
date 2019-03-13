@@ -1,6 +1,5 @@
 #include "operators/operator.h"
 #include "util/exceptions.h"
-#include "util/make_unique.h"
 #include "util/configuration.h"
 
 #include <pqxx/pqxx>
@@ -45,7 +44,7 @@ PostgresSourceOperator::PostgresSourceOperator(int sourcecounts[], GenericOperat
 	querystring = params.get("query", "x, y FROM locations").asString();
 
 #ifndef MAPPING_OPERATOR_STUBS
-	connection = make_unique<pqxx::connection>(connectionstring);
+	connection = std::make_unique<pqxx::connection>(connectionstring);
 #endif
 }
 
@@ -69,7 +68,7 @@ std::unique_ptr<PointCollection> PostgresSourceOperator::getPointCollection(cons
 	pqxx::work transaction(*connection, "load_points");
 	pqxx::result points = transaction.exec(sql.str());
 
-	auto points_out = make_unique<PointCollection>(rect);
+	auto points_out = std::make_unique<PointCollection>(rect);
 
 	auto column_count = points.columns();
 	for (pqxx::result::size_type c = 2;c<column_count;c++) {

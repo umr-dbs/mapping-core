@@ -8,7 +8,6 @@
 #include "cache/node/delivery.h"
 #include "cache/common.h"
 #include "cache/manager.h"
-#include "util/make_unique.h"
 #include "util/log.h"
 
 #include <sys/select.h>
@@ -87,7 +86,7 @@ void DeliveryManager::remove_expired_deliveries() {
 }
 
 std::unique_ptr<std::thread> DeliveryManager::run_async() {
-	return make_unique<std::thread>(&DeliveryManager::run, this);
+	return std::make_unique<std::thread>(&DeliveryManager::run, this);
 }
 
 void DeliveryManager::stop() {
@@ -182,7 +181,7 @@ void DeliveryManager::run() {
 					Log::error("Accept failed: %d", strerror(errno));
 				else if (new_fd > 0) {
 					Log::debug("New connection established, fd: %d", new_fd);
-					new_cons.push_back( make_unique<NewNBConnection>(&remote_addr,new_fd) );
+					new_cons.push_back( std::make_unique<NewNBConnection>(&remote_addr,new_fd) );
 				}
 			}
 			remove_expired_deliveries();
@@ -202,7 +201,7 @@ void DeliveryManager::process_handshake(
 				auto &data = nc.get_data();
 				uint32_t magic = data.read<uint32_t>();
 				if (magic == DeliveryConnection::MAGIC_NUMBER) {
-					std::unique_ptr<DeliveryConnection> dc = make_unique<DeliveryConnection>(nc.release_socket());
+					std::unique_ptr<DeliveryConnection> dc = std::make_unique<DeliveryConnection>(nc.release_socket());
 					Log::debug("New delivery-connection createdm, id: %d", dc->id);
 					connections.push_back(std::move(dc));
 				}

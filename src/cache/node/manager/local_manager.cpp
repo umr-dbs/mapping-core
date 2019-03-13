@@ -20,7 +20,7 @@
 
 template<class T>
 LocalCacheWrapper<T>::LocalCacheWrapper(LocalCacheManager &mgr, const std::string &repl, size_t size, CacheType type ) :
-	NodeCacheWrapper<T>(mgr, size, type ), mgr(mgr), replacement(make_unique<LocalReplacement<T>>( LocalRelevanceFunction::by_name(repl))) {
+	NodeCacheWrapper<T>(mgr, size, type ), mgr(mgr), replacement(std::make_unique<LocalReplacement<T>>( LocalRelevanceFunction::by_name(repl))) {
 }
 
 template<class T>
@@ -143,12 +143,12 @@ LocalCacheManager::LocalCacheManager(const std::string &strategy, const std::str
 		size_t line_cache_size, size_t polygon_cache_size,
 		size_t plot_cache_size, size_t provenance_cache_size ) :
 				NodeCacheManager( strategy,
-						make_unique<LocalCacheWrapper<GenericRaster>>(*this, replacement, raster_cache_size, CacheType::RASTER),
-						make_unique<LocalCacheWrapper<PointCollection>>(*this, replacement,point_cache_size, CacheType::POINT),
-						make_unique<LocalCacheWrapper<LineCollection>>(*this, replacement,line_cache_size, CacheType::LINE),
-						make_unique<LocalCacheWrapper<PolygonCollection>>(*this, replacement,polygon_cache_size, CacheType::POLYGON),
-						make_unique<LocalCacheWrapper<GenericPlot>>(*this, replacement,plot_cache_size, CacheType::PLOT),
-						make_unique<LocalCacheWrapper<ProvenanceCollection>>(*this, replacement,provenance_cache_size, CacheType::UNKNOWN)) {
+						std::make_unique<LocalCacheWrapper<GenericRaster>>(*this, replacement, raster_cache_size, CacheType::RASTER),
+						std::make_unique<LocalCacheWrapper<PointCollection>>(*this, replacement,point_cache_size, CacheType::POINT),
+						std::make_unique<LocalCacheWrapper<LineCollection>>(*this, replacement,line_cache_size, CacheType::LINE),
+						std::make_unique<LocalCacheWrapper<PolygonCollection>>(*this, replacement,polygon_cache_size, CacheType::POLYGON),
+						std::make_unique<LocalCacheWrapper<GenericPlot>>(*this, replacement,plot_cache_size, CacheType::PLOT),
+						std::make_unique<LocalCacheWrapper<ProvenanceCollection>>(*this, replacement,provenance_cache_size, CacheType::UNKNOWN)) {
 }
 
 template class LocalCacheWrapper<GenericRaster>;

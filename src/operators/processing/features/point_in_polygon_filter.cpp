@@ -3,7 +3,6 @@
 #include "operators/operator.h"
 #include "datatypes/pointcollection.h"
 #include "datatypes/polygoncollection.h"
-#include "util/make_unique.h"
 
 #include <string>
 #include <sstream>
@@ -79,7 +78,7 @@ std::unique_ptr<PointCollection> PointInPolygonFilterOperator::getPointCollectio
 
 std::unique_ptr<PointCollection> PointInPolygonFilterOperator::filterWithTime(const QueryRectangle &rect, PointCollection& points, PolygonCollection& multiPolygons) {
 	//initialize new point collection
-	auto points_out = make_unique<PointCollection>(rect);
+	auto points_out = std::make_unique<PointCollection>(rect);
 	points_out->addGlobalAttributesFromCollection(points);
 	points_out->addFeatureAttributesFromCollection(points);
 

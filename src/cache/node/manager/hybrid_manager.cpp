@@ -155,17 +155,17 @@ HybridCacheManager::HybridCacheManager(const std::string &strategy,
 		size_t line_cache_size, size_t polygon_cache_size,
 		size_t plot_cache_size, size_t provenance_cache_size) :
 		NodeCacheManager(strategy,
-				make_unique<HybridCacheWrapper<GenericRaster>>(*this,
+				std::make_unique<HybridCacheWrapper<GenericRaster>>(*this,
 						raster_cache_size, CacheType::RASTER),
-				make_unique<HybridCacheWrapper<PointCollection>>(*this,
+				std::make_unique<HybridCacheWrapper<PointCollection>>(*this,
 						point_cache_size, CacheType::POINT),
-				make_unique<HybridCacheWrapper<LineCollection>>(*this,
+				std::make_unique<HybridCacheWrapper<LineCollection>>(*this,
 						line_cache_size, CacheType::LINE),
-				make_unique<HybridCacheWrapper<PolygonCollection>>(*this,
+				std::make_unique<HybridCacheWrapper<PolygonCollection>>(*this,
 						polygon_cache_size, CacheType::POLYGON),
-				make_unique<HybridCacheWrapper<GenericPlot>>(*this,
+				std::make_unique<HybridCacheWrapper<GenericPlot>>(*this,
 						plot_cache_size, CacheType::PLOT),
-				make_unique<HybridCacheWrapper<ProvenanceCollection>>(*this,
+				std::make_unique<HybridCacheWrapper<ProvenanceCollection>>(*this,
 						provenance_cache_size, CacheType::UNKNOWN)) {
 }
 

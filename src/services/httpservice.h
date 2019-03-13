@@ -1,7 +1,6 @@
 #ifndef SERVICES_HTTPSERVICES_H
 #define SERVICES_HTTPSERVICES_H
 
-#include "util/make_unique.h"
 #include "util/parameters.h"
 #include "processing/queryprocessor.h"
 #include "userdb/userdb.h"
@@ -120,7 +119,7 @@ class HTTPServiceRegistration {
 		HTTPServiceRegistration(const char *name, std::unique_ptr<HTTPService> (*constructor)(const Parameters &params, HTTPService::HTTPResponseStream &response, std::ostream &error));
 };
 
-#define REGISTER_HTTP_SERVICE(classname, name) static std::unique_ptr<HTTPService> create##classname(const Parameters &params, HTTPService::HTTPResponseStream &response, std::ostream &error) { return make_unique<classname>(params, response, error); } static HTTPServiceRegistration register_##classname(name, create##classname)
+#define REGISTER_HTTP_SERVICE(classname, name) static std::unique_ptr<HTTPService> create##classname(const Parameters &params, HTTPService::HTTPResponseStream &response, std::ostream &error) { return std::make_unique<classname>(params, response, error); } static HTTPServiceRegistration register_##classname(name, create##classname)
 
 
 #endif
