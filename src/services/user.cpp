@@ -144,7 +144,7 @@ void UserService::run() {
 								band["index"].asInt(),
 								"&ext=%%%MINX%%%%20%%%MINY%%%%20%%%MAXX%%%%20%%%MAXY%%%",
 								"&width=%%%WIDTH%%%&height=%%%HEIGHT%%%"
-								"&JWS=%%%JWT%%%");
+								"&JWS=%%%JWT%%%&clipped");
 
                         user.addPermission(concat("data.gdal_source.", channel["file_name"].asString()));
 
