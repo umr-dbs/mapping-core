@@ -102,10 +102,13 @@ void UserService::run() {
 			try {
 				std::string jwt = user.loadArtifact(user.getUsername(), "jwt", "token")->getLatestArtifactVersion()->getValue();
 
+                std::string rasterDBUrl = Configuration::get<std::string>("natur40.rasterdb_url", "");
+
 				cURL curl;
 				std::stringstream data;
 				curl.setOpt(CURLOPT_PROXY, Configuration::get<std::string>("proxy", "").c_str());
-				curl.setOpt(CURLOPT_URL, concat("http://137.248.186.133:62134/rasterdbs.json?bands&code&JWS=", jwt).c_str());
+
+                curl.setOpt(CURLOPT_URL, concat(rasterDBUrl, "/rasterdbs.json?bands&code&JWS=", jwt).c_str());
 				curl.setOpt(CURLOPT_WRITEFUNCTION, cURL::defaultWriteFunction);
 				curl.setOpt(CURLOPT_WRITEDATA, &data);
 				curl.perform();
@@ -138,7 +141,7 @@ void UserService::run() {
 						channel["name"] = band["title"];
 						channel["datatype"] = band["datatype"];
 
-						channel["file_name"] = concat("http://137.248.186.133:62134/rasterdb/",
+						channel["file_name"] = concat(rasterDBUrl, "/rasterdb/",
 								sourceName,
 								"/raster.tiff?band=",
 								band["index"].asInt(),
