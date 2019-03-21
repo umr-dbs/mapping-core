@@ -119,6 +119,18 @@ void UserService::run() {
 					throw std::runtime_error("Could not parse rasters from Natur40 rasterdb");
 
 				for (auto &raster : rasters["rasterdbs"]) {
+					bool vatTag = false;
+					for (auto &tag : raster["tags"]) {
+						if (tag.asString() == "vat") {
+							vatTag = true;
+							break;
+						}
+					}
+
+					if (!vatTag) {
+						continue;
+					}
+
 					Json::Value source (Json::objectValue);
 
 					std::string sourceName = raster["name"].asString();
@@ -153,12 +165,26 @@ void UserService::run() {
 
 						channel["channel"] = 1;
 
+						Json::Value unit(Json::objectValue);
+						unit["unit"] = "unknown";
+						unit["interpolation"] = "continuous";
+						unit["measurement"] = "unknown";
+						unit["min"] = band["vis_min"];
+						unit["max"] = band["vis_max"];
+
+						channel["unit"] = unit;
+
 						channels.append(channel);
 					}
 
 					source["channels"] = channels;
 
                     source["operator"] = "gdal_ext_source";
+
+                    Json::Value tags(Json::arrayValue);
+                    tags.append("natur40");
+
+                    source["tags"] = tags;
 
 					v[sourceName] = source;
 				}
