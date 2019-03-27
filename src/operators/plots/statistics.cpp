@@ -79,8 +79,11 @@ std::unique_ptr<GenericPlot> StatisticsOperator::getPlot(const QueryRectangle &r
 		double max = -std::numeric_limits<double>::max();
 		for (int x = 0; x < raster->width; ++x) {
 			for (int y = 0; y < raster->height; ++y) {
-				min = std::min(min, raster->getAsDouble(x, y));
-				max = std::max(min, raster->getAsDouble(x, y));
+				double value = raster->getAsDouble(x, y);
+				if (!raster->dd.is_no_data(value)) {
+					min = std::min(min, value);
+					max = std::max(min, value);
+				}
 			}
 		}
 
