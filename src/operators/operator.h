@@ -5,6 +5,7 @@
 #include "operators/provenance.h"
 #include "operators/queryrectangle.h"
 #include "operators/querytools.h"
+#include "datatypes/raster_time_series.h"
 
 #include <ctime>
 #include <string>
@@ -34,6 +35,7 @@ class GenericOperator {
 	friend class PuzzleUtil;
 	friend class GraphReorgStrategy;
 	friend class QuerySpec;
+	friend class rts::Descriptor;
 	public:
 		/*
 		 * Restricts the spatial extent and resolution of a raster returned from an operator.
@@ -60,7 +62,7 @@ class GenericOperator {
 			SINGLE_ELEMENT_FEATURES
 		};
 
-		static const int MAX_INPUT_TYPES = 4;
+		static const int MAX_INPUT_TYPES = 5;
 		static const int MAX_SOURCES = 20;
 		static std::unique_ptr<GenericOperator> fromJSON(const std::string &json, int depth = 0);
 		static std::unique_ptr<GenericOperator> fromJSON(Json::Value &json, int depth = 0);
@@ -71,6 +73,8 @@ class GenericOperator {
 		std::unique_ptr<PointCollection> getCachedPointCollection(const QueryRectangle &rect, const QueryTools &tools, FeatureCollectionQM query_mode = FeatureCollectionQM::ANY_FEATURE);
 		std::unique_ptr<LineCollection> getCachedLineCollection(const QueryRectangle &rect, const QueryTools &tools, FeatureCollectionQM query_mode = FeatureCollectionQM::ANY_FEATURE);
 		std::unique_ptr<PolygonCollection> getCachedPolygonCollection(const QueryRectangle &rect, const QueryTools &tools, FeatureCollectionQM query_mode = FeatureCollectionQM::ANY_FEATURE);
+		std::unique_ptr<rts::RasterTimeSeries> getCachedRasterTimeSeries(const QueryRectangle &rect, const QueryTools &tools, rts::ProcessingOrder processingOrder, RasterQM query_mode = RasterQM::LOOSE);
+	    std::unique_ptr<rts::RasterTimeSeries> getCachedRasterTimeSeries(const QueryRectangle &rect, const QueryTools &tools, RasterQM query_mode = RasterQM::LOOSE);
 		std::unique_ptr<GenericPlot> getCachedPlot(const QueryRectangle &rect, const QueryTools &tools);
 
 		std::unique_ptr<ProvenanceCollection> getFullProvenance();
@@ -90,16 +94,20 @@ class GenericOperator {
 		int getPointCollectionSourceCount() { return sourcecounts[1]; }
 		int getLineCollectionSourceCount() { return sourcecounts[2]; }
 		int getPolygonCollectionSourceCount() { return sourcecounts[3]; }
+		int getRasterTimeSeriesSourceCount() { return sourcecounts[4]; }
 		virtual std::unique_ptr<GenericRaster> getRaster(const QueryRectangle &rect, const QueryTools &tools);
 		virtual std::unique_ptr<PointCollection> getPointCollection(const QueryRectangle &rect, const QueryTools &tools);
-		virtual std::unique_ptr<LineCollection> getLineCollection(const QueryRectangle &rect, const QueryTools &tools);
-		virtual std::unique_ptr<PolygonCollection> getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools);
-		virtual std::unique_ptr<GenericPlot> getPlot(const QueryRectangle &rect, const QueryTools &tools);
+        virtual std::unique_ptr<LineCollection> getLineCollection(const QueryRectangle &rect, const QueryTools &tools);
+        virtual std::unique_ptr<PolygonCollection> getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools);
+        virtual std::unique_ptr<rts::RasterTimeSeries> getRasterTimeSeries(const QueryRectangle &rect, const QueryTools &tools);
+        virtual std::unique_ptr<rts::RasterTimeSeries> getRasterTimeSeries(const QueryRectangle &rect, const QueryTools &tools, rts::ProcessingOrder processingOrder);
+        virtual std::unique_ptr<GenericPlot> getPlot(const QueryRectangle &rect, const QueryTools &tools);
 
 		std::unique_ptr<GenericRaster> getRasterFromSource(int idx, const QueryRectangle &rect, const QueryTools &tools, RasterQM query_mode = RasterQM::LOOSE);
 		std::unique_ptr<PointCollection> getPointCollectionFromSource(int idx, const QueryRectangle &rect, const QueryTools &tools, FeatureCollectionQM query_mode = FeatureCollectionQM::ANY_FEATURE);
 		std::unique_ptr<LineCollection> getLineCollectionFromSource(int idx, const QueryRectangle &rect, const QueryTools &tools, FeatureCollectionQM query_mode = FeatureCollectionQM::ANY_FEATURE);
 		std::unique_ptr<PolygonCollection> getPolygonCollectionFromSource(int idx, const QueryRectangle &rect, const QueryTools &tools, FeatureCollectionQM query_mode = FeatureCollectionQM::ANY_FEATURE);
+		std::unique_ptr<rts::RasterTimeSeries> getRasterTimeSeriesFromSource(int idx, const QueryRectangle &rect, const QueryTools &tools, rts::ProcessingOrder processingOrder, RasterQM query_mode = RasterQM::LOOSE);
 		// there is no getPlotFromSource, because plots are by definition the final step of a chain
 
 	private:

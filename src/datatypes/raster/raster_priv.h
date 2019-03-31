@@ -18,6 +18,15 @@ template<typename T, int dimensions> class Raster : public GenericRaster {
 
 		virtual const void *getData() { setRepresentation(GenericRaster::Representation::CPU); return (void *) data; };
 		virtual void *getDataForWriting() { setRepresentation(GenericRaster::Representation::CPU); return (void *) data; };
+		void *getDataForWritingOffset(int offsetX, int offsetY) override {
+			if(offsetX >= width || offsetY >= height)
+				throw ArgumentException("Requested offset to data pointer exceeds the resolution of the raster.");
+
+			T* offset_ptr = data;
+			offset_ptr += offsetY * width * sizeof(T);
+			offset_ptr += offsetX * sizeof(T);
+			return (void*)(offset_ptr);
+		};
 
 		virtual cl::Buffer *getCLBuffer() { return clbuffer; };
 		virtual cl::Buffer *getCLInfoBuffer() { return clbuffer_info; };

@@ -38,15 +38,17 @@ class QueryProcessor {
 				std::unique_ptr<LineCollection> getLineCollection(GenericOperator::FeatureCollectionQM querymode = GenericOperator::FeatureCollectionQM::ANY_FEATURE);
 				std::unique_ptr<PolygonCollection> getPolygonCollection(GenericOperator::FeatureCollectionQM querymode = GenericOperator::FeatureCollectionQM::ANY_FEATURE);
 				std::unique_ptr<SimpleFeatureCollection> getAnyFeatureCollection(GenericOperator::FeatureCollectionQM querymode = GenericOperator::FeatureCollectionQM::ANY_FEATURE);
+				std::unique_ptr<rts::RasterTimeSeries> getRasterTimeSeries(GenericOperator::RasterQM querymode = GenericOperator::RasterQM::LOOSE);
 				std::string getPlot();
 				ProvenanceCollection& getProvenance();
 				bool isError();
 				boost::optional<MappingException> getErrorException();
 
-			static std::unique_ptr<QueryResult> raster(std::unique_ptr<GenericRaster> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
+				static std::unique_ptr<QueryResult> raster(std::unique_ptr<GenericRaster> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
 				static std::unique_ptr<QueryResult> points(std::unique_ptr<PointCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
 				static std::unique_ptr<QueryResult> lines(std::unique_ptr<LineCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
 				static std::unique_ptr<QueryResult> polygons(std::unique_ptr<PolygonCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
+				static std::unique_ptr<QueryResult> rasterTimeSeries(std::unique_ptr<rts::RasterTimeSeries> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
 				static std::unique_ptr<QueryResult> plot(const std::string &plot, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance);
 				static std::unique_ptr<QueryResult> error(const MappingException &exception, const QueryRectangle &qrect);
 			private:

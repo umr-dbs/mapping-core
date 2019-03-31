@@ -7,7 +7,7 @@
 #include "datatypes/colorizer.h"
 #include "util/configuration.h"
 #include "util/log.h"
-
+#include "datatypes/raster_time_series.h"
 
 /**
  * Implementation of the OGC WMS standard http://www.opengeospatial.org/standards/wms
@@ -70,10 +70,19 @@ void WMSService::run() {
 				QueryResolution::pixels(output_width, output_height)
 			);
 
+			std::unique_ptr<GenericRaster> result_raster;
 
-			Query query(params.get("layers"), Query::ResultType::RASTER, qrect);
-			auto result_raster = processQuery(query, user)
-				->getRaster(GenericOperator::RasterQM::EXACT);
+			if(params.hasParam("result_type") && params.get("result_type") == "raster_time_series"){
+				Query query(params.get("layers"), Query::ResultType::RASTER_TIME_SERIES, qrect);
+				auto rts = processQuery(query,user)
+						->getRasterTimeSeries(GenericOperator::RasterQM::EXACT);
+				result_raster = rts->getAsRaster();
+			} else {
+				Query query(params.get("layers"), Query::ResultType::RASTER, qrect);
+				result_raster = processQuery(query, user)
+						->getRaster(GenericOperator::RasterQM::EXACT);
+			}
+
 
 			double bbox[4] = {sref.x1, sref.y1, sref.x2, sref.y2};
 			flipx = (bbox[2] > bbox[0]) != (result_raster->pixel_scale_x > 0);

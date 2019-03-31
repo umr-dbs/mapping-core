@@ -30,7 +30,7 @@
 #include <utility>
 
 #include <json/json.h>
-
+#include "datatypes/raster_time_series.h"
 
 // This is a helper template, allowing much of the following functionality to be templated for all feature types
 template<typename T> struct queryFeature {};
@@ -345,6 +345,44 @@ static void runquery(int argc, char *argv[]) {
 		
 		auto raster = graph->getCachedRaster(qrect, QueryTools(profiler), queryMode); 
 		
+		printf("flip: %d %d\n", flipx, flipy);
+		printf("QRect(%f,%f -> %f,%f)\n", qrect.x1, qrect.y1, qrect.x2, qrect.y2);
+		if (flipx || flipy)
+			raster = raster->flip(flipx, flipy);
+
+		if (out_filename) {
+			{
+				//Profiler::Profiler p("TO_GTIFF");
+				raster->toGDAL((std::string(out_filename) + ".tif").c_str(), "GTiff", flipx, flipy);
+			}
+			{
+				//Profiler::Profiler p("TO_PNG");
+				auto colors = Colorizer::greyscale(raster->dd.unit.getMin(), raster->dd.unit.getMax());
+				std::ofstream output(std::string(out_filename) + ".png");
+				raster->toPNG(output, *colors);
+			}
+		}
+		else
+			printf("No output filename given, discarding result of size %d x %d\n", raster->width, raster->height);
+	}
+	else if(result == "raster_time_series"){
+		QueryProfiler profiler;
+
+		std::string queryModeParam = root.get("query_mode", "exact").asString();
+		GenericOperator::RasterQM queryMode;
+
+		if(queryModeParam == "exact")
+			queryMode = GenericOperator::RasterQM::EXACT;
+		else if(queryModeParam == "loose")
+			queryMode = GenericOperator::RasterQM::LOOSE;
+		else {
+			fprintf(stderr, "invalid query mode");
+			exit(5);
+		}
+
+		auto rts = graph->getCachedRasterTimeSeries(qrect, QueryTools(profiler), queryMode);
+		auto raster = rts->getAsRaster();
+
 		printf("flip: %d %d\n", flipx, flipy);
 		printf("QRect(%f,%f -> %f,%f)\n", qrect.x1, qrect.y1, qrect.x2, qrect.y2);
 		if (flipx || flipy)

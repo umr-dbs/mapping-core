@@ -17,6 +17,7 @@
 #include "datatypes/linecollection.h"
 #include "datatypes/pointcollection.h"
 #include "datatypes/polygoncollection.h"
+#include "datatypes/raster_time_series.h"
 
 
 // The magic of type registration, see REGISTER_OPERATOR in operator.h
@@ -105,6 +106,12 @@ void GenericOperator::validateResult(const QueryRectangle &rect, SpatioTemporalR
 
 std::unique_ptr<GenericRaster> GenericOperator::getRaster(const QueryRectangle &, const QueryTools &) {
 	throw OperatorException("getRaster() called on an operator that doesn't return rasters");
+}
+std::unique_ptr<rts::RasterTimeSeries> GenericOperator::getRasterTimeSeries(const QueryRectangle &rect, const QueryTools &tools) {
+	throw OperatorException("getRasterTimeSeries() called on an operator that doesn't return raster iterators.");
+}
+std::unique_ptr<rts::RasterTimeSeries> GenericOperator::getRasterTimeSeries(const QueryRectangle &rect, const QueryTools &tools, rts::ProcessingOrder processingOrder) {
+	throw OperatorException("getRasterTimeSeries() called on an operator that doesn't return raster iterators.");
 }
 std::unique_ptr<PointCollection> GenericOperator::getPointCollection(const QueryRectangle &, const QueryTools &) {
 	throw OperatorException("getPointCollection() called on an operator that doesn't return points");
@@ -303,6 +310,19 @@ std::unique_ptr<GenericPlot> GenericOperator::getCachedPlot(const QueryRectangle
 	return result;
 }
 
+
+std::unique_ptr<rts::RasterTimeSeries> GenericOperator::getCachedRasterTimeSeries(const QueryRectangle &rect, const QueryTools &tools, rts::ProcessingOrder processingOrder, GenericOperator::RasterQM query_mode) {
+	//not caching raster time series as a whole at the moment.
+	//The caching will be done for each processed tile. For consistency this function is kept.
+	return getRasterTimeSeries(rect, tools, processingOrder);
+}
+
+std::unique_ptr<rts::RasterTimeSeries> GenericOperator::getCachedRasterTimeSeries(const QueryRectangle &rect, const QueryTools &tools, GenericOperator::RasterQM query_mode) {
+	//not caching raster time series as a whole at the moment.
+	//The caching will be done for each processed tile. For consistency this function is kept.
+	return getRasterTimeSeries(rect, tools);
+}
+
 void GenericOperator::getRecursiveProvenance(ProvenanceCollection &pc) {
 	for (int i=0;i<MAX_SOURCES;i++) {
 		if (sources[i])
@@ -378,7 +398,14 @@ std::unique_ptr<PolygonCollection> GenericOperator::getPolygonCollectionFromSour
 	auto result = sources[offset]->getCachedPolygonCollection(rect, tools, query_mode);
 	return result;
 }
-
+std::unique_ptr<rts::RasterTimeSeries> GenericOperator::getRasterTimeSeriesFromSource(int idx, const QueryRectangle &rect, const QueryTools &tools, rts::ProcessingOrder processingOrder, GenericOperator::RasterQM query_mode) {
+	if (idx < 0 || idx >= sourcecounts[4])
+		throw OperatorException("getChildRasterTimeSeries() called on invalid index");
+	//QueryProfilerStoppingGuard guard(tools.profiler);
+    int offset = sourcecounts[0] + sourcecounts[1] + sourcecounts[2] + sourcecounts[3] + idx;
+    auto result = sources[offset]->getCachedRasterTimeSeries(rect, tools, processingOrder, query_mode);
+	return result;
+}
 
 // JSON constructor
 static int parseSourcesFromJSON(Json::Value &sourcelist, GenericOperator *sources[GenericOperator::MAX_SOURCES], int &sourcecount, int depth) {
@@ -399,7 +426,7 @@ static int parseSourcesFromJSON(Json::Value &sourcelist, GenericOperator *source
 }
 
 std::unique_ptr<GenericOperator> GenericOperator::fromJSON(Json::Value &json, int depth) {
-	std::string sourcetypes[] = { "raster", "points", "lines", "polygons" };
+	std::string sourcetypes[] = { "raster", "points", "lines", "polygons","raster_time_series" };
 
 	// recursively create all sources
 	Json::Value sourcelist = json["sources"];

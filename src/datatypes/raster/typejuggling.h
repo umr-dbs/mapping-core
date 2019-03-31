@@ -75,6 +75,74 @@ auto callBinaryOperatorFunc(GenericRaster *raster1, GenericRaster *raster2, V...
 	}
 }
 
+template<template<typename T1, typename T2, typename T3> class function, typename Ta, typename Tb, typename... V>
+static auto callTernaryOperatorFunc3(Raster2D<Ta> *raster1, Raster2D<Tb> *raster2, GenericRaster *raster3, V... v)
+-> decltype(function<uint8_t, uint8_t, uint8_t >::execute(nullptr, nullptr, nullptr, v...)) {
+	switch (raster3->dd.datatype) {
+		case GDT_Byte:
+			return function<Ta, Tb, uint8_t>::execute(raster1, raster2, (Raster2D<uint8_t> *) raster3, v...);
+		case GDT_Int16:
+			return function<Ta, Tb, int16_t>::execute(raster1, raster2, (Raster2D<int16_t> *) raster3, v...);
+		case GDT_UInt16:
+			return function<Ta, Tb, uint16_t>::execute(raster1, raster2, (Raster2D<uint16_t> *) raster3, v...);
+		case GDT_Int32:
+			return function<Ta, Tb, int32_t>::execute(raster1, raster2, (Raster2D<int32_t> *) raster3, v...);
+		case GDT_UInt32:
+			return function<Ta, Tb, uint32_t>::execute(raster1, raster2, (Raster2D<uint32_t> *) raster3, v...);
+		case GDT_Float32:
+			return function<Ta, Tb, float>::execute(raster1, raster2, (Raster2D<float> *) raster3, v...);
+		case GDT_Float64:
+			return function<Ta, Tb, double>::execute(raster1, raster2, (Raster2D<double> *) raster3, v...);
+		default:
+			throw std::runtime_error("Cannot call operator with this data type");
+	}
+}
+
+template<template<typename T1, typename T2, typename T3> class function, typename Ta, typename... V>
+static auto callTernaryOperatorFunc2(Raster2D<Ta> *raster1, GenericRaster *raster2, GenericRaster *raster3, V... v)
+-> decltype(function<uint8_t, uint8_t, uint8_t>::execute(nullptr, nullptr, nullptr, v...)) {
+	switch (raster1->dd.datatype) {
+		case GDT_Byte:
+			return callTernaryOperatorFunc3<function, Ta, uint8_t>(raster1, (Raster2D<uint8_t> *) raster2, raster3, v...);
+		case GDT_Int16:
+			return callTernaryOperatorFunc3<function, Ta, int16_t>(raster1, (Raster2D<int16_t> *) raster2, raster3, v...);
+		case GDT_UInt16:
+			return callTernaryOperatorFunc3<function, Ta, uint16_t>(raster1, (Raster2D<uint16_t> *) raster2, raster3, v...);
+		case GDT_Int32:
+			return callTernaryOperatorFunc3<function, Ta, int32_t>(raster1, (Raster2D<int32_t> *) raster2, raster3, v...);
+		case GDT_UInt32:
+			return callTernaryOperatorFunc3<function, Ta, uint32_t>(raster1, (Raster2D<uint32_t> *) raster2, raster3, v...);
+		case GDT_Float32:
+			return callTernaryOperatorFunc3<function, Ta, float>(raster1, (Raster2D<float> *) raster2, raster3, v...);
+		case GDT_Float64:
+			return callTernaryOperatorFunc3<function, Ta, double>(raster1, (Raster2D<double> *) raster2, raster3, v...);
+		default:
+			throw std::runtime_error("Cannot call operator with this data type");
+	}
+}
+
+template<template<typename T1, typename T2, typename T3> class function, typename... V>
+static auto callTernaryOperatorFunc(GenericRaster*raster1, GenericRaster *raster2, GenericRaster *raster3, V... v)
+-> decltype(function<uint8_t, uint8_t, uint8_t>::execute(nullptr, nullptr, nullptr, v...)) {
+	switch (raster1->dd.datatype) {
+		case GDT_Byte:
+			return callTernaryOperatorFunc2<function, uint8_t>((Raster2D<uint8_t> *) raster1, raster2, raster3, v...);
+		case GDT_Int16:
+			return callTernaryOperatorFunc2<function, int16_t>((Raster2D<int16_t> *) raster1, raster2, raster3, v...);
+		case GDT_UInt16:
+			return callTernaryOperatorFunc2<function, uint16_t>((Raster2D<uint16_t> *) raster1, raster2, raster3, v...);
+		case GDT_Int32:
+			return callTernaryOperatorFunc2<function, int32_t>((Raster2D<int32_t> *) raster1, raster2, raster3, v...);
+		case GDT_UInt32:
+			return callTernaryOperatorFunc2<function, uint32_t>((Raster2D<uint32_t> *) raster1, raster2, raster3, v...);
+		case GDT_Float32:
+			return callTernaryOperatorFunc2<function, float>((Raster2D<float> *) raster1, raster2, raster3, v...);
+		case GDT_Float64:
+			return callTernaryOperatorFunc2<function, double>((Raster2D<double> *) raster1, raster2, raster3, v...);
+		default:
+			throw std::runtime_error("Cannot call operator with this data type");
+	}
+}
 
 
 template<typename T> struct RasterTypeInfo {

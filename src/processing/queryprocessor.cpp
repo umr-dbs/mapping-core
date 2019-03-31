@@ -56,6 +56,9 @@ std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::lines(
 std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::polygons(std::unique_ptr<PolygonCollection> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
 	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::POLYGONS, std::move(result), std::move(provenance), "", boost::none, qrect));
 }
+std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::rasterTimeSeries(std::unique_ptr<rts::RasterTimeSeries> result, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
+	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::RASTER_TIME_SERIES, std::move(result), std::move(provenance), "", boost::none, qrect));
+}
 std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::QueryResult::plot(const std::string &plot, const QueryRectangle &qrect, std::unique_ptr<ProvenanceCollection> provenance) {
 	return std::unique_ptr<QueryResult>(new QueryResult(Query::ResultType::PLOT, nullptr, std::move(provenance), plot, boost::none, qrect));
 }
@@ -135,6 +138,17 @@ std::unique_ptr<SimpleFeatureCollection> QueryProcessor::QueryResult::getAnyFeat
 	if (query_mode == GenericOperator::FeatureCollectionQM::SINGLE_ELEMENT_FEATURES && !features->isSimple())
 		throw OperatorException("Operator did not return Features consisting only of single features");
 	return features;
+}
+
+std::unique_ptr<rts::RasterTimeSeries> QueryProcessor::QueryResult::getRasterTimeSeries(GenericOperator::RasterQM query_mode) {
+	if (result_type == Query::ResultType::ERROR)
+		throw result_exception.value();
+	if (result_type != Query::ResultType::RASTER_TIME_SERIES)
+		throw ProcessingException("QueryResult::getRasterTimeSeries(): result is not a raster time series", MappingExceptionType::PERMANENT);
+
+	auto rts = cast_unique_ptr<rts::RasterTimeSeries>(result);
+
+	return rts;
 }
 
 std::string QueryProcessor::QueryResult::getPlot() {
