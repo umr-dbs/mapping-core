@@ -174,6 +174,7 @@ add_library(mapping_core_operators_lib
         raster_time_series/gdal_source_backend.cpp
         operators/raster_time_series/expression.cpp
         raster_time_series/operator_state/operator_state.cpp
+        raster_time_series/operator_state/projection_state.cpp
         raster_time_series/operator_state/source_state.cpp)
 
 target_link_libraries_internal(mapping_core_operators_lib mapping_core_base_lib)
