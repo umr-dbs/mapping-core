@@ -97,7 +97,9 @@ add_library(mapping_core_base_lib
         util/ogr_source_datasets.cpp
         datatypes/raster_time_series.cpp
         datatypes/descriptor.cpp
-        raster_time_series/raster_calculations.cpp)
+        raster_time_series/raster_calculations.cpp
+        raster_time_series/time_step.cpp
+        raster_time_series/expression.cpp)
 
 target_include_directories(mapping_core_base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi mapping_core_base_lib)
@@ -170,6 +172,8 @@ add_library(mapping_core_operators_lib
         operators/raster_time_series/raster_time_series_source.cpp
         raster_time_series/source_backend.cpp
         raster_time_series/gdal_source_backend.cpp
+        operators/raster_time_series/expression.cpp
+        raster_time_series/operator_state/operator_state.cpp
         raster_time_series/operator_state/source_state.cpp)
 
 target_link_libraries_internal(mapping_core_operators_lib mapping_core_base_lib)
