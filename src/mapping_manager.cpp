@@ -381,7 +381,7 @@ static void runquery(int argc, char *argv[]) {
 		}
 
 		auto rts = graph->getCachedRasterTimeSeries(qrect, QueryTools(profiler), queryMode);
-		auto raster = rts->getAsRaster();
+		auto raster = rts->getAsRaster(rts::RasterTimeSeries::MoreThanOneRasterHandling::THROW);
 
 		printf("flip: %d %d\n", flipx, flipy);
 		printf("QRect(%f,%f -> %f,%f)\n", qrect.x1, qrect.y1, qrect.x2, qrect.y2);
