@@ -7,7 +7,7 @@
 #include <memory>
 #include <functional>
 #include <gdal.h>
-#include <boost/optional.hpp>
+#include <optional>
 
 #include "datatypes/raster.h"
 
