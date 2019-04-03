@@ -20,6 +20,9 @@ namespace GDAL {
 			CRSTransformer(const CRSTransformer &copy) = delete;
 			CRSTransformer &operator=(const CRSTransformer &copy) = delete;
 
+			CRSTransformer(CRSTransformer &&other);
+			CRSTransformer &operator=(CRSTransformer &&other) = default;
+
 			bool transform(double &px, double &py, double &pz) const;
 			bool transform(double &px, double &py) const { double pz = 0.0; return transform(px, py, pz); }
 			const CrsId in_crsId;

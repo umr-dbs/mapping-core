@@ -3,6 +3,7 @@
 #include "operators/operator.h"
 #include "datatypes/raster.h"
 #include "util/timeparser.h"
+#include "datatypes/raster_time_series.h"
 
 /**
  * Implementation of the OGC WCS standard http://www.opengeospatial.org/standards/wcs
@@ -131,9 +132,22 @@ void WCSService::run() {
 			QueryResolution::pixels(sizeX, sizeY)
 		);
 
-		Query query(params.get("coverageid"), Query::ResultType::RASTER, query_rect);
-		auto result = processQuery(query, user);
-		auto result_raster = result->getRaster(GenericOperator::RasterQM::EXACT);
+		std::unique_ptr<QueryProcessor::QueryResult> result;
+		std::unique_ptr<GenericRaster> result_raster;
+
+        //expects a parameter "result_type" to be "raster_time_series" if a raster time series is requested.
+        if(params.hasParam("result_type") && params.get("result_type") == "raster_time_series"){
+            Query query(params.get("coverageid"), Query::ResultType::RASTER_TIME_SERIES, query_rect);
+            result = processQuery(query, user);
+            auto rts = result->getRasterTimeSeries(GenericOperator::RasterQM::EXACT);
+            result_raster = rts->getAsRaster();
+
+        } else {
+            Query query(params.get("coverageid"), Query::ResultType::RASTER, query_rect);
+            result = processQuery(query, user);
+            result_raster = result->getRaster(GenericOperator::RasterQM::EXACT);
+        }
+
 
 		// TODO: check permissions
 

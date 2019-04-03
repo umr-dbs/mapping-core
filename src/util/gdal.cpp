@@ -94,6 +94,12 @@ CRSTransformer::CRSTransformer(CrsId in_crsId, CrsId out_crsId) : in_crsId(in_cr
 		throw GDALException("Could not initialize ReprojectionTransformer");
 }
 
+CRSTransformer::CRSTransformer(CRSTransformer &&other)
+		: in_crsId(other.in_crsId), out_crsId(other.out_crsId), transformer(other.transformer)
+{
+	other.transformer = nullptr;
+}
+
 CRSTransformer::~CRSTransformer() {
 	if (transformer) {
 		GDALDestroyReprojectionTransformer(transformer);

@@ -44,6 +44,8 @@ std::unique_ptr<QueryProcessor::QueryResult> LocalQueryProcessor::process(const 
 		else if (q.result == Query::ResultType::PLOT) {
 			auto plot = op->getCachedPlot(q.rectangle, tools);
 			return QueryProcessor::QueryResult::plot(plot->toJSON(), q.rectangle, std::move(provenance));
+		} else if(q.result == Query::ResultType::RASTER_TIME_SERIES){
+			return QueryProcessor::QueryResult::rasterTimeSeries( op->getCachedRasterTimeSeries(q.rectangle, tools), q.rectangle, std::move(provenance) );
 		}
 		else {
 			throw ArgumentException("Unknown query type", MappingExceptionType::PERMANENT);

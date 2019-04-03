@@ -17,6 +17,9 @@ public:
 
 	CrsId(std::string authority, uint32_t code);
 
+	CrsId(const CrsId &copy) = default;
+	CrsId &operator=(const CrsId &copy) = default;
+
 	static CrsId from_epsg_code(uint32_t epsg_code);
 
 	/**

@@ -1,0 +1,32 @@
+{
+    "name": "Load world raster",
+	"query_result": "raster_time_series",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1409875200,
+        "end" : 1412899200
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },
+    "resolution": {
+    	"type": "pixels",
+        "x": 3000,
+        "y": 1400
+    },
+    "query_mode": "exact",
+    "query": {        
+        "params": {            
+            "order" : "Temporal",
+            "backend" : "gdal_source",
+       		"channel": 1,
+            "sourcename": "TestMonth6",
+            "tile_resolution" : [ 900, 900 ]
+        },
+        "type": "raster_time_series_source"
+    }
+}

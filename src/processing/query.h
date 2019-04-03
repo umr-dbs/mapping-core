@@ -7,12 +7,13 @@
 class Query {
 	public:
 		enum class ResultType {
-			RASTER,
-			POINTS,
-			LINES,
-			POLYGONS,
-			PLOT,
-			ERROR
+			RASTER = 0,
+			POINTS = 1,
+			LINES = 2,
+			POLYGONS = 3,
+			RASTER_TIME_SERIES = 4,
+			PLOT = 5,
+			ERROR = 6
 		};
 		Query(const std::string &operatorgraph, ResultType result, const QueryRectangle &rectangle);
 		~Query();

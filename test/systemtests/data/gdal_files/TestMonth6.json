@@ -1,17 +1,42 @@
 {
 	"dataset_name" : "TestMonth6",
-	"path" : "test/systemtests/data/gdal_files/TestMonth6",
+	"path" : "../../test/systemtests/data/gdal_files/TestMonth6",
 	"file_name" : "6Month_%%%TIME_STRING%%%.TIFF",
 	
 	"time_format" : "%Y-%m-%d",
-	"time_start" : "2014-09-05",
-	"time_end" : "2016-09-05",
+	"time_start" : "2014-09-05T00:00:00",
+	"time_end" : "2016-09-05T00:00:00",
 	
 	"time_interval" : {
 		"unit" : "Month",
 		"value" : 6	
 	},
 
+	"coords" : {
+		"crs" : "EPSG:4326"       
+	},
+
+	"channels" : [
+		{
+        	"datatype": "Byte",
+	        "channel" : 1,
+	        "nodata" : 0,
+	        "unit": {
+	          	"interpolation" : "continuous",
+	          	"unit": "reflectance",
+	          	"measurement": "raw",
+	          	"min": 0.0,
+	        	"max": 1.0
+	        }
+        }
+	],
+
 	"channel" : 1,
-	"description" : "test files 1"
+	"description" : "test files 1",
+
+	"provenance" : {
+       "citation" : "",
+       "license" : "",
+       "uri" : ""
+    }
 }
