@@ -94,7 +94,9 @@ add_library(mapping_core_base_lib
         util/parameters.cpp
         datatypes/raster/raster.cpp
         raster/opencl.cpp
-        util/ogr_source_datasets.cpp)
+        util/ogr_source_datasets.cpp
+        util/uploader_util.cpp
+        util/uploader_util.h)
 
 target_include_directories(mapping_core_base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi mapping_core_base_lib)
@@ -119,7 +121,8 @@ add_library(mapping_core_services_lib
         pointvisualization/FindResult.cpp
         pointvisualization/QuadTreeNode.cpp
         pointvisualization/CircleClusteringQuadTree.cpp
-        services/featurecollectiondb.cpp)
+        services/featurecollectiondb.cpp
+        services/ogrimporter.cpp)
 target_link_libraries_internal(mapping_core_services_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_services_lib)
 target_link_libraries_internal(mapping_uploader mapping_core_services_lib)

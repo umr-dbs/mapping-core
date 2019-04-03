@@ -95,7 +95,7 @@ Json::Value OGRSourceOperator::constructParameters(Json::Value &params){
 
     // create new json object from the queries parameters, the dataset definition, and the layer definition:
     Json::Value constructed_params(Json::ValueType::objectValue);
-    constructed_params["filename"]    = dataset_json["filename"];
+    constructed_params["filename"]    = OGRSourceDatasets::getJsonParameter(layer_json, dataset_json, "filename");
     constructed_params["layer_name"]  = params["layer_name"];
 
     constructed_params["time"]        = OGRSourceDatasets::getJsonParameterDefault(layer_json, dataset_json, "time", "none");
@@ -139,7 +139,7 @@ Json::Value OGRSourceOperator::constructParameters(Json::Value &params){
 
     // provenance information
     Json::Value dataset_provenance = dataset_json["provenance"];
-    Json::Value layer_provenance   = dataset_json["provenance"];
+    Json::Value layer_provenance   = layer_json["provenance"];
     Json::Value provenanceInfo;
     if(OGRSourceDatasets::hasJsonParameter(layer_provenance, dataset_provenance, "citation"))
         provenanceInfo["citation"] = OGRSourceDatasets::getJsonParameter(layer_provenance, dataset_provenance, "citation");

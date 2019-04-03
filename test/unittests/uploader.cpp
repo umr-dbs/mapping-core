@@ -23,6 +23,7 @@ protected:
     virtual void TearDown();
     std::string sessiontoken;
     std::string upl_dir;
+    std::string upl_dir_orig;
     std::string userID;
 };
 
@@ -35,6 +36,7 @@ void UploaderTest::SetUp() {
     time_t now = time(nullptr);
     UserDB::init("sqlite", ":memory:", std::make_unique<UserDBTestClock_Uploader>(&now), 0);
 
+    upl_dir_orig = Configuration::get<std::string>("uploader.directory");
     //change upload dir parameter to a test directory
     Configuration::loadFromString("[uploader]\ndirectory=\""+ temp_dir_name + "\"");
     upl_dir = Configuration::get<std::string>("uploader.directory");
@@ -59,6 +61,7 @@ void UploaderTest::TearDown() {
     //delete test upload dir and just in case change back the parameter.
     boost::filesystem::path test_path(upl_dir);
     boost::filesystem::remove_all(test_path);
+    Configuration::loadFromString("[uploader]\ndirectory=\""+ upl_dir_orig + "\"");
     UserDB::shutdown();
 }
 
