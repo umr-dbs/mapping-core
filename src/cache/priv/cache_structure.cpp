@@ -481,7 +481,7 @@ CacheStructure<KType, EType>& Cache<KType, EType>::get_cache(
 	auto got = caches.find(semantic_id);
 	if (got == caches.end() && create) {
 		Log::trace("No cache-structure found for semantic_id: %s. Creating.", semantic_id.c_str() );
-		auto e = caches.emplace(semantic_id, make_unique<CacheStructure<KType,EType>>(semantic_id,query_exact));
+		auto e = caches.emplace(semantic_id, std::make_unique<CacheStructure<KType,EType>>(semantic_id,query_exact));
 		return *e.first->second;
 	}
 	else if (got != caches.end())

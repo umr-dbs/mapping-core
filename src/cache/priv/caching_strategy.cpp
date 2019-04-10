@@ -11,7 +11,6 @@
 #include "datatypes/raster.h"
 
 #include "util/exceptions.h"
-#include "util/make_unique.h"
 #include "util/concat.h"
 
 
@@ -24,13 +23,13 @@
 
 std::unique_ptr<CachingStrategy> CachingStrategy::by_name(const std::string& name) {
 	if ( name == "never")
-		return make_unique<CacheNone>();
+		return std::make_unique<CacheNone>();
 	else if ( name == "always")
-		return make_unique<CacheAll>();
+		return std::make_unique<CacheAll>();
 	else if ( name == "self")
-		return make_unique<SimpleThresholdStrategy>(Type::SELF);
+		return std::make_unique<SimpleThresholdStrategy>(Type::SELF);
 	else if ( name == "uncached")
-			return make_unique<SimpleThresholdStrategy>(Type::UNCACHED);
+			return std::make_unique<SimpleThresholdStrategy>(Type::UNCACHED);
 	throw ArgumentException(concat("Unknown Caching-Strategy: ", name));
 }
 

@@ -1,6 +1,5 @@
 
 #include "timeparser.h"
-#include "util/make_unique.h"
 #include "util/exceptions.h"
 #include "util/enumconverter.h"
 
@@ -119,18 +118,18 @@ private:
 std::unique_ptr<TimeParser> TimeParser::create(const Format timeFormat) {
 	switch (timeFormat){
 	case Format::SECONDS:
-		return make_unique<TimeParserSeconds>();
+		return std::make_unique<TimeParserSeconds>();
 	case Format::DMYHM:
-		return make_unique<TimeParserDMYHM>();
+		return std::make_unique<TimeParserDMYHM>();
 	case Format::ISO:
-		return make_unique<TimeParserISO>();
+		return std::make_unique<TimeParserISO>();
 	}
 
 	throw ArgumentException("Could not create TimeParser for given format");
 }
 
 std::unique_ptr<TimeParser> TimeParser::createCustom(const std::string& customFormat) {
-	return make_unique<TimeParserCustom>(customFormat);
+	return std::make_unique<TimeParserCustom>(customFormat);
 }
 
 std::unique_ptr<TimeParser> TimeParser::createFromJson(const Json::Value& json) {
@@ -140,7 +139,7 @@ std::unique_ptr<TimeParser> TimeParser::createFromJson(const Json::Value& json) 
 		if(!json.isMember("custom_format"))
 			throw ArgumentException("TimeFormat is custom, but no custom format defined.");
 
-		return make_unique<TimeParserCustom>(json.get("custom_format", "").asString());
+		return std::make_unique<TimeParserCustom>(json.get("custom_format", "").asString());
 	} else {
 		return create(format);
 	}

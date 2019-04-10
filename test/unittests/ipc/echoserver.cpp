@@ -1,5 +1,4 @@
 #include "util/server_nonblocking.h"
-#include "util/make_unique.h"
 #include "util/log.h"
 #include "util/concat.h"
 
@@ -52,7 +51,7 @@ EchoServerConnection::~EchoServerConnection() {
 }
 
 void EchoServerConnection::processData(std::unique_ptr<BinaryReadBuffer> request) {
-	auto response = make_unique<BinaryWriteBuffer>();
+	auto response = std::make_unique<BinaryWriteBuffer>();
 	size_t bytes_read = 0, bytes_total = request->getPayloadSize();
 	char buffer[SERVER_BUFFER_SIZE];
 	while (bytes_read < bytes_total) {
@@ -76,7 +75,7 @@ class EchoServer : public NonblockingServer {
 };
 
 std::unique_ptr<NonblockingServer::Connection> EchoServer::createConnection(int fd, int id) {
-	return make_unique<EchoServerConnection>(*this, fd, id);
+	return std::make_unique<EchoServerConnection>(*this, fd, id);
 }
 
 /*
@@ -92,7 +91,7 @@ static void run_server() {
 
 		server_initialization_mutex.lock();
 
-		server = make_unique<EchoServer>();
+		server = std::make_unique<EchoServer>();
 		server->listen(portnr);
 		server->listen(unix_socket_path, 0700);
 

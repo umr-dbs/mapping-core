@@ -1,7 +1,6 @@
 #include "featurecollectiondb/featurecollectiondb.h"
 #include "util/configuration.h"
 #include "util/exceptions.h"
-#include "util/make_unique.h"
 #include "datatypes/simplefeaturecollections/wkbutil.h"
 #include "unittests/simplefeaturecollections/util.h"
 

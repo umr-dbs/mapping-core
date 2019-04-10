@@ -7,7 +7,6 @@
 
 #include "cache/index/indexserver.h"
 #include "cache/index/reorg_strategy.h"
-#include "util/make_unique.h"
 #include "util/concat.h"
 
 #include <memory>
@@ -110,7 +109,7 @@ void IndexServer::run() {
 				}
 				else if (new_fd > 0) {
 					Log::debug("New connection established, fd: %d", new_fd);
-					new_cons.push_back( make_unique<NewNBConnection>(&remote_addr,new_fd) );
+					new_cons.push_back( std::make_unique<NewNBConnection>(&remote_addr,new_fd) );
 				}
 			}
 		}
@@ -200,7 +199,7 @@ void IndexServer::process_handshake(std::vector<std::unique_ptr<NewNBConnection>
 				uint32_t magic = data.read<uint32_t>();
 				switch (magic) {
 					case ClientConnection::MAGIC_NUMBER: {
-						std::unique_ptr<ClientConnection> cc = make_unique<ClientConnection>(nc.release_socket());
+						std::unique_ptr<ClientConnection> cc = std::make_unique<ClientConnection>(nc.release_socket());
 						Log::trace("New client connections established, id: %lu", cc->id);
 						if ( !client_connections.emplace(cc->id, std::move(cc)).second )
 							throw MustNotHappenException("Emplaced same connection-id twice!");
@@ -208,7 +207,7 @@ void IndexServer::process_handshake(std::vector<std::unique_ptr<NewNBConnection>
 					}
 					case WorkerConnection::MAGIC_NUMBER: {
 						uint32_t node_id = data.read<uint32_t>();
-						std::unique_ptr<WorkerConnection> wc = make_unique<WorkerConnection>(nc.release_socket(),node_id);
+						std::unique_ptr<WorkerConnection> wc = std::make_unique<WorkerConnection>(nc.release_socket(),node_id);
 						Log::info("New worker registered for node: %d, id: %d", node_id, wc->id);
 						nodes.at(node_id)->add_worker(std::move(wc));
 						break;
@@ -217,7 +216,7 @@ void IndexServer::process_handshake(std::vector<std::unique_ptr<NewNBConnection>
 						NodeHandshake hs(data);
 						uint32_t id = next_node_id++;
 
-						auto node = std::make_shared<Node>(id, nc.hostname, hs, make_unique<ControlConnection>(nc.release_socket(), id, nc.hostname) );
+						auto node = std::make_shared<Node>(id, nc.hostname, hs, std::make_unique<ControlConnection>(nc.release_socket(), id, nc.hostname) );
 						nodes.emplace(node->id, node);
 						caches.process_handshake(node->id,hs);
 						Log::info("New node registered. ID: %d, hostname: %s", node->id, nc.hostname.c_str() );

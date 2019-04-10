@@ -32,7 +32,7 @@ auto RasterizePolygons::get_raster() const -> std::unique_ptr<Raster2D<uint8_t>>
     boolean_unit.setMinMax(0, 1); // reserve one value for each polygon in the collection
     DataDescription boolean_data_description {GDT_Byte, boolean_unit, true, 0};
 
-    auto boolean_raster = make_unique<Raster2D<uint8_t>>(
+    auto boolean_raster = std::make_unique<Raster2D<uint8_t>>(
             boolean_data_description,
             fitted_raster->stref,
             fitted_raster->width,
@@ -79,7 +79,7 @@ auto RasterizePolygons::create_raster(const QueryRectangle &rect, SpatialReferen
     auto x_enlargement = x_span_mbr / x_span_query;
     auto y_enlargement = y_span_mbr / y_span_query;
 
-    return make_unique<Raster2D<uint32_t>>(
+    return std::make_unique<Raster2D<uint32_t>>(
             data_description,
             st_ref,
             static_cast<uint32_t>(std::ceil(rect.xres * x_enlargement)),

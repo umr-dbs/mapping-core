@@ -1,6 +1,5 @@
 #include "operators/operator.h"
 #include "util/exceptions.h"
-#include "util/make_unique.h"
 #include "util/csv_source_util.h"
 #include "util/uriloader.h"
 
@@ -112,7 +111,7 @@ CSVSourceOperator::CSVSourceOperator(int sourcecounts[], GenericOperator *source
 
 	params["separator"] = configured_separator;
 
-	csvSourceUtil = make_unique<CSVSourceUtil>(params);
+	csvSourceUtil = std::make_unique<CSVSourceUtil>(params);
 
 	Json::Value provenanceInfo = params["provenance"];
 	if (provenanceInfo.isObject()) {

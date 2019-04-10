@@ -122,7 +122,7 @@ template<typename T>
 struct Output {
 	static std::unique_ptr<GenericRaster> execute(Raster2D<T> *raster, Raster2D<double> *accumulator,
 			AggregationType aggregationType, size_t n) {
-		auto output = make_unique<Raster2D<T>>(raster->dd, accumulator->stref,
+		auto output = std::make_unique<Raster2D<T>>(raster->dd, accumulator->stref,
 											   accumulator->width, accumulator->height);
 
 		for (int x = 0; x < raster->width; ++x) {
@@ -164,7 +164,7 @@ std::unique_ptr<Raster2D<double>> TemporalAggregationOperator::createAccumulator
 	DataDescription accumulatorDD = raster.dd;
 	accumulatorDD.datatype = GDT_Float64;
 
-	auto accumulator = make_unique<Raster2D<double>>(accumulatorDD,
+	auto accumulator = std::make_unique<Raster2D<double>>(accumulatorDD,
 			raster.stref, raster.width, raster.height);
 
 	// initialize accumulator

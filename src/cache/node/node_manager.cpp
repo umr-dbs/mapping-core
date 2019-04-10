@@ -215,11 +215,11 @@ std::unique_ptr<NodeCacheManager> NodeCacheManager::from_config( const NodeConfi
 
 
 	if ( mgrlc == "remote" )
-		return make_unique<RemoteCacheManager>(config.caching_strategy, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size, config.provenance_size);
+		return std::make_unique<RemoteCacheManager>(config.caching_strategy, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size, config.provenance_size);
 	else if ( mgrlc == "local" )
-		return make_unique<LocalCacheManager>(config.caching_strategy, config.local_replacement, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size, config.provenance_size);
+		return std::make_unique<LocalCacheManager>(config.caching_strategy, config.local_replacement, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size, config.provenance_size);
 	else if ( mgrlc == "hybrid" )
-		return make_unique<HybridCacheManager>(config.caching_strategy, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size, config.provenance_size);
+		return std::make_unique<HybridCacheManager>(config.caching_strategy, config.raster_size, config.point_size, config.line_size, config.polygon_size, config.plot_size, config.provenance_size);
 	else
 		throw ArgumentException(concat("Unknown manager impl: ", config.mgr_impl));
 }

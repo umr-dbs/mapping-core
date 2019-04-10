@@ -4,7 +4,6 @@
 #include "datatypes/simplefeaturecollections/wkbutil.h"
 #include "util/exceptions.h"
 #include "util/enumconverter.h"
-#include "util/make_unique.h"
 
 #include <memory>
 #include <pqxx/pqxx>
@@ -51,7 +50,7 @@ static thread_local std::unique_ptr<pqxx::connection> _connection;
 
 static pqxx::connection& getConnection(const std::string& connectionString) {
 	if(_connection.get() == nullptr) {
-		_connection = make_unique<pqxx::connection>(connectionString);
+		_connection = std::make_unique<pqxx::connection>(connectionString);
 	}
 
 	return *_connection;
@@ -434,19 +433,19 @@ void PostgresFeatureCollectionDBBackend::loadFeatures(SimpleFeatureCollection &c
 
 
 std::unique_ptr<PointCollection> PostgresFeatureCollectionDBBackend::loadPoints(const UserDB::User &owner, const std::string &dataSetName, const QueryRectangle &qrect) {
-	auto points = make_unique<PointCollection>(qrect);
+	auto points = std::make_unique<PointCollection>(qrect);
 	loadFeatures(*points, Query::ResultType::POINTS, owner, dataSetName, qrect);
 	return points;
 }
 
 std::unique_ptr<LineCollection> PostgresFeatureCollectionDBBackend::loadLines(const UserDB::User &owner, const std::string &dataSetName, const QueryRectangle &qrect) {
-	auto lines = make_unique<LineCollection>(qrect);
+	auto lines = std::make_unique<LineCollection>(qrect);
 	loadFeatures(*lines, Query::ResultType::LINES,  owner, dataSetName, qrect);
 	return lines;
 }
 
 std::unique_ptr<PolygonCollection> PostgresFeatureCollectionDBBackend::loadPolygons(const UserDB::User  &owner, const std::string &dataSetName, const QueryRectangle &qrect) {
-	auto polygons = make_unique<PolygonCollection>(qrect);
+	auto polygons = std::make_unique<PolygonCollection>(qrect);
 	loadFeatures(*polygons, Query::ResultType::POLYGONS, owner, dataSetName, qrect);
 	return polygons;
 }

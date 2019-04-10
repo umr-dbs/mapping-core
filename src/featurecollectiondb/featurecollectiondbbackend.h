@@ -5,7 +5,6 @@
 #include "featurecollectiondb/featurecollectiondb.h"
 #include "datatypes/simplefeaturecollection.h"
 #include "processing/query.h"
-#include "util/make_unique.h"
 
 #include <memory>
 
@@ -77,7 +76,7 @@ class FeatureCollectionDBBackendRegistration {
 	FeatureCollectionDBBackendRegistration(const char *name, std::unique_ptr<FeatureCollectionDBBackend> (*constructor)(const std::string &));
 };
 
-#define REGISTER_FEATURECOLLECTIONDB_BACKEND(classname, name) static std::unique_ptr<FeatureCollectionDBBackend> create##classname(const std::string &location) { return make_unique<classname>(location); } static FeatureCollectionDBBackendRegistration register_##classname(name, create##classname)
+#define REGISTER_FEATURECOLLECTIONDB_BACKEND(classname, name) static std::unique_ptr<FeatureCollectionDBBackend> create##classname(const std::string &location) { return std::make_unique<classname>(location); } static FeatureCollectionDBBackendRegistration register_##classname(name, create##classname)
 
 
 #endif /* FEATURECOLLECTIONDB_FEATURECOLLECTIONDBBACKEND_CPP_ */

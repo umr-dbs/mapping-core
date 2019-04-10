@@ -7,7 +7,6 @@
 #include "datatypes/raster/typejuggling.h"
 #include "raster/profiler.h"
 #include "operators/operator.h"
-#include "util/make_unique.h"
 
 #include <memory>
 #include <cmath>
@@ -159,7 +158,7 @@ struct histogram{
 			}
 		}
 
-		auto histogram = make_unique<Histogram>(buckets, min, max);
+		auto histogram = std::make_unique<Histogram>(buckets, min, max);
 
 		int size = raster->getPixelCount();
 		for (int i=0;i<size;i++) {
@@ -226,7 +225,7 @@ std::unique_ptr<GenericPlot> createHistogram(SimpleFeatureCollection &features, 
 		buckets = sqrt(featureCount);
 	}
 
-	auto histogram = make_unique<Histogram>(buckets, min, max);
+	auto histogram = std::make_unique<Histogram>(buckets, min, max);
 	for (size_t i=0; i < featureCount; i++) {
 		double value = valueVector.get(i);
 		if (std::isnan(value) /* is NaN */)

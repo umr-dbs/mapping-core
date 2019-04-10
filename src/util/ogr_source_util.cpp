@@ -6,7 +6,6 @@
 #include "datatypes/simplefeaturecollection.h"
 #include "util/ogr_source_util.h"
 #include "util/exceptions.h"
-#include "util/make_unique.h"
 #include "util/timeparser.h"
 #include "configuration.h"
 #include <unordered_map>
@@ -116,6 +115,11 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
     // a call suggested by OGR Tutorial as "just in case" (to start reading from first feature)
     layer->ResetReading();
 
+    // no need to process any further if result is empty
+    if (layer->GetFeatureCount() < 1) {
+        return;
+    }
+
     //start reading the FeatureCollection
     OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
     createAttributeArrays(attributeDefn, collection->feature_attributes);
@@ -215,7 +219,7 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
 
 std::unique_ptr<PointCollection>
 OGRSourceUtil::getPointCollection(const QueryRectangle &rect, const QueryTools &tools) {
-    auto points = make_unique<PointCollection>(rect);
+    auto points = std::make_unique<PointCollection>(rect);
 
     auto addFeature = [&](OGRGeometry *geom) -> bool {
         int type = wkbFlatten(geom->getGeometryType());
@@ -244,7 +248,7 @@ OGRSourceUtil::getPointCollection(const QueryRectangle &rect, const QueryTools &
 }
 
 std::unique_ptr<LineCollection> OGRSourceUtil::getLineCollection(const QueryRectangle &rect, const QueryTools &tools) {
-    auto lines = make_unique<LineCollection>(rect);
+    auto lines = std::make_unique<LineCollection>(rect);
 
     auto addFeature = [&](OGRGeometry *geom) -> bool {
         int type = wkbFlatten(geom->getGeometryType());
@@ -273,7 +277,7 @@ std::unique_ptr<LineCollection> OGRSourceUtil::getLineCollection(const QueryRect
 
 std::unique_ptr<PolygonCollection>
 OGRSourceUtil::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools) {
-    auto polygons = make_unique<PolygonCollection>(rect);
+    auto polygons = std::make_unique<PolygonCollection>(rect);
 
     auto addFeature = [&](OGRGeometry *geom) -> bool {
         int type = wkbFlatten(geom->getGeometryType());

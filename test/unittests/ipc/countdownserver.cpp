@@ -1,5 +1,4 @@
 #include "util/server_nonblocking.h"
-#include "util/make_unique.h"
 #include "util/log.h"
 
 #include <gtest/gtest.h>
@@ -39,7 +38,7 @@ void CountdownServerConnection::processData(std::unique_ptr<BinaryReadBuffer> re
 
 	//printf("got %d on %d\n", number, id);
 	if (number >= 0) {
-		auto response = make_unique<BinaryWriteBuffer>();
+		auto response = std::make_unique<BinaryWriteBuffer>();
 		response->write(number);
 
 		// send to next connection
@@ -61,7 +60,7 @@ class CountdownServer : public NonblockingServer {
 };
 
 std::unique_ptr<NonblockingServer::Connection> CountdownServer::createConnection(int fd, int id) {
-	return make_unique<CountdownServerConnection>(*this, fd, id);
+	return std::make_unique<CountdownServerConnection>(*this, fd, id);
 }
 
 /*
@@ -77,7 +76,7 @@ static void run_server() {
 
 		server_initialization_mutex.lock();
 
-		server = make_unique<CountdownServer>();
+		server = std::make_unique<CountdownServer>();
 		server->listen(portnr);
 
 		server_initialization_mutex.unlock();

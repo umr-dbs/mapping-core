@@ -6,7 +6,6 @@
 
 #include <ctime>
 #include <memory>
-#include "util/make_unique.h"
 
 class TimeShiftTests: public ::testing::Test {
 protected:
@@ -168,9 +167,9 @@ TEST_F(TimeShiftTests, Snap_HourOfDay) {
 }
 
 TEST_F(TimeShiftTests, TimeModification) {
-	auto shift1 = make_unique<RelativeShift>(-5, RelativeShift::ShiftUnit::days);
-	auto shift2 = make_unique<RelativeShift>(5, RelativeShift::ShiftUnit::minutes);
-	TimeModification time_modification{std::move(shift1), std::move(shift2), make_unique<Identity>(), make_unique<Identity>(), make_unique<Identity>()};
+	auto shift1 = std::make_unique<RelativeShift>(-5, RelativeShift::ShiftUnit::days);
+	auto shift2 = std::make_unique<RelativeShift>(5, RelativeShift::ShiftUnit::minutes);
+	TimeModification time_modification{std::move(shift1), std::move(shift2), std::make_unique<Identity>(), std::make_unique<Identity>(), std::make_unique<Identity>()};
 
 	TemporalReference temporal_reference{timetype_t::TIMETYPE_UNIX, static_cast<double>(start_time), static_cast<double>(start_time + 1)};
 	auto shifted = time_modification.apply(temporal_reference);
@@ -188,9 +187,9 @@ TEST_F(TimeShiftTests, TimeModification) {
 }
 
 TEST_F(TimeShiftTests, TimeModificationCheckReverse) {
-	auto shift1 = make_unique<RelativeShift>(-5, RelativeShift::ShiftUnit::days);
-	auto shift2 = make_unique<RelativeShift>(5, RelativeShift::ShiftUnit::minutes);
-	TimeModification time_modification{std::move(shift1), std::move(shift2), make_unique<Identity>(), make_unique<Identity>(), make_unique<Identity>()};
+	auto shift1 = std::make_unique<RelativeShift>(-5, RelativeShift::ShiftUnit::days);
+	auto shift2 = std::make_unique<RelativeShift>(5, RelativeShift::ShiftUnit::minutes);
+	TimeModification time_modification{std::move(shift1), std::move(shift2), std::make_unique<Identity>(), std::make_unique<Identity>(), std::make_unique<Identity>()};
 
 	TemporalReference temporal_reference{timetype_t::TIMETYPE_UNIX, static_cast<double>(start_time), static_cast<double>(start_time + 1)};
 	auto shifted = time_modification.apply(temporal_reference);
@@ -208,9 +207,9 @@ TEST_F(TimeShiftTests, TimeModificationCheckReverse) {
 }
 
 TEST_F(TimeShiftTests, TimeModificationReverseBeforeShift) {
-	auto shift1 = make_unique<RelativeShift>(-5, RelativeShift::ShiftUnit::days);
-	auto shift2 = make_unique<RelativeShift>(5, RelativeShift::ShiftUnit::minutes);
-	TimeModification time_modification{std::move(shift1), std::move(shift2), make_unique<Identity>(), make_unique<Identity>(), make_unique<Identity>()};
+	auto shift1 = std::make_unique<RelativeShift>(-5, RelativeShift::ShiftUnit::days);
+	auto shift2 = std::make_unique<RelativeShift>(5, RelativeShift::ShiftUnit::minutes);
+	TimeModification time_modification{std::move(shift1), std::move(shift2), std::make_unique<Identity>(), std::make_unique<Identity>(), std::make_unique<Identity>()};
 
 	TemporalReference temporal_reference{timetype_t::TIMETYPE_UNIX, static_cast<double>(start_time), static_cast<double>(start_time + 1)};
 
@@ -218,9 +217,9 @@ TEST_F(TimeShiftTests, TimeModificationReverseBeforeShift) {
 }
 
 TEST_F(TimeShiftTests, TimeModificationShiftWithFractions) {
-	auto shift1 = make_unique<RelativeShift>(-5, RelativeShift::ShiftUnit::days);
-	auto shift2 = make_unique<RelativeShift>(5, RelativeShift::ShiftUnit::minutes);
-	TimeModification time_modification{std::move(shift1), std::move(shift2), make_unique<Identity>(), make_unique<Identity>(), make_unique<Identity>()};
+	auto shift1 = std::make_unique<RelativeShift>(-5, RelativeShift::ShiftUnit::days);
+	auto shift2 = std::make_unique<RelativeShift>(5, RelativeShift::ShiftUnit::minutes);
+	TimeModification time_modification{std::move(shift1), std::move(shift2), std::make_unique<Identity>(), std::make_unique<Identity>(), std::make_unique<Identity>()};
 
 	TemporalReference temporal_reference{timetype_t::TIMETYPE_UNIX, static_cast<double>(start_time + 0.25), static_cast<double>(start_time + 1.25)};
 	auto shifted = time_modification.apply(temporal_reference);

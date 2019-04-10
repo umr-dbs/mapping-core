@@ -237,7 +237,7 @@ std::unique_ptr<PointCollection> WFSService::clusterPoints(const PointCollection
         }
     }
 
-	auto clusteredPoints = make_unique<PointCollection>(points.stref);
+	auto clusteredPoints = std::make_unique<PointCollection>(points.stref);
 
 	const SpatialReference &sref = points.stref;
 	auto x1 = sref.x1;

@@ -2,7 +2,6 @@
 #include "util/csv_source_util.h"
 
 #include "util/exceptions.h"
-#include "util/make_unique.h"
 #include "util/csvparser.h"
 #include "util/timeparser.h"
 #include "datatypes/simplefeaturecollections/wkbutil.h"
@@ -336,7 +335,7 @@ void CSVSourceUtil::readAnyCollection(SimpleFeatureCollection *collection, std::
 
 
 std::unique_ptr<PointCollection> CSVSourceUtil::getPointCollection(std::istream &data, const QueryRectangle &rect) {
-	auto collection = make_unique<PointCollection>(rect);
+	auto collection = std::make_unique<PointCollection>(rect);
 	auto add_xy = [&](const std::string &x_str, const std::string &y_str) -> bool {
 		// Workaround for safecast data: ignore entries without coordinates
 		if (x_str == "" || y_str == "")
@@ -367,7 +366,7 @@ std::unique_ptr<PointCollection> CSVSourceUtil::getPointCollection(std::istream 
 }
 
 std::unique_ptr<LineCollection> CSVSourceUtil::getLineCollection(std::istream &data, const QueryRectangle &rect) {
-	auto collection = make_unique<LineCollection>(rect);
+	auto collection = std::make_unique<LineCollection>(rect);
 	auto add_wkt = [&](const std::string &wkt, const std::string &) -> bool {
 		WKBUtil::addFeatureToCollection(*collection, wkt);
 		return true;
@@ -383,7 +382,7 @@ std::unique_ptr<LineCollection> CSVSourceUtil::getLineCollection(std::istream &d
 }
 
 std::unique_ptr<PolygonCollection> CSVSourceUtil::getPolygonCollection(std::istream &data, const QueryRectangle &rect) {
-	auto collection = make_unique<PolygonCollection>(rect);
+	auto collection = std::make_unique<PolygonCollection>(rect);
 	auto add_wkt = [&](const std::string &wkt, const std::string &) -> bool {
 		WKBUtil::addFeatureToCollection(*collection, wkt);
 		return true;

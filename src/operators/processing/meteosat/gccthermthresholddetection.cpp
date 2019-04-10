@@ -281,14 +281,14 @@ std::unique_ptr<GenericRaster> MeteosatGccThermThresholdDetectionOperator::getRa
 	int buckets = static_cast<int>(std::ceil((value_raster_max-value_raster_min)/bucket_size));
 
 	//create the histogram for day mode
-	std::unique_ptr<Histogram> histogram_day_ptr = make_unique<Histogram>(buckets, value_raster_min, value_raster_max);
+	std::unique_ptr<Histogram> histogram_day_ptr = std::make_unique<Histogram>(buckets, value_raster_min, value_raster_max);
 	//fill the histogram
 	callBinaryOperatorFunc<ConditionalFillHistogramFunction>(bt108_minus_bt039_raster.get(), solar_zenith_angle_raster.get(), histogram_day_ptr.get(), cloudclass::solar_zenith_angle_min_day, cloudclass::solar_zenith_angle_max_day);
 	//get the threshold
 	double temperature_threshold_day = findGccThermThreshold(histogram_day_ptr.get());
 
 	//create the histogram for day mode
-	std::unique_ptr<Histogram> histogram_night_ptr = make_unique<Histogram>(buckets, value_raster_min, value_raster_max);
+	std::unique_ptr<Histogram> histogram_night_ptr = std::make_unique<Histogram>(buckets, value_raster_min, value_raster_max);
 	//fill the histogram
 	callBinaryOperatorFunc<ConditionalFillHistogramFunction>(bt108_minus_bt039_raster.get(), solar_zenith_angle_raster.get(), histogram_night_ptr.get(), cloudclass::solar_zenith_angle_min_night, cloudclass::solar_zenith_angle_max_night);
 	//get the threshold
@@ -351,7 +351,7 @@ std::unique_ptr<GenericPlot> MeteosatGccThermThresholdDetectionOperator::getPlot
 	int buckets = static_cast<int>(std::ceil((value_raster_max-value_raster_min)/bucket_size));
 
 	//create the histogram
-	std::unique_ptr<Histogram> histogram_ptr = make_unique<Histogram>(buckets, value_raster_min, value_raster_max);
+	std::unique_ptr<Histogram> histogram_ptr = std::make_unique<Histogram>(buckets, value_raster_min, value_raster_max);
 	//fill the histogram
 	callBinaryOperatorFunc<ConditionalFillHistogramFunction>(bt108_minus_bt039_raster.get(), solar_zenith_angle_raster.get(), histogram_ptr.get(), cloudclass::solar_zenith_angle_min_day, cloudclass::solar_zenith_angle_max_day);
 	//find the GccThermalThreshold and annotate the histogram

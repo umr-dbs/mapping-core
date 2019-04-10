@@ -31,6 +31,7 @@ add_library(mapping_core_base_lib
         datatypes/colorizer.cpp
         datatypes/plot.cpp
         datatypes/plots/histogram.cpp
+        datatypes/plots/json.cpp
         datatypes/plots/text.cpp
         datatypes/plots/png.cpp
         rasterdb/rasterdb.cpp
@@ -162,6 +163,7 @@ add_library(mapping_core_operators_lib
         operators/processing/scripting/r_script.cpp
         operators/plots/histogram.cpp
         operators/plots/feature_attributes_plot.cpp
+        operators/plots/statistics.cpp
         )
 target_link_libraries_internal(mapping_core_operators_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_operators_lib)

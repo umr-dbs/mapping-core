@@ -1,7 +1,6 @@
 #include "datatypes/pointcollection.h"
 
 #include "util/binarystream.h"
-#include "util/make_unique.h"
 
 #include <sstream>
 #include <iomanip>
@@ -11,7 +10,7 @@
 
 
 std::unique_ptr<PointCollection> PointCollection::clone() const {
-	auto copy = make_unique<PointCollection>(stref);
+	auto copy = std::make_unique<PointCollection>(stref);
 	copy->global_attributes = global_attributes;
 	copy->feature_attributes = feature_attributes.clone();
 	copy->coordinates = coordinates;
@@ -28,7 +27,7 @@ std::unique_ptr<PointCollection> filter(const PointCollection &in, const std::ve
 		throw ArgumentException(concat("PointCollection::filter(): size of filter does not match (", keep.size(), " != ",count, ")"));
 	}
 
-	auto out = make_unique<PointCollection>(in.stref);
+	auto out = std::make_unique<PointCollection>(in.stref);
 	out->start_feature.reserve(kept_count);
 
 	// copy global attributes

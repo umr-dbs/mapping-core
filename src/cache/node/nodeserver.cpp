@@ -18,7 +18,6 @@
 #include "datatypes/plot.h"
 
 #include "util/exceptions.h"
-#include "util/make_unique.h"
 #include "util/log.h"
 
 #include <sstream>
@@ -246,7 +245,7 @@ void NodeServer::run() {
 
 			workers_up = true;
 			for (int i = 0; i < config.num_workers; i++)
-				workers.push_back(make_unique<std::thread>(&NodeServer::worker_loop, this));
+				workers.push_back(std::make_unique<std::thread>(&NodeServer::worker_loop, this));
 
 			// Read on control
 			while (!shutdown) {
@@ -372,15 +371,15 @@ void NodeServer::handle_reorg_move_item( const ReorgMoveItem& item, time_t &fetc
 						break;
 					case CacheType::POINT:
 						new_cache_id = manager->get_point_cache().put_local(
-							item.semantic_id, make_unique<PointCollection>(*resp), std::move(ce)).entry_id;
+							item.semantic_id, std::make_unique<PointCollection>(*resp), std::move(ce)).entry_id;
 						break;
 					case CacheType::LINE:
 						new_cache_id = manager->get_line_cache().put_local(
-							item.semantic_id, make_unique<LineCollection>(*resp), std::move(ce)).entry_id;
+							item.semantic_id, std::make_unique<LineCollection>(*resp), std::move(ce)).entry_id;
 						break;
 					case CacheType::POLYGON:
 						new_cache_id = manager->get_polygon_cache().put_local(
-							item.semantic_id, make_unique<PolygonCollection>(*resp), std::move(ce)).entry_id;
+							item.semantic_id, std::make_unique<PolygonCollection>(*resp), std::move(ce)).entry_id;
 						break;
 					case CacheType::PLOT:
 						new_cache_id = manager->get_plot_cache().put_local(
@@ -456,7 +455,7 @@ void NodeServer::setup_control_connection() {
 }
 
 std::unique_ptr<std::thread> NodeServer::run_async() {
-	return make_unique<std::thread>(&NodeServer::run, this);
+	return std::make_unique<std::thread>(&NodeServer::run, this);
 }
 
 void NodeServer::wakeup() {

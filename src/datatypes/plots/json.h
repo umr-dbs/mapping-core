@@ -2,27 +2,26 @@
 #define PLOT_TEXT_H
 
 #include <string>
+#include <json/json.h>
 
 #include "datatypes/plot.h"
 
 /**
- * This plot outputs text encapuslated in JSON
+ * This plot outputs json
  */
-class TextPlot : public GenericPlot {
+class JsonPlot : public GenericPlot {
 	public:
-		TextPlot(const std::string &text);
-		virtual ~TextPlot();
+		JsonPlot(Json::Value json);
+		virtual ~JsonPlot();
 
 		const std::string toJSON() const;
 
 		std::unique_ptr<GenericPlot> clone() const {
-			return std::make_unique<TextPlot>(text);
+			return std::make_unique<JsonPlot>(json);
 		}
 
-
-
 	private:
-		std::string text;
+		Json::Value json;
 };
 
 #endif

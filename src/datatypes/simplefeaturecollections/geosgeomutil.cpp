@@ -7,7 +7,6 @@
 #include <geos/geom/LineString.h>
 #include <geos/geom/LinearRing.h>
 #include <geos/geom/MultiLineString.h>
-#include "util/make_unique.h"
 #include "util/exceptions.h"
 
 //TODO: LineString?
@@ -39,7 +38,7 @@ std::unique_ptr<PointCollection> GeosGeomUtil::createPointCollection(const geos:
 		throw ConverterException("GEOS Geometry is not a geometry collection");
 	}
 
-	std::unique_ptr<PointCollection> pointCollection = make_unique<PointCollection>(stref);
+	std::unique_ptr<PointCollection> pointCollection = std::make_unique<PointCollection>(stref);
 
 	for(size_t i=0; i  < geometry.getNumGeometries(); ++i){
 		addFeatureToCollection(*pointCollection, *geometry.getGeometryN(i));
@@ -102,7 +101,7 @@ std::unique_ptr<LineCollection> GeosGeomUtil::createLineCollection(const geos::g
 		throw ConverterException("GEOS Geometry is not a geometry collection");
 	}
 
-	std::unique_ptr<LineCollection> lineCollection = make_unique<LineCollection>(stref);
+	std::unique_ptr<LineCollection> lineCollection = std::make_unique<LineCollection>(stref);
 
 	for(size_t i=0; i < geometry.getNumGeometries(); ++i){
 		addFeatureToCollection(*lineCollection, *geometry.getGeometryN(i));
@@ -149,7 +148,7 @@ std::unique_ptr<geos::geom::Geometry> GeosGeomUtil::createGeosLineCollection(con
 //i.e. each polygon in geos multipolygon becomes one elements in a MAPPING PolygonCollection
 std::unique_ptr<PolygonCollection> GeosGeomUtil::createPolygonCollection(const geos::geom::MultiPolygon& multiPolygon, const SpatioTemporalReference& stref){
 
-	std::unique_ptr<PolygonCollection> polygonCollection = make_unique<PolygonCollection>(stref);
+	std::unique_ptr<PolygonCollection> polygonCollection = std::make_unique<PolygonCollection>(stref);
 
 	for(size_t polygonIndex = 0; polygonIndex < multiPolygon.getNumGeometries(); ++polygonIndex){
 		addPolygon(*polygonCollection, *multiPolygon.getGeometryN(polygonIndex));
@@ -217,7 +216,7 @@ std::unique_ptr<PolygonCollection> GeosGeomUtil::createPolygonCollection(const g
 		throw ConverterException("GEOS Geometry is not a geometry collection");
 	}
 
-	std::unique_ptr<PolygonCollection> polygonCollection = make_unique<PolygonCollection>(stref);
+	std::unique_ptr<PolygonCollection> polygonCollection = std::make_unique<PolygonCollection>(stref);
 
 	for(size_t i=0; i  < geometry.getNumGeometries(); ++i){
 		addFeatureToCollection(*polygonCollection, *geometry.getGeometryN(i));

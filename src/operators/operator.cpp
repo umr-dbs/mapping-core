@@ -312,7 +312,7 @@ void GenericOperator::getRecursiveProvenance(ProvenanceCollection &pc) {
 }
 
 std::unique_ptr<ProvenanceCollection> GenericOperator::getFullProvenance() {
-	auto provenance = make_unique<ProvenanceCollection>();
+	auto provenance = std::make_unique<ProvenanceCollection>();
 	getRecursiveProvenance(*provenance);
 	return provenance;
 }

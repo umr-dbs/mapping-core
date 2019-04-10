@@ -1,6 +1,5 @@
 
 #include "util/exceptions.h"
-#include "util/make_unique.h"
 #include "datatypes/plots/histogram.h"
 
 #include <cmath>
@@ -92,7 +91,7 @@ const std::string Histogram::toJSON() const {
 }
 
 std::unique_ptr<GenericPlot> Histogram::clone() const {
-    auto copy = make_unique<Histogram>(counts.size(), min, max);
+    auto copy = std::make_unique<Histogram>(counts.size(), min, max);
 
     copy->nodata_count = nodata_count;
     copy->markers = markers;

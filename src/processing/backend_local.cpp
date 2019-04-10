@@ -1,7 +1,6 @@
 
 #include "util/configuration.h"
 #include "processing/queryprocessor_backend.h"
-#include "util/make_unique.h"
 
 class LocalQueryProcessor : public QueryProcessor::QueryProcessorBackend {
 	public:
@@ -69,7 +68,7 @@ class LocalQueryProgress : public QueryProcessor::QueryProgress {
 };
 
 std::unique_ptr<QueryProcessor::QueryProgress> LocalQueryProcessor::processAsync(const Query &q, bool includeProvenance) {
-	auto progress = make_unique<LocalQueryProgress>();
+	auto progress = std::make_unique<LocalQueryProgress>();
 	progress->result = process(q, includeProvenance);
 	return std::unique_ptr<QueryProcessor::QueryProgress>( progress.release() );
 }

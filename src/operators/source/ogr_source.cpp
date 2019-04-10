@@ -50,7 +50,7 @@ OGRSourceOperator::OGRSourceOperator(int sourcecounts[], GenericOperator *source
     dataset_name = params["name"].asString();
     std::string local_id = "data.ogr_source.";
     local_id.append(dataset_name); //todo: does this need the layer_name added?
-    ogrUtil = make_unique<OGRSourceUtil>(constructParameters(params), std::move(local_id));
+    ogrUtil = std::make_unique<OGRSourceUtil>(constructParameters(params), std::move(local_id));
 }
 
 REGISTER_OPERATOR(OGRSourceOperator, "ogr_source");

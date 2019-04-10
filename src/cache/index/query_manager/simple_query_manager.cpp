@@ -45,7 +45,7 @@ void SimpleQueryManager::add_request(uint64_t client_id, const BaseRequest& req)
 	} catch ( const std::exception &e ) {
 		Log::warn("Error while creating job, falling back to default scheduling: %s", e.what());
 		// 0 node-id means schedule on any!
-		j = make_unique<SimpleJob>(req,0);
+		j = std::make_unique<SimpleJob>(req,0);
 	}
 	j->add_client(client_id);
 	add_query(std::move(j));
@@ -63,7 +63,7 @@ std::unique_ptr<PendingQuery> SimpleQueryManager::recreate_job(const RunningQuer
 	} catch ( const std::exception &e ) {
 		Log::warn("Error while creating job, falling back to default scheduling: %s", e.what());
 		// 0 node-id means schedule on any!
-		res = make_unique<SimpleJob>(query.get_request(),0);
+		res = std::make_unique<SimpleJob>(query.get_request(),0);
 	}
 	res->add_clients(query.get_clients());
 	return res;
@@ -98,7 +98,7 @@ std::unique_ptr<PendingQuery> DemaQueryManager::create_job(
 		auto sit = infos.find(p.first);
 		if ( sit == infos.end() ) {
 			infos.emplace(p.first, ServerInfo(qc) );
-			return make_unique<SimpleJob>(req,p.first);
+			return std::make_unique<SimpleJob>(req,p.first);
 		}
 		else {
 			auto &si = sit->second;
@@ -111,7 +111,7 @@ std::unique_ptr<PendingQuery> DemaQueryManager::create_job(
 	}
 	auto &si = infos.at(node_id);
 	si.p = (qc*alpha) + (si.p * (1-alpha));
-	return make_unique<SimpleJob>(req,node_id);
+	return std::make_unique<SimpleJob>(req,node_id);
 }
 
 //
@@ -137,7 +137,7 @@ std::unique_ptr<PendingQuery> BemaQueryManager::create_job(
 		auto sit = infos.find(p.first);
 		if ( sit == infos.end() ) {
 			infos.emplace(p.first, ServerInfo(qc) );
-			return make_unique<SimpleJob>(req,p.first);
+			return std::make_unique<SimpleJob>(req,p.first);
 		}
 		else {
 			auto &si = sit->second;
@@ -151,7 +151,7 @@ std::unique_ptr<PendingQuery> BemaQueryManager::create_job(
 	auto &si = infos.at(node_id);
 	si.p = (qc*alpha) + (si.p * (1-alpha));
 	assign_query(node_id);
-	return make_unique<SimpleJob>(req,node_id);
+	return std::make_unique<SimpleJob>(req,node_id);
 }
 
 void BemaQueryManager::assign_query(uint32_t node) {

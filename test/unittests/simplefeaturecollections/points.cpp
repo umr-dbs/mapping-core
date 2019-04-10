@@ -631,12 +631,12 @@ TEST(PointCollection, removeLastFeature){
 }
 
 TEST(PointCollection, removeLastFeatureEmptyCollection){
-	auto points = make_unique<PointCollection>(SpatioTemporalReference::unreferenced());
+	auto points = std::make_unique<PointCollection>(SpatioTemporalReference::unreferenced());
 
 	points->removeLastFeature();
 	points->validate();
 
-	auto result = make_unique<PointCollection>(SpatioTemporalReference::unreferenced());
+	auto result = std::make_unique<PointCollection>(SpatioTemporalReference::unreferenced());
 
 	CollectionTestUtil::checkEquality(*result, *points);
 }

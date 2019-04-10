@@ -1,5 +1,4 @@
 #include "operators/operator.h"
-#include "util/make_unique.h"
 #include "datatypes/plots/xygraph.h"
 
 #include <string>
@@ -69,7 +68,7 @@ void FeatureAttributesPlotOperator::writeSemanticParameters(std::ostringstream& 
 #ifndef MAPPING_OPERATOR_STUBS
 template<std::size_t size>
 auto FeatureAttributesPlotOperator::createXYGraph(PointCollection& points) -> std::unique_ptr<GenericPlot> {
-	auto xyGraph = make_unique<XYGraph<size>>();
+	auto xyGraph = std::make_unique<XYGraph<size>>();
 
 	for (size_t featureIndex = 0; featureIndex < points.getFeatureCount(); ++featureIndex) {
 		std::array<double, size> value;

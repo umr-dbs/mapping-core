@@ -8,7 +8,6 @@
 #include "cache/index/indexserver.h"
 #include "cache/index/query_manager/default_query_manager.h"
 #include "cache/common.h"
-#include "util/make_unique.h"
 
 #include <algorithm>
 
@@ -146,7 +145,7 @@ std::unique_ptr<PendingQuery> DefaultQueryManager::create_job( const BaseRequest
 				req.semantic_id,
 				res.covered,
 				key.get_entry_id());
-		return make_unique<DeliverJob>(std::move(dr), key);
+		return std::make_unique<DeliverJob>(std::move(dr), key);
 	}
 	// Puzzle
 	else if (res.has_hit()) {
@@ -182,13 +181,13 @@ std::unique_ptr<PendingQuery> DefaultQueryManager::create_job( const BaseRequest
 		}
 		// END STATS ONLY
 
-		return make_unique<PuzzleJob>(std::move(pr), std::move(keys));
+		return std::make_unique<PuzzleJob>(std::move(pr), std::move(keys));
 	}
 	// Full miss
 	else {
 		stats.misses++;
 		Log::debug("Full MISS.");
-		return make_unique<CreateJob>(BaseRequest(req), *this);
+		return std::make_unique<CreateJob>(BaseRequest(req), *this);
 	}
 }
 
