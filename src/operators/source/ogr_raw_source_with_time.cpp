@@ -83,7 +83,7 @@ OGRRawSourceWithTimeOperator::OGRRawSourceWithTimeOperator(int sourcecounts[], G
     filename = params.get("filename", "").asString();
 //    local_id.append(filename); //todo: does this need the layer_name added?
 
-    ogrUtil = make_unique<OGRSourceUtil>(params, std::move(local_id));
+    ogrUtil = std::make_unique<OGRSourceUtil>(params, std::move(local_id));
 }
 
 REGISTER_OPERATOR(OGRRawSourceWithTimeOperator, "ogr_raw_source_with_time");
