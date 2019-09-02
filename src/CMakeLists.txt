@@ -112,6 +112,7 @@ add_library(mapping_core_services_lib
         services/plot.cpp
         services/provenance.cpp
         services/artifact.cpp
+        services/featurecollectiondb.cpp
         pointvisualization/BoundingBox.cpp
         pointvisualization/Circle.cpp
         pointvisualization/Coordinate.cpp
@@ -119,7 +120,8 @@ add_library(mapping_core_services_lib
         pointvisualization/FindResult.cpp
         pointvisualization/QuadTreeNode.cpp
         pointvisualization/CircleClusteringQuadTree.cpp
-        services/featurecollectiondb.cpp)
+        pointvisualization/Grid.cpp
+        pointvisualization/Grid.h)
 target_link_libraries_internal(mapping_core_services_lib mapping_core_base_lib)
 target_link_libraries_internal(mapping_cgi mapping_core_services_lib)
 target_link_libraries_internal(mapping_uploader mapping_core_services_lib)

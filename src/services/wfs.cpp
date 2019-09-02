@@ -14,6 +14,7 @@
 #include <json/json.h>
 #include <utility>
 #include <vector>
+#include <pointvisualization/Grid.h>
 
 enum class WFSServiceType {
 	GetCapabilities, GetFeature
@@ -245,17 +246,18 @@ std::unique_ptr<PointCollection> WFSService::clusterPoints(const PointCollection
 	auto y1 = sref.y1;
 	auto y2 = sref.y2;
 
-    // initialize empty tree
-    std::size_t node_capacity = 1;
+	// create pv bounding box
     pv::Circle::CommonAttributes common_attributes{circle_min_radius_px, inter_circle_min_distance_px};
-	pv::CircleClusteringQuadTree clustering_tree{
-        pv::BoundingBox(
+    const pv::BoundingBox bounding_box = pv::BoundingBox(
             pv::Coordinate((x2 + x1) / (2 * resolution), (y2 + y1) / (2 * resolution)),
             pv::Dimension((x2 - x1) / (2 * resolution), (y2 - y1) / (2 * resolution)),
             common_attributes.getEpsilonDistance()
-        ),
-        node_capacity
-    };
+    );
+
+	// initialize empty grid and tree
+	pv::Grid grid(bounding_box, x1, y1, common_attributes);
+    std::size_t node_capacity = 1;
+    pv::CircleClusteringQuadTree clustering_tree{bounding_box, node_capacity};
 
     // add coordinate by coordinate
     std::vector<std::string> text_keys = points.feature_attributes.getTextualKeys();
@@ -285,12 +287,12 @@ std::unique_ptr<PointCollection> WFSService::clusterPoints(const PointCollection
             numeric_attributes.insert(
                 std::make_pair(
                     key,
-                    std::move(pv::Circle::NumericAttribute{points.feature_attributes.numeric(key).get(point)})
+                    pv::Circle::NumericAttribute{points.feature_attributes.numeric(key).get(point)}
                 )
             );
         }
 
-        clustering_tree.insert(
+        grid.insert(
             std::make_shared<pv::Circle>(
                 coordinate,
                 common_attributes,
@@ -299,6 +301,8 @@ std::unique_ptr<PointCollection> WFSService::clusterPoints(const PointCollection
             )
         );
     }
+
+    grid.insert_into(clustering_tree);
 
 	// PROPERTYNAME
 	// O
