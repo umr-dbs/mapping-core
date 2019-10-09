@@ -148,7 +148,7 @@ void StatisticsOperator::processFeatureCollection(Json::Value &json,
         for (size_t j = 0; j < number_of_features; ++j) {
             double value = array.get(j);
 
-            if (isnan(value)) {
+            if (std::isnan(value)) {
                 nan_values += 1;
                 continue;
             }
