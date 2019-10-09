@@ -200,8 +200,22 @@ void StatisticsOperator::processFeatureCollection(Json::Value &json,
             }
         });
 
+        const double min_percentage_boundary = 0.001; // TODO: make a user parameter
+        const size_t max_k = 20; // TODO: make a user parameter
+        size_t k = 0;
+
         Json::Value value_counts_json(Json::arrayValue);
         for (const auto &kv : values) {
+            double percentage = ((double) kv.second) / ((double) number_of_features);
+            if (percentage < min_percentage_boundary) {
+                break;
+            }
+
+            k += 1;
+            if (k > max_k) {
+                break;
+            }
+
             Json::Value kv_json(Json::arrayValue);
             kv_json.append(kv.first);
             kv_json.append(kv.second);
