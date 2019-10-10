@@ -25,6 +25,7 @@ add_library(mapping_core_unittests_lib
         unittests/temporal/timeshift.cpp
         unittests/util/formula.cpp
         unittests/util/sha1.cpp
+        unittests/util/number_statistics.cpp
         unittests/gdal_source.cpp
         unittests/util/configuration.cpp
         unittests/uploader.cpp)

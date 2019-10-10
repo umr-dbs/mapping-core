@@ -6,9 +6,9 @@
 #include <json/json.h>
 #include <limits>
 #include <vector>
-#include <cmath>
 #include <unordered_map>
-#include <algorithm>
+#include <datatypes/plots/statistics.h>
+#include <util/NumberStatistics.h>
 #include "datatypes/pointcollection.h"
 #include "datatypes/linecollection.h"
 #include "datatypes/polygoncollection.h"
@@ -20,7 +20,33 @@
  *   - raster_height (optional)
  *
  *  Output example:
- *	{"data":{"lines":[],"points":[{"population":{"max":300001,"min":267000}}],"polygons":[],"rasters":[{"max":0,"min":0}]},"type":"json"}
+ *  {
+ *    "data": {
+ *      "points": [
+ *        {
+ *          "population": {
+ *            "count": 100000,
+ *            "max": 99998,
+ *            "mean": 52040.203309998964,
+ *            "min": 6,
+ *            "nan_count": 0,
+ *            "stddev": 26942.648100743056
+ *          }
+ *        }
+ *      ],
+ *      "rasters": [
+ *        {
+ *          "count": 50,
+ *          "max": 0,
+ *          "mean": 0,
+ *          "min": 0,
+ *          "nan_count": 0,
+ *          "stddev": 0
+ *        }
+ *      ]
+ *    },
+ *    "type": "layer_statistics"
+ *  }
  *
  */
 class StatisticsOperator : public GenericOperator {
@@ -43,7 +69,11 @@ class StatisticsOperator : public GenericOperator {
 
 #ifndef MAPPING_OPERATOR_STUBS
 
-        void processFeatureCollection(Json::Value &json, SimpleFeatureCollection &collection) const;
+        auto processRaster(LayerStatistics &result, const GenericRaster &raster) const -> void;
+
+        auto processFeatureCollection(LayerStatistics &result,
+                                      LayerStatistics::FeatureType feature_type,
+                                      SimpleFeatureCollection &collection) const -> void;
 
 #endif
 };
@@ -70,109 +100,70 @@ void StatisticsOperator::writeSemanticParameters(std::ostringstream &stream) {
 
 #ifndef MAPPING_OPERATOR_STUBS
 
-std::unique_ptr<GenericPlot> StatisticsOperator::getPlot(const QueryRectangle &rect, const QueryTools &tools) {
-    Json::Value result(Json::objectValue);
-
-    Json::Value rasters(Json::arrayValue);
-    Json::Value points(Json::arrayValue);
-    Json::Value lines(Json::arrayValue);
-    Json::Value polygons(Json::arrayValue);
+auto StatisticsOperator::getPlot(const QueryRectangle &rect, const QueryTools &tools) -> std::unique_ptr<GenericPlot> {
+    auto result = std::make_unique<LayerStatistics>();
 
     // TODO: compute statistics using OpenCL
     for (int i = 0; i < getRasterSourceCount(); ++i) {
-        auto raster = getRasterFromSource(i,
-                                          QueryRectangle(rect, rect,
-                                                         QueryResolution::pixels(rasterWidth, rasterHeight)), tools,
-                                          RasterQM::EXACT);
-
-        double min = std::numeric_limits<double>::max();
-        double max = -std::numeric_limits<double>::max();
-        for (int x = 0; x < raster->width; ++x) {
-            for (int y = 0; y < raster->height; ++y) {
-                double value = raster->getAsDouble(x, y);
-                if (!raster->dd.is_no_data(value)) {
-                    min = std::min(min, value);
-                    max = std::max(min, value);
-                }
-            }
-        }
-
-        Json::Value rasterJson(Json::objectValue);
-        rasterJson["min"] = min;
-        rasterJson["max"] = max;
-
-        rasters.append(rasterJson);
+        auto raster = getRasterFromSource(
+                i,
+                QueryRectangle(rect, rect, QueryResolution::pixels(rasterWidth, rasterHeight)),
+                tools,
+                RasterQM::EXACT
+        );
+        processRaster(*result, *raster);
     }
-
 
     for (int i = 0; i < getPointCollectionSourceCount(); ++i) {
         auto collection = getPointCollectionFromSource(i, rect, tools);
-        processFeatureCollection(points, *collection);
+        processFeatureCollection(*result, LayerStatistics::FeatureType::POINTS, *collection);
     }
 
     for (int i = 0; i < getLineCollectionSourceCount(); ++i) {
         auto collection = getLineCollectionFromSource(i, rect, tools);
-        processFeatureCollection(lines, *collection);
+        processFeatureCollection(*result, LayerStatistics::FeatureType::LINES, *collection);
     }
 
     for (int i = 0; i < getPolygonCollectionSourceCount(); ++i) {
         auto collection = getPolygonCollectionFromSource(i, rect, tools);
-        processFeatureCollection(polygons, *collection);
+        processFeatureCollection(*result, LayerStatistics::FeatureType::POLYGONS, *collection);
     }
 
-
-    result["rasters"] = rasters;
-    result["points"] = points;
-    result["lines"] = lines;
-    result["polygons"] = polygons;
-
-    return std::make_unique<JsonPlot>(result);
+    return result;
 }
 
-void StatisticsOperator::processFeatureCollection(Json::Value &json,
-                                                  SimpleFeatureCollection &collection) const {
+auto StatisticsOperator::processRaster(LayerStatistics &result, const GenericRaster &raster) const -> void {
+    NumberStatistics number_statistics;
+
+    for (int x = 0; x < raster.width; ++x) {
+        for (int y = 0; y < raster.height; ++y) {
+            double value = raster.getAsDouble(x, y);
+            if (!raster.dd.is_no_data(value)) {
+                // TODO: combine no_data and NaNs in stats
+                number_statistics.add(value);
+            }
+        }
+    }
+
+    result.addRasterStats(number_statistics);
+}
+
+auto StatisticsOperator::processFeatureCollection(LayerStatistics &result,
+                                                  LayerStatistics::FeatureType feature_type,
+                                                  SimpleFeatureCollection &collection) const -> void {
+    result.startFeature(feature_type);
+
     size_t number_of_features = collection.getFeatureCount();
 
-    Json::Value collectionJson(Json::objectValue);
-
     for (auto &key : collection.feature_attributes.getNumericKeys()) {
-        double min = std::numeric_limits<double>::max();
-        double max = -std::numeric_limits<double>::max();
-        size_t count = 0;
-        size_t nan_values = 0;
-        double mean = 0;
-        double delta, delta2;
-        double M2 = 0;
+        NumberStatistics number_statistics;
 
         auto &array = collection.feature_attributes.numeric(key);
-        for (size_t j = 0; j < number_of_features; ++j) {
-            double value = array.get(j);
-
-            if (std::isnan(value)) {
-                nan_values += 1;
-                continue;
-            }
-
-            min = std::min(min, value);
-            max = std::max(max, value);
-
-            // Welford's algorithm
-            count += 1;
-            delta = value - mean;
-            mean += delta / count;
-            delta2 = value - mean;
-            M2 += delta * delta2;
+        for (size_t i = 0; i < number_of_features; ++i) {
+            number_statistics.add(array.get(i));
         }
 
-        Json::Value attributeJson(Json::objectValue);
-        attributeJson["min"] = min;
-        attributeJson["max"] = max;
-        attributeJson["mean"] = mean;
-        attributeJson["stddev"] = sqrt(M2 / count);
-        attributeJson["count"] = count;
-        attributeJson["nan_values"] = nan_values;
-
-        collectionJson[key] = attributeJson;
+        result.addFeatureNumericStats(key, number_statistics);
     }
 
     for (auto &key : collection.feature_attributes.getTextualKeys()) {
@@ -180,7 +171,7 @@ void StatisticsOperator::processFeatureCollection(Json::Value &json,
 
         auto &array = collection.feature_attributes.textual(key);
         for (size_t j = 0; j < number_of_features; ++j) {
-            const std::string& value = array.get(j);
+            const std::string &value = array.get(j);
 
             auto iter = value_map.find(value);
             if (iter != value_map.end()) {
@@ -190,47 +181,12 @@ void StatisticsOperator::processFeatureCollection(Json::Value &json,
             }
         }
 
-        std::vector<std::pair<std::string, size_t>> values (value_map.begin(), value_map.end());
+        std::vector<std::pair<std::string, std::size_t>> values(value_map.begin(), value_map.end());
 
-        std::sort(values.begin(), values.end(), [](auto &left, auto &right) {
-            if (left.second != right.second) {
-                return left.second > right.second;
-            } else {
-                return left.first <= right.first;
-            }
-        });
-
-        const double min_percentage_boundary = 0.001; // TODO: make a user parameter
-        const size_t max_k = 20; // TODO: make a user parameter
-        size_t k = 0;
-
-        Json::Value value_counts_json(Json::arrayValue);
-        for (const auto &kv : values) {
-            double percentage = ((double) kv.second) / ((double) number_of_features);
-            if (percentage < min_percentage_boundary) {
-                break;
-            }
-
-            k += 1;
-            if (k > max_k) {
-                break;
-            }
-
-            Json::Value kv_json(Json::arrayValue);
-            kv_json.append(kv.first);
-            kv_json.append(kv.second);
-            value_counts_json.append(kv_json);
-        }
-
-        Json::Value attributeJson(Json::objectValue);
-        attributeJson["count"] = number_of_features;
-        attributeJson["distinct_values"] = values.size();
-        attributeJson["value_counts"] = value_counts_json;
-
-        collectionJson[key] = attributeJson;
+        result.addFeatureTextStats(key, number_of_features, values.size(), values);
     }
 
-    json.append(collectionJson);
+    result.endFeature();
 }
 
 #endif

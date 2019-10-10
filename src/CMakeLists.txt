@@ -34,6 +34,7 @@ add_library(mapping_core_base_lib
         datatypes/plots/json.cpp
         datatypes/plots/text.cpp
         datatypes/plots/png.cpp
+        datatypes/plots/statistics.cpp
         rasterdb/rasterdb.cpp
         rasterdb/backend.cpp
         rasterdb/backend_local.cpp
@@ -94,7 +95,7 @@ add_library(mapping_core_base_lib
         util/parameters.cpp
         datatypes/raster/raster.cpp
         raster/opencl.cpp
-        util/ogr_source_datasets.cpp)
+        util/ogr_source_datasets.cpp util/NumberStatistics.cpp util/NumberStatistics.h)
 
 target_include_directories(mapping_core_base_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries_internal(mapping_cgi mapping_core_base_lib)
