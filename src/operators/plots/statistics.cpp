@@ -129,7 +129,7 @@ auto StatisticsOperator::getPlot(const QueryRectangle &rect, const QueryTools &t
         processFeatureCollection(*result, LayerStatistics::FeatureType::POLYGONS, *collection);
     }
 
-    return result;
+    return std::unique_ptr<GenericPlot>(result.release());
 }
 
 auto StatisticsOperator::processRaster(LayerStatistics &result, const GenericRaster &raster) const -> void {
