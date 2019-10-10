@@ -26,7 +26,7 @@ auto LayerStatistics::clone() const -> std::unique_ptr<GenericPlot> {
     clone->lines = this->lines;
     clone->polygons = this->polygons;
 
-    return clone;
+    return std::unique_ptr<GenericPlot>(clone.release());
 }
 
 auto LayerStatistics::addRasterStats(NumberStatistics &number_statistics) -> void {
