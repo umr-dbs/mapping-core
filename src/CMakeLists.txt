@@ -44,6 +44,7 @@ add_library(mapping_core_base_lib
         userdb/backend_sqlite.cpp
         featurecollectiondb/featurecollectiondb.cpp
         featurecollectiondb/featurecollectiondbbackend_postgres.cpp
+        featurecollectiondb/featurecollectiondbbackend_chronicledb.cpp
         util/gdal.cpp
         util/sha1.cpp
         util/curl.cpp
