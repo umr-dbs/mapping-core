@@ -28,7 +28,8 @@ add_library(mapping_core_unittests_lib
         unittests/util/number_statistics.cpp
         unittests/gdal_source.cpp
         unittests/util/configuration.cpp
-        unittests/uploader.cpp)
+        unittests/uploader.cpp
+        unittests/featurecollectiondb/chronicledb.cpp)
 
 target_include_directories(mapping_core_unittests_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
