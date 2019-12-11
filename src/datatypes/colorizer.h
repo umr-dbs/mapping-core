@@ -4,52 +4,62 @@
 #include <memory>
 #include <vector>
 
-#include <stdint.h>
+#include <cstdint>
 #include <json/json.h>
 
 
 using color_t = uint32_t;
 
-color_t color_from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255);
+color_t color_from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) noexcept;
 
 class Unit;
 
 static color_t defaultNoDataColor = color_from_rgba(0, 0, 0, 0);
 static color_t defaultDefaultColor = color_from_rgba(255, 0, 255, 0);
 
-/*
+/**
  * This is a basic Colorizer, based on a table of value:color pairs.
  * The color of a pixel is determined by interpolating between the nearest Breakpoints.
  */
 class Colorizer {
-	public:
-		struct Breakpoint {
-			Breakpoint(double v, color_t c) : value(v), color(c) {}
-			double value;
-			color_t color;
-		};
-		enum class Interpolation {
-			NEAREST,
-			LINEAR
-		};
-		using ColorTable = std::vector<Breakpoint>;
+    public:
+        struct Breakpoint {
+            Breakpoint(double v, color_t c) : value(v), color(c) {}
 
-		Colorizer(ColorTable table, Interpolation interpolation = Interpolation::LINEAR,
-                  color_t nodataColor = defaultNoDataColor, color_t defaultColor = defaultDefaultColor);
-		virtual ~Colorizer();
+            double value;
+            color_t color;
+        };
 
-		void fillPalette(color_t *colors, int num_colors, double min, double max) const;
-		std::string toJson() const;
+        enum class Interpolation {
+                NEAREST,
+                LINEAR,
+                TREAT_AS_RGBA,
+        };
+        using ColorTable = std::vector<Breakpoint>;
 
-		/**
-		 * create colorizer from json specification
-		 */
-		static std::unique_ptr<Colorizer> fromJson(const Json::Value &json);
+        explicit Colorizer(ColorTable table, Interpolation interpolation = Interpolation::LINEAR,
+                           color_t nodataColor = defaultNoDataColor, color_t defaultColor = defaultDefaultColor);
 
-		/**
-		 * create greyscale colorizer based on min/max values
-		 */
+        virtual ~Colorizer();
+
+        void fillPalette(color_t *colors, int num_colors, double min, double max) const;
+
+        std::string toJson() const;
+
+        /**
+         * create colorizer from json specification
+         */
+        static std::unique_ptr<Colorizer> fromJson(const Json::Value &json);
+
+        /**
+         * create greyscale colorizer based on min/max values
+         */
         static std::unique_ptr<Colorizer> greyscale(double min, double max);
+
+        /**
+         * Create an RGBA colorizer.
+         */
+        static auto rgba() -> std::unique_ptr<Colorizer>;
 
         /**
          * get the default colorizer for error output
@@ -72,11 +82,11 @@ class Colorizer {
             return defaultColor;
         }
 
-private:
-		ColorTable table;
-		Interpolation interpolation;
-		color_t nodataColor = defaultNoDataColor;
-		color_t defaultColor = defaultDefaultColor;
+    private:
+        ColorTable table;
+        Interpolation interpolation;
+        color_t nodataColor = defaultNoDataColor;
+        color_t defaultColor = defaultDefaultColor;
 };
 
 #endif
