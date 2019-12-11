@@ -51,7 +51,7 @@ Colorizer::Colorizer(ColorTable table, Interpolation interpolation, color_t noda
 
 Colorizer::~Colorizer() = default;
 
-void Colorizer::fillPalette(color_t *colors, int num_colors, double min, double max) const {
+void Colorizer::fillPalette(color_t *colors, unsigned int num_colors, double min, double max) const {
     double step = (num_colors > 1) ? ((max - min) / (num_colors - 1)) : 0;
     for (int c = 0; c < num_colors; c++) {
         double value = min + c * step;

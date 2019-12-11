@@ -42,7 +42,7 @@ class Colorizer {
 
         virtual ~Colorizer();
 
-        void fillPalette(color_t *colors, int num_colors, double min, double max) const;
+        void fillPalette(color_t *colors, unsigned int num_colors, double min, double max) const;
 
         std::string toJson() const;
 
