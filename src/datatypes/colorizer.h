@@ -10,7 +10,11 @@
 
 using color_t = uint32_t;
 
-color_t color_from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) noexcept;
+auto color_from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) noexcept -> color_t;
+auto r_from_color(color_t color) -> uint8_t;
+auto g_from_color(color_t color) -> uint8_t;
+auto b_from_color(color_t color) -> uint8_t;
+auto a_from_color(color_t color) -> uint8_t;
 
 class Unit;
 
@@ -45,6 +49,8 @@ class Colorizer {
         void fillPalette(color_t *colors, unsigned int num_colors, double min, double max) const;
 
         std::string toJson() const;
+
+        auto getInterpolation() const -> Interpolation { return this->interpolation; }
 
         /**
          * create colorizer from json specification

@@ -6,14 +6,14 @@
 #include <vector>
 #include <iomanip>
 
-color_t color_from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept {
+auto color_from_rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept -> color_t {
     return static_cast<uint32_t>(a) << 24u
            | static_cast<uint32_t>(b) << 16u
            | static_cast<uint32_t>(g) << 8u
            | static_cast<uint32_t>(r);
 }
 
-color_t color_from_json(const Json::Value &json) {
+auto color_from_json(const Json::Value &json) -> color_t {
     int r = json["r"].asInt();
     int g = json["g"].asInt();
     int b = json["b"].asInt();
@@ -21,19 +21,19 @@ color_t color_from_json(const Json::Value &json) {
     return color_from_rgba(r, g, b, a);
 }
 
-static uint8_t r_from_color(color_t color) {
+auto r_from_color(color_t color) -> uint8_t {
     return color & 0x00000000ffu;
 }
 
-static uint8_t g_from_color(color_t color) {
+auto g_from_color(color_t color) -> uint8_t {
     return (color & 0x0000ff00u) >> 8u;
 }
 
-static uint8_t b_from_color(color_t color) {
+auto b_from_color(color_t color) -> uint8_t {
     return (color & 0x00ff0000u) >> 16u;
 }
 
-static uint8_t a_from_color(color_t color) {
+auto a_from_color(color_t color) -> uint8_t {
     return (color & 0xff000000u) >> 24u;
 }
 
@@ -86,7 +86,8 @@ void Colorizer::fillPalette(color_t *colors, unsigned int num_colors, double min
                         else
                             color = table[i].color;
                     } else if (interpolation == Interpolation::TREAT_AS_RGBA) {
-                        throw MustNotHappenException("fillPallette must not be called when using RGBA mode in colorizer");
+                        throw MustNotHappenException(
+                                "fillPallette must not be called when using RGBA mode in colorizer");
                     } else {
                         throw MustNotHappenException("Unknown interpolation mode in colorizer");
                     }

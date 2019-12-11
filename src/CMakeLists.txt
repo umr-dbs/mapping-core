@@ -246,6 +246,9 @@ find_package(PNG REQUIRED)
 target_link_libraries(mapping_core_base_lib PNG::PNG)
 target_include_directories(mapping_core_base_lib PRIVATE ${PNG_INCLUDE_DIRS})
 
+find_package(PNG++ REQUIRED)
+target_include_directories(mapping_core_base_lib PRIVATE ${PNG++_INCLUDE_DIRS})
+
 find_package(ZLIB REQUIRED)
 target_link_libraries(mapping_core_base_lib ZLIB::ZLIB)
 target_include_directories(mapping_core_base_lib PRIVATE ${ZLIB_INCLUDE_DIRS})

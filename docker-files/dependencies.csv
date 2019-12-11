@@ -18,6 +18,7 @@ libgeos-dev,libgeos-c1v5
 libgtest-dev,
 libjpeg-dev,libjpeg8
 libpng-dev,libpng12-0
+libpng++-dev,
 libpoco-dev,libpocofoundation46;libpoconet46
 libpqxx-dev,libpqxx-4.0
 libproj-dev,libproj9

@@ -3,6 +3,7 @@
 #include "datatypes/colorizer.h"
 
 #include <png.h>
+#include <png++/png.hpp>
 #include <sstream>
 #include <cmath>
 
@@ -24,6 +25,43 @@ void Raster2D<T>::toPNG(std::ostream &output, const Colorizer &colorizer, bool f
             overlay = nullptr;
     }
 
+    switch (colorizer.getInterpolation()) {
+        case Colorizer::Interpolation::TREAT_AS_RGBA:
+            writeRgbaPng(output, flipx, flipy, overlay);
+            break;
+        case Colorizer::Interpolation::NEAREST:
+        case Colorizer::Interpolation::LINEAR:
+        default:
+            writePallettedPng(output, colorizer, flipx, flipy, overlay);
+            break;
+    }
+}
+
+template<typename T>
+auto Raster2D<T>::writeRgbaPng(std::ostream &output, bool flipx, bool flipy, Raster2D<uint8_t> *overlay) const -> void {
+    if (!std::is_same<T, color_t>()) {
+        throw ExporterException("Cannot create RGBA PNG from type different than Raster<uint32_t>");
+    }
+
+    // TODO: include overlay
+
+    png::image<png::rgba_pixel> image(this->width, this->height);
+    for (size_t y = 0; y < image.get_height(); ++y) {
+        for (size_t x = 0; x < image.get_width(); ++x) {
+            color_t value = this->get(x, y); // doing a hard narrowing because of the type check at the top
+            auto pixel = png::rgba_pixel(
+                    r_from_color(value), g_from_color(value), b_from_color(value), a_from_color(value)
+            );
+            image.set_pixel(x, y, pixel);
+        }
+    }
+
+    image.write_stream(output);
+}
+
+template<typename T>
+auto Raster2D<T>::writePallettedPng(std::ostream &output, const Colorizer &colorizer, bool flipx, bool flipy,
+                                    Raster2D<uint8_t> *overlay) const -> void {
     if (overlay) {
         // Write debug info
         std::ostringstream msg_scale;

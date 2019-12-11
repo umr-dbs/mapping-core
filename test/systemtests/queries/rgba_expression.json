@@ -1,0 +1,77 @@
+{
+    "name": "RGBA Raster of three inputs",
+    "query_result": "raster",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1388534400
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },
+    "resolution": {
+        "type": "pixels",
+        "x": 360,
+        "y": 180
+    },
+    "query": {
+        "params": {
+            "datatype": "UInt32",
+            "expression": "(((uint) 255) << 24u) | (((uint) A) << 16u) | (((uint) B) << 8u) | ((uint) C)",
+            "unit": {
+                "measurement": "unknown",
+                "unit": "unknown",
+                "min": 1,
+                "max": 4294967296
+            }
+        },
+        "colorizer": {
+            "type": "rgba",
+            "breakpoints": [
+                {
+                    "value": 0,
+                    "r": 0,
+                    "g": 0,
+                    "b": 0,
+                    "a": 0
+                },
+                {
+                    "value": 255,
+                    "r": 255,
+                    "g": 0,
+                    "b": 0
+                }
+            ]
+        },
+        "sources": {
+            "raster": [
+                {
+                    "params": {
+                        "channel": 0,
+                        "sourcename": "raster_planes"
+                    },
+                    "type": "gdal_source"
+                },
+                {
+                    "params": {
+                        "channel": 1,
+                        "sourcename": "raster_planes"
+                    },
+                    "type": "gdal_source"
+                },
+                {
+                    "params": {
+                        "channel": 2,
+                        "sourcename": "raster_planes"
+                    },
+                    "type": "gdal_source"
+                }
+            ]
+        },
+        "type": "expression"
+    },
+    "query_expected_hash": "foobar"
+}
