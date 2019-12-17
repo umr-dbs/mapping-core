@@ -1,5 +1,5 @@
 {
-    "name": "RGBA Raster of three inputs",
+    "name": "RGBA Raster Expression",
     "query_result": "raster",
     "temporal_reference": {
         "type": "UNIX",
@@ -20,31 +20,14 @@
     "query": {
         "params": {
             "datatype": "UInt32",
-            "expression": "(((uint) 255) << 24u) | (((uint) A) << 16u) | (((uint) B) << 8u) | ((uint) C)",
+            "expression": "A | (B << 8) | (C << 16) | (255 << 24)",
             "unit": {
                 "measurement": "unknown",
+                "interpolation": "unknown",
                 "unit": "unknown",
                 "min": 1,
-                "max": 4294967296
+                "max": 4294967295
             }
-        },
-        "colorizer": {
-            "type": "rgba",
-            "breakpoints": [
-                {
-                    "value": 0,
-                    "r": 0,
-                    "g": 0,
-                    "b": 0,
-                    "a": 0
-                },
-                {
-                    "value": 255,
-                    "r": 255,
-                    "g": 0,
-                    "b": 0
-                }
-            ]
         },
         "sources": {
             "raster": [

@@ -127,7 +127,7 @@ class Raster2D : public Raster<T, 2> {
         auto writePallettedPng(std::ostream &output, const Colorizer &colorizer, bool flipx, bool flipy,
                                Raster2D<uint8_t> *overlay) const -> void;
 
-        auto writeRgbaPng(std::ostream &output, bool flipx, bool flipy, Raster2D<uint8_t> *overlay) const -> void;
+        auto writeRgbaPng(std::ostream &output, bool flipx, bool flipy, const Raster2D<uint8_t> *overlay) const -> void;
 };
 
 

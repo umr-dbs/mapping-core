@@ -19,10 +19,11 @@ void Raster2D<T>::toPNG(std::ostream &output, const Colorizer &colorizer, bool f
                         Raster2D<uint8_t> *overlay) {
     this->setRepresentation(GenericRaster::Representation::CPU);
 
-    if (overlay) {
+    if (overlay && overlay->width == width && overlay->height == height) {
+        writeDebugInfoToOverlay(*this, *overlay, colorizer);
+    } else if (overlay) {
         // do not use the overlay if the size does not match
-        if (overlay->width != width || overlay->height != height)
-            overlay = nullptr;
+        overlay = nullptr;
     }
 
     switch (colorizer.getInterpolation()) {
@@ -38,20 +39,28 @@ void Raster2D<T>::toPNG(std::ostream &output, const Colorizer &colorizer, bool f
 }
 
 template<typename T>
-auto Raster2D<T>::writeRgbaPng(std::ostream &output, bool flipx, bool flipy, Raster2D<uint8_t> *overlay) const -> void {
+auto Raster2D<T>::writeRgbaPng(std::ostream &output, bool flipx, bool flipy, const Raster2D<uint8_t> *overlay) const -> void {
     if (!std::is_same<T, color_t>()) {
         throw ExporterException("Cannot create RGBA PNG from type different than Raster<uint32_t>");
     }
 
-    // TODO: include overlay
-
     png::image<png::rgba_pixel> image(this->width, this->height);
     for (size_t y = 0; y < image.get_height(); ++y) {
         for (size_t x = 0; x < image.get_width(); ++x) {
-            color_t value = this->get(x, y); // doing a hard narrowing because of the type check at the top
+            color_t value = this->get(
+                    flipx ? this->width - x - 1 : x,
+                    flipy ? this->height - y - 1 : y
+            ); // doing a hard narrowing to `color_t` because of the type check at the top
+
             auto pixel = png::rgba_pixel(
                     r_from_color(value), g_from_color(value), b_from_color(value), a_from_color(value)
             );
+
+            if (overlay && overlay->get(x, y) > 0) { // override pixel with overlay
+                static const png::rgba_pixel OVERLAY_MARKER_COLOR = png::rgba_pixel(255, 20, 147, 255); // deeppink
+                pixel = OVERLAY_MARKER_COLOR;
+            }
+
             image.set_pixel(x, y, pixel);
         }
     }
@@ -60,22 +69,45 @@ auto Raster2D<T>::writeRgbaPng(std::ostream &output, bool flipx, bool flipy, Ras
 }
 
 template<typename T>
+auto writeDebugInfoToOverlay(const Raster2D<T> &about, Raster2D<uint8_t> &overlay, const Colorizer &colorizer) -> void {
+    const double MARKER_VALUE = 1;
+    std::ostringstream text;
+
+    // write scale
+    auto previous_precision_value = text.precision(2);
+    text << std::fixed << "scale: " << about.pixel_scale_x << ", " << about.pixel_scale_y;
+    overlay.print(4, 26, MARKER_VALUE, text.str().c_str());
+
+    text.clear();
+    text.precision(previous_precision_value);
+
+    // write unit
+    text << "Unit: " << about.dd.unit.getMeasurement() << ", " << about.dd.unit.getUnit();
+    overlay.print(4, 36, MARKER_VALUE, text.str().c_str());
+
+    text.clear();
+
+    // write datatype and min/max
+    text << GDALGetDataTypeName(about.dd.datatype) << " (" << colorizer.minValue() << " - " << colorizer.maxValue()
+         << ")";
+    overlay.print(4, 16, MARKER_VALUE, text.str().c_str());
+
+    // mark outer border
+    for (uint32_t x = 0; x < overlay.width; ++x) {
+        overlay.set(x, 0, MARKER_VALUE);
+        overlay.set(x, overlay.height, MARKER_VALUE);
+    }
+    for (uint32_t y = 0; y < overlay.height; ++y) {
+        overlay.set(0, y, MARKER_VALUE);
+        overlay.set(overlay.height, y, MARKER_VALUE);
+    }
+}
+
+template<typename T>
 auto Raster2D<T>::writePallettedPng(std::ostream &output, const Colorizer &colorizer, bool flipx, bool flipy,
                                     Raster2D<uint8_t> *overlay) const -> void {
-    if (overlay) {
-        // Write debug info
-        std::ostringstream msg_scale;
-        msg_scale.precision(2);
-        msg_scale << std::fixed << "scale: " << pixel_scale_x << ", " << pixel_scale_y;
-        overlay->print(4, 26, 1, msg_scale.str().c_str());
-
-        std::ostringstream msg_unit;
-        msg_unit << "Unit: " << dd.unit.getMeasurement() << ", " << dd.unit.getUnit();
-        overlay->print(4, 36, 1, msg_unit.str().c_str());
-    }
 
     // calculate the actual min/max so we can include only the range we require in the palette
-
 
     uint32_t colors[256];
     colors[0] = colorizer.getNoDataColor();
@@ -92,13 +124,6 @@ auto Raster2D<T>::writePallettedPng(std::ostream &output, const Colorizer &color
     }
 
     colorizer.fillPalette(&colors[2], num_colors, actual_min, actual_max);
-
-    if (overlay) {
-        std::ostringstream msg;
-        msg << GDALGetDataTypeName(dd.datatype) << " (" << actual_min << " - " << actual_max << ")";
-        overlay->print(4, 16, 1, msg.str().c_str());
-    }
-
 
     // prepare PNG output
     png_structp png_ptr;
@@ -163,17 +188,6 @@ auto Raster2D<T>::writePallettedPng(std::ostream &output, const Colorizer &color
                         row[x] = round(253.0 * ((float) v - actual_min) / (actual_max - actual_min)) + 2;
                 }
             }
-            if (overlay && row[x] != 1) {
-                // calculate the distance to the closest image border
-                int distx = std::min(x, width - 1 - x);
-                int disty = std::min(y, height - 1 - y);
-
-                if ((distx == 0 && (disty < 32 || disty > height / 2 - 16)) ||
-                    (disty == 0 && (distx < 32 || distx > width / 2 - 16))) {
-                    row[x] = 1;
-                }
-            }
-
         }
         png_write_row(png_ptr, (png_bytep) row);
     }
