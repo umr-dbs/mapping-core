@@ -93,7 +93,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRe
 }
 
 bool overlaps (double a_start, double a_end, double b_start, double b_end) {
-	return a_end > a_start && b_end > b_start && a_end >= b_start && a_start <= b_end;
+	return a_end >= a_start && b_end >= b_start && a_end >= b_start && a_start <= b_end;
 }
 
 // loads the raster and read the wanted raster data section into a GenericRaster
