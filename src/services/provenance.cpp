@@ -1,6 +1,7 @@
 
 #include "services/ogcservice.h"
 #include "operators/operator.h"
+#include "util/log.h"
 
 /*
  * This class serves provenance information of a query.
@@ -27,6 +28,7 @@ REGISTER_HTTP_SERVICE(ProvenanceService, "provenance");
 void ProvenanceService::run() {
 	auto session = UserDB::loadSession(params.get("sessiontoken"));
 	auto user = session->getUser();
+	Log::debug("User: " + user.getUserIDString());
 
 	std::string type = params.get("type", "");
 	if(type != "points" && type != "lines" && type != "polygons" && type != "raster") {

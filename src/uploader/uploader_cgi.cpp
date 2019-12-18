@@ -7,7 +7,7 @@
 
 int main() {
     Configuration::loadFromDefaultPaths();
-    Log::off();
+    Log::streamAndMemoryOff();
     UserDB::initFromConfiguration();
 
     UploadService service(std::cin.rdbuf(), std::cout.rdbuf(), std::cerr.rdbuf());

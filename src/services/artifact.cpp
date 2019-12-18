@@ -6,6 +6,7 @@
 #include "util/exceptions.h"
 #include "util/curl.h"
 #include "util/timeparser.h"
+#include "util/log.h"
 
 #include <cstring>
 #include <sstream>
@@ -62,6 +63,7 @@ void ArtifactService::run() {
 
 		auto session = UserDB::loadSession(params.get("sessiontoken"));
 		auto user = session->getUser();
+		Log::debug("User: " + user.getUserIDString());
 
 		if(request == "create") {
 			std::string type = params.get("type");

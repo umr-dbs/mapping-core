@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <ostream>
+#include <fstream>
 #include <stdarg.h>
 
 
@@ -22,6 +23,14 @@ public:
 	enum class LogLevel {
 		OFF, ERROR, WARN, INFO, DEBUG, TRACE
 	};
+
+	/**
+	 * Logs to a file on disc. Parameters can be set in config (enable/disable, file location, log level, cgi log file name).
+	 * It will not be disabled with the streamAndMemoryOff() call [former off()].
+	 * This allows logging on fcgi level without interfering with memory and stream logging.
+	 * @param isCgi If isCgi is true every instance of mapping_cgi will log into the same file, else a new file will be created for this fcgi program instance.
+	 */
+	static void logToFile(bool isCgi);
 
 	/**
 	 * Logs to a stream, usually std::cerr
@@ -42,9 +51,14 @@ public:
 	static std::vector<std::string> getMemoryMessages();
 
 	/**
-	 * Turns logging off.
+	 * Turns stream and memory logging off.
 	 */
-	static void off();
+	static void streamAndMemoryOff();
+
+    /**
+     * Turns file logging off.
+     */
+    static void fileOff();
 
 	static void error(const char *msg, ...);
 	static void error(const std::string &msg);
@@ -56,6 +70,22 @@ public:
 	static void debug(const std::string &msg);
 	static void trace(const char *msg, ...);
 	static void trace(const std::string &msg);
+
+	/**
+	 * Sets the thread_local variable current_request_id. If logRequestId is set to true
+	 * the request id of the current thread will be written in front of the log messages.
+	 */
+	static void setThreadRequestId(long id);
+
+    static bool log_request_id;
+
+	/**
+	 * Set if the current request id will be written before logs. Call setThreadRequestId
+	 * to set the current id for the calling thread.
+	 */
+	static void logRequestId(bool value);
+
+	static thread_local long current_request_id;
 };
 
 #endif /* LOG_H_ */

@@ -46,6 +46,11 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 	std::ostream error(err);
 	HTTPResponseStream response(out);
 
+	//read query input to string and log it. reset input istream position to the beginning afterwards.
+	std::string query_string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	input.seekg(0, std::ios_base::beg);
+	Log::debug(query_string);
+
 	Log::logToStream(Log::LogLevel::WARN, &error);
 	Log::logToMemory(Log::LogLevel::INFO);
 	try {
@@ -57,6 +62,8 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 		auto servicename = params.get("service");
 		auto service = HTTPService::getRegisteredService(servicename, params, response, error);
 
+		Log::debug("Running new service: " + servicename);
+		
 		service->run();
 	}
     catch(const MappingException &e){
@@ -64,6 +71,7 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
     }
 	catch (const std::exception &e) {
 		error << "Request failed with an exception: " << e.what() << "\n";
+        Log::debug(e.what());
 		if (Configuration::get<bool>("global.debug", false)) {
             response.send500(concat("invalid request: ", e.what()));
         } else {
@@ -71,7 +79,7 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
         }
 
 	}
-	Log::off();
+	Log::streamAndMemoryOff();
 }
 
 /**
@@ -81,6 +89,11 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 	std::istream input(in);
 	std::ostream error(err);
 	HTTPResponseStream response(out);
+
+	//read query input to string and log it. reset input istream position to the beginning afterwards.
+	std::string query_string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	input.seekg(0, std::ios_base::beg);
+	Log::debug(query_string);
 
 	Log::logToStream(Log::LogLevel::WARN, &error);
 	Log::logToMemory(Log::LogLevel::INFO);
@@ -93,6 +106,8 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
 		auto servicename = params.get("service");
 		auto service = HTTPService::getRegisteredService(servicename, params, response, error);
 
+		Log::debug("Running new service: " + servicename);
+
 		service->run();
 	}
     catch(const MappingException &e){
@@ -100,13 +115,14 @@ void HTTPService::run(std::streambuf *in, std::streambuf *out, std::streambuf *e
     }
 	catch (const std::exception &e) {
 		error << "Request failed with an exception: " << e.what() << "\n";
+		Log::debug(e.what());
 		if (Configuration::get<bool>("global.debug", false)) {
             response.send500(concat("invalid request: ", e.what()));
         } else {
             response.send500("invalid request");
         }
 	}
-	Log::off();
+	Log::streamAndMemoryOff();
 }
 
 void HTTPService::catchExceptions(HTTPResponseStream& response, const MappingException &me){
@@ -126,6 +142,7 @@ void HTTPService::catchExceptions(HTTPResponseStream& response, const MappingExc
         }
         response.sendHeader("Status", "500 Internal Server Error");
         response.sendJSON(exceptionJson);
+        Log::debug(exceptionJson.asString());
     } else {
         response.send500("invalid request");
     }
