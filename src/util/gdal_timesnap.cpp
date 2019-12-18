@@ -146,60 +146,67 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
         throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
 
     if(datasetJson.isMember("time_interval") || channelJson.isMember("time_interval")) {
-        Json::Value timeInterval = channelJson.get("time_interval", datasetJson.get("time_interval", Json::Value(Json::objectValue)));
-        TimeUnit intervalUnit 	 = GDALTimesnap::createTimeUnit(timeInterval.get("unit", "Month").asString());
-        int intervalValue 		 = timeInterval.get("value", 1).asInt();
-
-
-        // doesn't work on older boost versions because seconds precision is limit to 32bit
-		// ptime start = from_time_t(static_cast<time_t>(time_start_mapping));
-        // ptime wanted = from_time_t(static_cast<time_t>(wantedTimeUnix));
-
-        ptime start = ptime(boost::gregorian::date(1970,1,1)) + milliseconds(static_cast<long>(time_start_mapping * 1000));
-        ptime wanted = ptime(boost::gregorian::date(1970,1,1)) + milliseconds(static_cast<long>(wantedTimeUnix * 1000));
-
-		//snap the time to the given interval
-        ptime snappedTimeStart = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, start, wanted);
-
-        // snap end to the next interval
-		ptime snappedTimeEnd(snappedTimeStart);
-		switch (intervalUnit) {
-			case TimeUnit::Year:
-				snappedTimeEnd += boost::gregorian::years(intervalValue);
-                break;
-			case TimeUnit::Month:
-				snappedTimeEnd += boost::gregorian::months(intervalValue);
-                break;
-			case TimeUnit::Day:
-				snappedTimeEnd += boost::gregorian::days(intervalValue);
-                break;
-			case TimeUnit::Hour:
-				snappedTimeEnd += boost::posix_time::hours(intervalValue);
-                break;
-			case TimeUnit::Minute:
-				snappedTimeEnd += boost::posix_time::minutes(intervalValue);
-                break;
-			case TimeUnit::Second:
-				snappedTimeEnd += boost::posix_time::seconds(intervalValue);
-                break;
-		}
-
-        time_start_mapping = boost::posix_time::to_time_t(snappedTimeStart);
-        time_end_mapping = boost::posix_time::to_time_t(snappedTimeEnd);
-
-        // format date to determine file
-        auto snappedTimeT = static_cast<time_t>(time_start_mapping);
-        tm snappedTimeTm = {};
-        gmtime_r(&snappedTimeT, &snappedTimeTm);
-
-        char date[MAX_FILE_NAME_LENGTH] = {0};
-        strftime(date, sizeof(date), time_format.c_str(), &snappedTimeTm);
-        std::string snappedTimeString(date);
 
         std::string placeholder = "%%%TIME_STRING%%%";
         size_t placeholderPos = fileName.find(placeholder);
 
-        fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
+        //only create the timesnap when a placeholder exists. else the filename is fixed.
+        if (placeholderPos != std::string::npos) {
+            Json::Value timeInterval = channelJson.get("time_interval", datasetJson.get("time_interval", Json::Value(
+                    Json::objectValue)));
+            TimeUnit intervalUnit = GDALTimesnap::createTimeUnit(timeInterval.get("unit", "Month").asString());
+            int intervalValue = timeInterval.get("value", 1).asInt();
+
+
+            // doesn't work on older boost versions because seconds precision is limit to 32bit
+            // ptime start = from_time_t(static_cast<time_t>(time_start_mapping));
+            // ptime wanted = from_time_t(static_cast<time_t>(wantedTimeUnix));
+
+            ptime start = ptime(boost::gregorian::date(1970, 1, 1)) +
+                          milliseconds(static_cast<long>(time_start_mapping * 1000));
+            ptime wanted =
+                    ptime(boost::gregorian::date(1970, 1, 1)) + milliseconds(static_cast<long>(wantedTimeUnix * 1000));
+
+            //snap the time to the given interval
+            ptime snappedTimeStart = GDALTimesnap::snapToInterval(intervalUnit, intervalValue, start, wanted);
+
+            // snap end to the next interval
+            ptime snappedTimeEnd(snappedTimeStart);
+            switch (intervalUnit) {
+                case TimeUnit::Year:
+                    snappedTimeEnd += boost::gregorian::years(intervalValue);
+                    break;
+                case TimeUnit::Month:
+                    snappedTimeEnd += boost::gregorian::months(intervalValue);
+                    break;
+                case TimeUnit::Day:
+                    snappedTimeEnd += boost::gregorian::days(intervalValue);
+                    break;
+                case TimeUnit::Hour:
+                    snappedTimeEnd += boost::posix_time::hours(intervalValue);
+                    break;
+                case TimeUnit::Minute:
+                    snappedTimeEnd += boost::posix_time::minutes(intervalValue);
+                    break;
+                case TimeUnit::Second:
+                    snappedTimeEnd += boost::posix_time::seconds(intervalValue);
+                    break;
+            }
+
+            time_start_mapping = boost::posix_time::to_time_t(snappedTimeStart);
+            time_end_mapping = boost::posix_time::to_time_t(snappedTimeEnd);
+
+            // format date to determine file
+            auto snappedTimeT = static_cast<time_t>(time_start_mapping);
+            tm snappedTimeTm = {};
+            gmtime_r(&snappedTimeT, &snappedTimeTm);
+
+            char date[MAX_FILE_NAME_LENGTH] = {0};
+            strftime(date, sizeof(date), time_format.c_str(), &snappedTimeTm);
+            std::string snappedTimeString(date);
+
+            fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
+        }
     }
 
 
