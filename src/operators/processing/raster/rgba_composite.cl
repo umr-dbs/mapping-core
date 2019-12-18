@@ -2,9 +2,9 @@ __kernel void rgba_composite_kernel(__constant const IN_TYPE0 *red_data, __const
                                     __constant const IN_TYPE1 *green_data, __constant const RasterInfo *green_info,
                                     __constant const IN_TYPE2 *blue_data, __constant const RasterInfo *blue_info,
                                     __global uint *rgba_data, __constant const RasterInfo *rgba_info,
-                                    double red_min, double red_max, double red_factor,
-                                    double green_min, double green_max, double green_factor,
-                                    double blue_min, double blue_max, double blue_factor) {
+                                    double red_min, double red_max, double red_scale,
+                                    double green_min, double green_max, double green_scale,
+                                    double blue_min, double blue_max, double blue_scale) {
     // determine sizes from first raster
     const int row_width = red_info->size[0];
     const int number_of_pixels = red_info->size[0] * red_info->size[1] * red_info->size[2];
@@ -22,7 +22,7 @@ __kernel void rgba_composite_kernel(__constant const IN_TYPE0 *red_data, __const
     double red = (double) red_data[pixel_index];
     red -= red_min; // shift to zero
     red /= red_max - red_min; // normalize to [0, 1]
-    red *= red_factor;
+    red *= red_scale;
     red = clamp(round(255. * red), 0., 255.); // bring value to integer range [0, 255]
 
     rgba_data[pixel_index] |= (uint) red;
@@ -30,7 +30,7 @@ __kernel void rgba_composite_kernel(__constant const IN_TYPE0 *red_data, __const
     double green = (double) green_data[pixel_index];
     green -= green_min; // shift to zero
     green /= green_max - green_min; // normalize to [0, 1]
-    green *= green_factor;
+    green *= green_scale;
     green = clamp(round(255. * green), 0., 255.); // bring value to integer range [0, 255]
 
     rgba_data[pixel_index] |= ((uint) green) << 8;
@@ -38,7 +38,7 @@ __kernel void rgba_composite_kernel(__constant const IN_TYPE0 *red_data, __const
     double blue = (double) blue_data[pixel_index];
     blue -= blue_min; // shift to zero
     blue /= blue_max - blue_min; // normalize to [0, 1]
-    blue *= blue_factor;
+    blue *= blue_scale;
     blue = clamp(round(255. * blue), 0., 255.); // bring value to integer range [0, 255]
 
     rgba_data[pixel_index] |= ((uint) blue) << 16;
