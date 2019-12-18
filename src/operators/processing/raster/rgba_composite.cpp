@@ -117,7 +117,7 @@ auto RgbaCompositeOperator::getRaster(const QueryRectangle &rect,
     output_tref.intersect(raster_b->stref);
 
     // create output raster
-    DataDescription output_data_description(GDALDataType::GDT_UInt32, Unit::unknown());
+    DataDescription output_data_description(GDALDataType::GDT_UInt32, Unit::unknown(), true, 0);
     SpatioTemporalReference output_stref(raster_r->stref, output_tref);
     auto rgba_raster = GenericRaster::create(output_data_description, output_stref,
                                              raster_r->width, raster_r->height, 0,
