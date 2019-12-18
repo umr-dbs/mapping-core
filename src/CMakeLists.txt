@@ -145,6 +145,7 @@ add_library(mapping_core_operators_lib
         operators/processing/raster/matrixkernel.cpp
         operators/processing/raster/expression.cpp
         operators/processing/raster/classification.cpp
+        operators/processing/raster/rgba_composite.cpp
         operators/processing/raster/temporal_aggregation.cpp
         operators/processing/features/difference.cpp
         operators/processing/features/numeric_attribute_filter.cpp
