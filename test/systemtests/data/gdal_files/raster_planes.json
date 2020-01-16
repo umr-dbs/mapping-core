@@ -1,0 +1,117 @@
+{
+    "channels": [
+        {
+            "name": "Plane1",
+            "datatype": "Byte",
+            "nodata": 1,
+            "unit": {
+                "interpolation": "continuous",
+                "unit": "raw",
+                "measurement": "raw",
+                "min": 0,
+                "max": 255
+            },
+            "colorizer": {
+                "type": "palette",
+                "breakpoints": [
+                    {
+                        "value": 0,
+                        "r": 0,
+                        "g": 0,
+                        "b": 0,
+                        "a": 0
+                    },
+                    {
+                        "value": 255,
+                        "r": 255,
+                        "g": 0,
+                        "b": 0
+                    }
+                ]
+            },
+            "file_name": "plane1.tif",
+            "channel": 1
+        },
+        {
+            "name": "Plane2",
+            "datatype": "Byte",
+            "nodata": 1,
+            "unit": {
+                "interpolation": "continuous",
+                "unit": "raw",
+                "measurement": "raw",
+                "min": 0,
+                "max": 255
+            },
+            "colorizer": {
+                "type": "palette",
+                "breakpoints": [
+                    {
+                        "value": 0,
+                        "r": 0,
+                        "g": 0,
+                        "b": 0,
+                        "a": 0
+                    },
+                    {
+                        "value": 255,
+                        "r": 0,
+                        "g": 255,
+                        "b": 0
+                    }
+                ]
+            },
+            "file_name": "plane2.tif",
+            "channel": 1
+        },
+        {
+            "name": "Plane3",
+            "datatype": "Byte",
+            "nodata": 1,
+            "unit": {
+                "interpolation": "continuous",
+                "unit": "raw",
+                "measurement": "raw",
+                "min": 0,
+                "max": 255
+            },
+            "colorizer": {
+                "type": "palette",
+                "breakpoints": [
+                    {
+                        "value": 0,
+                        "r": 0,
+                        "g": 0,
+                        "b": 0,
+                        "a": 0
+                    },
+                    {
+                        "value": 255,
+                        "r": 0,
+                        "g": 0,
+                        "b": 255
+                    }
+                ]
+            },
+            "file_name": "plane3.tif",
+            "channel": 1
+        }
+    ],
+    "coords": {
+        "crs": "EPSG:4326",
+        "origin": [
+            -180,
+            90
+        ],
+        "scale": [
+            30,
+            -30
+        ],
+        "size": [
+            12,
+            6
+        ]
+    },
+    "dataset_name": "raster_planes",
+    "path": "/home/beilschmidt/CLionProjects/mapping-core/test/systemtests/data/gdal_files/raster_planes/"
+}

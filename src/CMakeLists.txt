@@ -145,6 +145,7 @@ add_library(mapping_core_operators_lib
         operators/processing/raster/matrixkernel.cpp
         operators/processing/raster/expression.cpp
         operators/processing/raster/classification.cpp
+        operators/processing/raster/rgba_composite.cpp
         operators/processing/raster/temporal_aggregation.cpp
         operators/processing/features/difference.cpp
         operators/processing/features/numeric_attribute_filter.cpp
@@ -197,6 +198,7 @@ foreach(cl_file IN ITEMS
         operators/processing/meteosat/temperature.cl
         operators/processing/raster/classification_kernels.cl
         operators/processing/raster/matrixkernel.cl
+        operators/processing/raster/rgba_composite.cl
         )
     add_custom_command(TARGET mapping_cl_header_generator
             POST_BUILD
@@ -245,6 +247,9 @@ target_include_directories(mapping_core_base_lib PUBLIC ${GDAL_INCLUDE_DIR})
 find_package(PNG REQUIRED)
 target_link_libraries(mapping_core_base_lib PNG::PNG)
 target_include_directories(mapping_core_base_lib PRIVATE ${PNG_INCLUDE_DIRS})
+
+find_package(PNG++ REQUIRED)
+target_include_directories(mapping_core_base_lib PRIVATE ${PNG++_INCLUDE_DIRS})
 
 find_package(ZLIB REQUIRED)
 target_link_libraries(mapping_core_base_lib ZLIB::ZLIB)

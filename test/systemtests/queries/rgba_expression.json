@@ -1,0 +1,63 @@
+{
+    "name": "RGBA Raster Expression",
+    "query_result": "raster",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1388534400
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -180,
+        "x2": 180,
+        "y1": -90,
+        "y2": 90
+    },
+    "resolution": {
+        "type": "pixels",
+        "x": 360,
+        "y": 180
+    },
+    "query": {
+        "params": {
+            "raster_r_min": 0,
+            "raster_r_max": 255,
+            "raster_r_scale": 1,
+            "raster_g_min": 0,
+            "raster_g_max": 255,
+            "raster_g_scale": 1,
+            "raster_b_min": 0,
+            "raster_b_max": 255,
+            "raster_b_scale": 1
+        },
+        "sources": {
+            "raster": [
+                {
+                    "params": {
+                        "channel": 0,
+                        "sourcename": "raster_planes_hires",
+                        "transform": false
+                    },
+                    "type": "gdal_source"
+                },
+                {
+                    "params": {
+                        "channel": 1,
+                        "sourcename": "raster_planes_hires",
+                        "transform": false
+                    },
+                    "type": "gdal_source"
+                },
+                {
+                    "params": {
+                        "channel": 2,
+                        "sourcename": "raster_planes_hires",
+                        "transform": false
+                    },
+                    "type": "gdal_source"
+                }
+            ]
+        },
+        "type": "rgba_composite"
+    },
+    "query_expected_hash": "foobar"
+}
