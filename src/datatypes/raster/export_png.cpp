@@ -57,7 +57,12 @@ auto Raster2D<T>::writeRgbaBytesPng(std::ostream &output, bool flipx, bool flipy
             );
 
             if (overlay && overlay->get(x, y) > 0) { // override pixel with overlay
-                static const png::rgba_pixel OVERLAY_MARKER_COLOR = png::rgba_pixel(255, 20, 147, 255); // deeppink
+                static const png::rgba_pixel OVERLAY_MARKER_COLOR = png::rgba_pixel(
+                        r_from_color(defaultDefaultColor),
+                        g_from_color(defaultDefaultColor),
+                        b_from_color(defaultDefaultColor),
+                        a_from_color(defaultDefaultColor)
+                );
                 pixel = OVERLAY_MARKER_COLOR;
             }
 
