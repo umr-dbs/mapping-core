@@ -384,7 +384,7 @@ void PostgresFeatureCollectionDBBackend::loadFeatures(SimpleFeatureCollection &c
 
 
 	pqxx::work work(connection);
-
+	//TODO: fix error with redundantly declared prepared statements properly
 	std::string prepare = concat("select_", dataSetName, std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count());
 	connection.unprepare(prepare);
 	connection.prepare(prepare, query.str());
