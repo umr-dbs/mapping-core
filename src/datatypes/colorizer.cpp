@@ -126,7 +126,7 @@ std::string Colorizer::toJson() const {
             ss << "nearest";
             break;
         case Interpolation::TREAT_AS_RGBA:
-            ss << "rgba";
+            ss << "rgba_composite";
             break;
     }
     ss << "\", \"breakpoints\": [\n";
@@ -172,7 +172,7 @@ std::unique_ptr<Colorizer> Colorizer::fromJson(const Json::Value &json) {
     } else if (type == "palette") {
         // TODO: use discrete
         interpolation = Interpolation::NEAREST;
-    } else if (type == "rgba") {
+    } else if (type == "rgba_composite") {
         interpolation = Interpolation::TREAT_AS_RGBA;
     } else {
         throw ArgumentException("Unknown type for colorizer");
