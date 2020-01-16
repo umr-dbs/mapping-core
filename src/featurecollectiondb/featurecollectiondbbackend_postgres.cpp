@@ -9,6 +9,7 @@
 #include <pqxx/pqxx>
 #include <regex>
 #include <json/json.h>
+#include <chrono>
 
 /**
  * Backend for the FeatureCollectionDB
@@ -384,7 +385,7 @@ void PostgresFeatureCollectionDBBackend::loadFeatures(SimpleFeatureCollection &c
 
 	pqxx::work work(connection);
 
-	std::string prepare = "select_" + dataSetName;
+	std::string prepare = concat("select_", dataSetName, std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count());
 	connection.unprepare(prepare);
 	connection.prepare(prepare, query.str());
 
