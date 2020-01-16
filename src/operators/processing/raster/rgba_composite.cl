@@ -29,9 +29,9 @@ __kernel void rgba_composite_kernel(__constant const IN_TYPE0 *red_data, __const
     uint red = fit_to_interval_0_255((double) red_data[pixel_index], red_min, red_max, red_scale);
     uint green = fit_to_interval_0_255((double) green_data[pixel_index], green_min, green_max, green_scale);
     uint blue = fit_to_interval_0_255((double) blue_data[pixel_index], blue_min, blue_max, blue_scale);
-    uint no_data = is_any_nodata ? 0 : 255;
+    uint alpha = is_any_nodata ? 0 : 255;
 
-    rgba_data[pixel_index] = (red) | (green << 8) | (blue << 16) | (no_data << 24);
+    rgba_data[pixel_index] = (red) | (green << 8) | (blue << 16) | (alpha << 24);
 }
 
 /**
