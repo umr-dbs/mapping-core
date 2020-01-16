@@ -28,7 +28,7 @@ void Raster2D<T>::toPNG(std::ostream &output, const Colorizer &colorizer, bool f
 
     switch (colorizer.getInterpolation()) {
         case Colorizer::Interpolation::TREAT_AS_RGBA:
-            writeRgbaPng(output, flipx, flipy, overlay);
+            writeRgbaBytesPng(output, flipx, flipy, overlay);
             break;
         case Colorizer::Interpolation::NEAREST:
         case Colorizer::Interpolation::LINEAR:
@@ -39,7 +39,7 @@ void Raster2D<T>::toPNG(std::ostream &output, const Colorizer &colorizer, bool f
 }
 
 template<typename T>
-auto Raster2D<T>::writeRgbaPng(std::ostream &output, bool flipx, bool flipy, const Raster2D<uint8_t> *overlay) const -> void {
+auto Raster2D<T>::writeRgbaBytesPng(std::ostream &output, bool flipx, bool flipy, const Raster2D<uint8_t> *overlay) const -> void {
     if (!std::is_same<T, color_t>()) {
         throw ExporterException("Cannot create RGBA PNG from type different than Raster<uint32_t>");
     }
