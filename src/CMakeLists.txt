@@ -198,6 +198,7 @@ foreach(cl_file IN ITEMS
         operators/processing/meteosat/temperature.cl
         operators/processing/raster/classification_kernels.cl
         operators/processing/raster/matrixkernel.cl
+        operators/processing/raster/rgba_composite.cl
         )
     add_custom_command(TARGET mapping_cl_header_generator
             POST_BUILD

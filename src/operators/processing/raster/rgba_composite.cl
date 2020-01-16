@@ -1,3 +1,13 @@
+uint fit_to_interval_0_255(double value, double min, double max, double scale); // forward
+
+/**
+ * Computes an RGBA composite out of three input rasters.
+ * It transforms each channel into the byte range and composes it into a single unsigned integer.
+ * Alpha depends on NO_DATA and fills in the last of the four bytes.
+ *
+ * Each channel has metadata on their `*_min` and `*_max` values for being able to fit them into the range [0, 255].
+ * Moreover, the value `*_scale` ([0, 1]) can be used to accentuate the composite.
+ */
 __kernel void rgba_composite_kernel(__constant const IN_TYPE0 *red_data, __constant const RasterInfo *red_info,
                                     __constant const IN_TYPE1 *green_data, __constant const RasterInfo *green_info,
                                     __constant const IN_TYPE2 *blue_data, __constant const RasterInfo *blue_info,
@@ -17,29 +27,28 @@ __kernel void rgba_composite_kernel(__constant const IN_TYPE0 *red_data, __const
                                ISNODATA2(blue_data[pixel_index], blue_info);
 
     // initialize `rgba_data` with alpha value, depending on if there is any NODATA
-    rgba_data[pixel_index] = is_any_nodata ? 0 : (255 << 24);
+    uint no_data = is_any_nodata ? 0 : (255 << 24);
+    rgba_data[pixel_index] = no_data;
 
-    double red = (double) red_data[pixel_index];
-    red -= red_min; // shift to zero
-    red /= red_max - red_min; // normalize to [0, 1]
-    red *= red_scale;
-    red = clamp(round(255. * red), 0., 255.); // bring value to integer range [0, 255]
+    uint red = fit_to_interval_0_255((double) red_data[pixel_index], red_min, red_max, red_scale);
+    rgba_data[pixel_index] |= red;
 
-    rgba_data[pixel_index] |= (uint) red;
+    uint green = fit_to_interval_0_255((double) green_data[pixel_index], green_min, green_max, green_scale);
+    rgba_data[pixel_index] |= green << 8;
 
-    double green = (double) green_data[pixel_index];
-    green -= green_min; // shift to zero
-    green /= green_max - green_min; // normalize to [0, 1]
-    green *= green_scale;
-    green = clamp(round(255. * green), 0., 255.); // bring value to integer range [0, 255]
+    uint blue = fit_to_interval_0_255((double) blue_data[pixel_index], blue_min, blue_max, blue_scale);
+    rgba_data[pixel_index] |= blue << 16;
+}
 
-    rgba_data[pixel_index] |= ((uint) green) << 8;
-
-    double blue = (double) blue_data[pixel_index];
-    blue -= blue_min; // shift to zero
-    blue /= blue_max - blue_min; // normalize to [0, 1]
-    blue *= blue_scale;
-    blue = clamp(round(255. * blue), 0., 255.); // bring value to integer range [0, 255]
-
-    rgba_data[pixel_index] |= ((uint) blue) << 16;
+/**
+ * Fits The incoming value to the interval [0, 255].
+ *
+ * The parameter `scale` must be in the range [0, 1].
+ */
+uint fit_to_interval_0_255(double value, double min, double max, double scale) {
+    double result = value - min; // shift towards zero
+    result /= max - min; // normalize to [0, 1]
+    result *= scale; // after scaling, value stays in [0, 1]
+    result = clamp(round(255. * result), 0., 255.); // bring value to integer range [0, 255]
+    return (uint) result;
 }
