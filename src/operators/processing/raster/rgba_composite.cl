@@ -26,18 +26,12 @@ __kernel void rgba_composite_kernel(__constant const IN_TYPE0 *red_data, __const
                                ISNODATA1(green_data[pixel_index], green_info) ||
                                ISNODATA2(blue_data[pixel_index], blue_info);
 
-    // initialize `rgba_data` with alpha value, depending on if there is any NODATA
-    uint no_data = is_any_nodata ? 0 : (255 << 24);
-    rgba_data[pixel_index] = no_data;
-
     uint red = fit_to_interval_0_255((double) red_data[pixel_index], red_min, red_max, red_scale);
-    rgba_data[pixel_index] |= red;
-
     uint green = fit_to_interval_0_255((double) green_data[pixel_index], green_min, green_max, green_scale);
-    rgba_data[pixel_index] |= green << 8;
-
     uint blue = fit_to_interval_0_255((double) blue_data[pixel_index], blue_min, blue_max, blue_scale);
-    rgba_data[pixel_index] |= blue << 16;
+    uint no_data = is_any_nodata ? 0 : 255;
+
+    rgba_data[pixel_index] = (red) | (green << 8) | (blue << 16) | (no_data << 24);
 }
 
 /**
