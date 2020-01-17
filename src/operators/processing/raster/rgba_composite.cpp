@@ -78,12 +78,12 @@ void RgbaCompositeOperator::writeSemanticParameters(std::ostringstream &stream) 
     parameters["raster_r_min"] = raster_r_min;
     parameters["raster_r_max"] = raster_r_max;
     parameters["raster_r_scale"] = raster_r_scale;
-    parameters["raster_g_min"] = raster_r_min;
-    parameters["raster_g_max"] = raster_r_max;
-    parameters["raster_g_scale"] = raster_r_scale;
-    parameters["raster_b_min"] = raster_r_min;
-    parameters["raster_b_max"] = raster_r_max;
-    parameters["raster_b_scale"] = raster_r_scale;
+    parameters["raster_g_min"] = raster_g_min;
+    parameters["raster_g_max"] = raster_g_max;
+    parameters["raster_g_scale"] = raster_g_scale;
+    parameters["raster_b_min"] = raster_b_min;
+    parameters["raster_b_max"] = raster_b_max;
+    parameters["raster_b_scale"] = raster_b_scale;
 
     Json::FastWriter writer;
     stream << writer.write(parameters);

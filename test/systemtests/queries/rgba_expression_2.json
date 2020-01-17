@@ -1,0 +1,63 @@
+{
+    "name": "RGBA Raster Expression",
+    "query_result": "raster",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1388534400
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": -175.3,
+        "x2": 175.3,
+        "y1": -85.05,
+        "y2": 85.05
+    },
+    "resolution": {
+        "type": "pixels",
+        "x": 360,
+        "y": 180
+    },
+    "query": {
+        "params": {
+            "datatype": "UInt32",
+            "expression": "A | (B << 8) | (C << 16) | (255 << 24)",
+            "unit": {
+                "measurement": "unknown",
+                "interpolation": "unknown",
+                "unit": "unknown",
+                "min": 1,
+                "max": 4294967295
+            }
+        },
+        "sources": {
+            "raster": [
+                {
+                    "params": {
+                        "channel": 0,
+                        "sourcename": "raster_planes",
+                        "transform": false
+                    },
+                    "type": "gdal_source"
+                },
+                {
+                    "params": {
+                        "channel": 1,
+                        "sourcename": "raster_planes",
+                        "transform": false
+                    },
+                    "type": "gdal_source"
+                },
+                {
+                    "params": {
+                        "channel": 2,
+                        "sourcename": "raster_planes",
+                        "transform": false
+                    },
+                    "type": "gdal_source"
+                }
+            ]
+        },
+        "type": "expression"
+    },
+    "query_expected_hash": "foobar"
+}

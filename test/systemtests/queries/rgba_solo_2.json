@@ -1,0 +1,29 @@
+{
+    "name": "RGBA Raster Expression",
+    "query_result": "raster",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1388534400
+    },
+    "spatial_reference": {
+        "projection": "EPSG:4326",
+        "x1": 112.5,
+        "x2": 135,
+        "y1": -22.5,
+        "y2": 0
+    },
+    "resolution": {
+        "type": "pixels",
+        "x": 256,
+        "y": 256
+    },
+    "query": {
+        "params": {
+            "channel": 0,
+            "sourcename": "raster_planes",
+            "transform": false
+        },
+        "type": "gdal_source"
+    },
+    "query_expected_hash": "foobar"
+}

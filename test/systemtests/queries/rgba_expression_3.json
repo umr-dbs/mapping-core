@@ -1,0 +1,74 @@
+{
+    "name": "RGBA Raster Expression",
+    "query_result": "raster",
+    "temporal_reference": {
+        "type": "UNIX",
+        "start": 1388534400
+    },
+    "spatial_reference": {
+        "projection": "EPSG:3857",
+        "x1": -20037508.342789244,
+        "x2": 20037508.342789244,
+        "y1": -20037508.342789244,
+        "y2": 20037508.342789244
+    },
+    "resolution": {
+        "type": "pixels",
+        "x": 256,
+        "y": 256
+    },
+    "query": {
+        "type": "projection",
+        "params": {
+            "src_projection": "EPSG:4326",
+            "dest_projection": "EPSG:3857"
+        },
+        "sources": {
+            "raster": [
+                {
+                    "type": "expression",
+                    "params": {
+                        "expression": "A | (B << 8) | (C << 16) | (255 << 24)",
+                        "datatype": "UInt32",
+                        "unit": {
+                            "measurement": "unknown",
+                            "unit": "unknown",
+                            "interpolation": "unknown",
+                            "min": 1,
+                            "max": 4294967295
+                        }
+                    },
+                    "sources": {
+                        "raster": [
+                            {
+                                "type": "gdal_source",
+                                "params": {
+                                    "sourcename": "raster_planes",
+                                    "channel": 0,
+                                    "transform": false
+                                }
+                            },
+                            {
+                                "type": "gdal_source",
+                                "params": {
+                                    "sourcename": "raster_planes",
+                                    "channel": 1,
+                                    "transform": false
+                                }
+                            },
+                            {
+                                "type": "gdal_source",
+                                "params": {
+                                    "sourcename": "raster_planes",
+                                    "channel": 2,
+                                    "transform": false
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "query_expected_hash": "foobar"
+}
