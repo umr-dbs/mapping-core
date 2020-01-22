@@ -66,9 +66,26 @@ void Colorizer::fillPalette(color_t *colors, unsigned int num_colors, double min
                 if (value <= table[i].value) {
                     auto last_color = table[i - 1].color;
                     auto next_color = table[i].color;
+                    auto last_value = table[i - 1].value;
+                    auto next_value = table[i].value;
 
                     if (interpolation == Interpolation::LINEAR) {
-                        double fraction = (value - table[i - 1].value) / (table[i].value - table[i - 1].value);
+                        double fraction = (value - last_value) / (next_value - last_value);
+
+                        uint8_t r = channel_from_double(
+                                r_from_color(last_color) * (1 - fraction) + r_from_color(next_color) * fraction);
+                        uint8_t g = channel_from_double(
+                                g_from_color(last_color) * (1 - fraction) + g_from_color(next_color) * fraction);
+                        uint8_t b = channel_from_double(
+                                b_from_color(last_color) * (1 - fraction) + b_from_color(next_color) * fraction);
+                        uint8_t a = channel_from_double(
+                                a_from_color(last_color) * (1 - fraction) + a_from_color(next_color) * fraction);
+
+                        color = color_from_rgba(r, g, b, a);
+                    } else if (interpolation == Interpolation::LOGARITHMIC) {
+                        double fraction = value - log10(last_value);
+                        fraction /= log10(next_value) - log10(last_value);
+                        fraction = log10(fraction);
 
                         uint8_t r = channel_from_double(
                                 r_from_color(last_color) * (1 - fraction) + r_from_color(next_color) * fraction);
@@ -122,6 +139,9 @@ std::string Colorizer::toJson() const {
         case Interpolation::LINEAR:
             ss << "linear";
             break;
+        case Interpolation::LOGARITHMIC:
+            ss << "logarithmic";
+            break;
         case Interpolation::NEAREST:
             ss << "nearest";
             break;
@@ -169,6 +189,8 @@ std::unique_ptr<Colorizer> Colorizer::fromJson(const Json::Value &json) {
     if (type == "gradient") {
         // TODO: allow nearest neighbor gradient interpolation
         interpolation = Interpolation::LINEAR;
+    } else if (type == "logarithmic") {
+        interpolation = Interpolation::LOGARITHMIC;
     } else if (type == "palette") {
         // TODO: use discrete
         interpolation = Interpolation::NEAREST;

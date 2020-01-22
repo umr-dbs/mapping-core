@@ -37,6 +37,7 @@ class Colorizer {
         enum class Interpolation {
                 NEAREST,
                 LINEAR,
+                LOGARITHMIC,
                 TREAT_AS_RGBA,
         };
         using ColorTable = std::vector<Breakpoint>;

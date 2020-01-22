@@ -2,6 +2,7 @@
 add_executable(mapping_unittests EXCLUDE_FROM_ALL unittests/init.cpp)
 
 add_library(mapping_core_unittests_lib
+        unittests/colorizer.cpp
         unittests/csvparser.cpp
         unittests/httpparsing.cpp
         unittests/parameters.cpp
