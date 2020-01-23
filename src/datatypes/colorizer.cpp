@@ -47,6 +47,18 @@ static uint8_t channel_from_double(double c) {
 
 Colorizer::Colorizer(ColorTable table, Interpolation interpolation, color_t nodataColor, color_t defaultColor)
         : table(std::move(table)), interpolation(interpolation), nodataColor(nodataColor), defaultColor(defaultColor) {
+    if (this->table.empty()) {
+        throw ArgumentException("Colorizer requires a non-empty color table");
+    }
+
+    switch (this->interpolation) {
+        case Interpolation::LOGARITHMIC:
+            if (this->table.front().value <= 0) {
+                throw ArgumentException("Log-scaled colorizer requires positive color table entries");
+            }
+            break;
+        default:;// no error checks
+    }
 }
 
 Colorizer::~Colorizer() = default;
@@ -83,9 +95,8 @@ void Colorizer::fillPalette(color_t *colors, unsigned int num_colors, double min
 
                         color = color_from_rgba(r, g, b, a);
                     } else if (interpolation == Interpolation::LOGARITHMIC) {
-                        double fraction = value - log10(last_value);
+                        double fraction = log10(value) - log10(last_value);
                         fraction /= log10(next_value) - log10(last_value);
-                        fraction = log10(fraction);
 
                         uint8_t r = channel_from_double(
                                 r_from_color(last_color) * (1 - fraction) + r_from_color(next_color) * fraction);
