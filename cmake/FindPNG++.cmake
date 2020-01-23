@@ -8,7 +8,7 @@
 find_path(
         PNG++_INCLUDE_DIR
         NAMES "png.hpp"
-        PATHS "/usr/include/png++"
+        PATHS "/usr/include/png++" "/usr/local/include/png++"
         PATH_SUFFIXES "png++"
 )
 
