@@ -21,7 +21,7 @@ static std::unique_ptr<PointCollection> createPointsWithAttributesAndTime(){
 }
 
 
-TEST(FeatureCollectionDB1, testALL) {
+TEST(FeatureCollectionDBChronicle, testALL) {
     Configuration::loadFromDefaultPaths();
     FeatureCollectionDB::init("chronicledb", "http://localhost:8080");
 
@@ -36,5 +36,4 @@ TEST(FeatureCollectionDB1, testALL) {
     points->replaceSTRef(qrect);
 
     FeatureCollectionDB::DataSetMetaData dataset = FeatureCollectionDB::createPoints(*user, "testData", *points);
-
 }

@@ -6,7 +6,6 @@
 #include "util/exceptions.h"
 #include "util/enumconverter.h"
 
-
 #include "Poco/Net/HTTPClientSession.h"
 #include "Poco/Net/HTTPRequest.h"
 #include "Poco/Net/HTTPResponse.h"
@@ -25,8 +24,7 @@ public:
 
     virtual ~ChronicleDBFeatureCollectionDBBackend();
 
-    virtual FeatureCollectionDBBackend::datasetid_t
-    createPoints(UserDB::User &user, const std::string &dataSetName, const PointCollection &collection);
+    virtual FeatureCollectionDBBackend::datasetid_t createPoints(UserDB::User &user, const std::string &dataSetName, const PointCollection &collection);
 
     virtual std::vector<FeatureCollectionDBBackend::DataSetMetaData> loadDataSetsMetaData(UserDB::User &user) {}
     virtual FeatureCollectionDBBackend::DataSetMetaData loadDataSetMetaData(const UserDB::User &owner, const std::string &dataSetName) {return FeatureCollectionDBBackend::DataSetMetaData();}
@@ -39,40 +37,34 @@ public:
 
 private:
     virtual FeatureCollectionDBBackend::datasetid_t createFeatureCollection(UserDB::User &user, const std::string &dataSetName, const SimpleFeatureCollection &collection, const Query::ResultType &type) {}
-    std::string convertPointCollectionToCSV(const PointCollection &collection) const;
-
-    Json::Value
-    createPointCollectionImportRequestBody(const std::string &dataSetName, const PointCollection &collection) const;
-
-    Json::Value getSchemaFromPointCollection(const PointCollection &collection) const;
-
-    Json::Value createSchemaColumn(const std::string &name, const std::string &type, bool withIndex) const;
+    static Json::Value convertPointCollectionToFeatureEvents(const PointCollection &collection) ;
+    static Json::Value createPointCollectionImportRequestBody(const std::string &dataSetName, const PointCollection &collection) ;
+    static Json::Value getSchemaFromPointCollection(const PointCollection &collection) ;
+    static Json::Value createSchemaColumn(const std::string &name, const std::string &type, bool withIndex) ;
 
     std::string baseURL;
-    Poco::Net::HTTPClientSession *session;
+    Poco::URI uri;
 };
 
 REGISTER_FEATURECOLLECTIONDB_BACKEND(ChronicleDBFeatureCollectionDBBackend, "chronicledb");
 
 ChronicleDBFeatureCollectionDBBackend::ChronicleDBFeatureCollectionDBBackend(const std::string &baseURL) : baseURL(
         baseURL) {
-    Poco::URI uri(baseURL);
-    session = new Poco::Net::HTTPClientSession(uri.getHost(), uri.getPort());
-
+    uri = Poco::URI(baseURL);
 }
 
 ChronicleDBFeatureCollectionDBBackend::~ChronicleDBFeatureCollectionDBBackend() {
-    delete session;
 }
 
 FeatureCollectionDBBackend::datasetid_t
 ChronicleDBFeatureCollectionDBBackend::createPoints(UserDB::User &user, const std::string &dataSetName,
                                                     const PointCollection &collection) {
 
+    Poco::Net::HTTPClientSession session(uri.getHost(), uri.getPort());
     Json::Value bodyJSON = createPointCollectionImportRequestBody(dataSetName, collection);
     std::string body = bodyJSON.toStyledString();
 
-    std::string path = "/vat/import"; // TODO set url
+    std::string path = "/vat/import";
 
     Poco::Net::HTTPRequest request(Poco::Net::HTTPRequest::HTTP_POST, path, Poco::Net::HTTPRequest::HTTP_1_1);
     request.setContentType("application/json");
@@ -81,15 +73,13 @@ ChronicleDBFeatureCollectionDBBackend::createPoints(UserDB::User &user, const st
 
     std::cout << body;
 
-    std::ostream &os = session->sendRequest(request);
+    std::ostream &os = session.sendRequest(request);
     os << body;
 
     Poco::Net::HTTPResponse response;
-
-    std::cout << response.getStatus() << " " << response.getReason() << std::endl;
+    std::istream &is = session.receiveResponse(response);
 
     if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK) {
-        std::istream &is = session->receiveResponse(response);
         std::stringstream ss;
         Poco::StreamCopier::copyStream(is, ss);
         throw ExporterException("failed to export to chronicledb\n" + response.getReason() + "\n" + ss.str());
@@ -98,8 +88,7 @@ ChronicleDBFeatureCollectionDBBackend::createPoints(UserDB::User &user, const st
     return 0;
 }
 
-std::string
-ChronicleDBFeatureCollectionDBBackend::convertPointCollectionToCSV(const PointCollection &collection) const {
+Json::Value ChronicleDBFeatureCollectionDBBackend::convertPointCollectionToFeatureEvents(const PointCollection &collection) {
     if (!collection.hasTime()) {
         throw AttributeException("need a timestamp for chronicledb");
     }
@@ -107,52 +96,37 @@ ChronicleDBFeatureCollectionDBBackend::convertPointCollectionToCSV(const PointCo
         throw TimeParseException("only unix timestamp is allowed :(");
     }
 
-    std::ostringstream csv;
-    csv << std::fixed;
+    Json::Value features(Json::arrayValue);
 
     auto string_keys = collection.feature_attributes.getTextualKeys();
     auto value_keys = collection.feature_attributes.getNumericKeys();
 
-    bool isSimpleCollection = collection.isSimple();
-
-    //header
-    if (!isSimpleCollection) {
-        csv << "feature,";
-    }
-    csv << "lon,lat,timeStart,timeEnd";
-
-    for (auto &key : string_keys) {
-        csv << "," << key;
-    }
-    for (auto &key : value_keys) {
-        csv << "," << key;
-    }
-    csv << std::endl;
-    // actual data
-
     for (auto feature : collection) {
+        Json::Value event(Json::objectValue);
+        Json::Value payload(Json::arrayValue);
         for (auto &c : feature) {
-            if (!isSimpleCollection) {
-                csv << (size_t) feature << ",";
-            }
-            csv << c.x << "," << c.y;
-            csv << "," << static_cast<long>(collection.time[feature].t1);
-            csv << "," << static_cast<long>(collection.time[feature].t2);
+            payload.append(Json::Value(static_cast<long>(collection.time[feature].t1) * 1000));
+            payload.append(Json::Value(static_cast<long>(collection.time[feature].t2) * 1000));
+            payload.append(Json::Value(c.x));
+            payload.append(Json::Value(c.y));
 
             for (auto &key : string_keys) {
-                csv << "," << collection.feature_attributes.textual(key).get(feature);
+                payload.append(Json::Value(collection.feature_attributes.textual(key).get(feature)));
             }
             for (auto &key : value_keys) {
-                csv << "," << collection.feature_attributes.numeric(key).get(feature);
+                payload.append(Json::Value(collection.feature_attributes.numeric(key).get(feature)));
             }
-            csv << std::endl;
         }
+        event["t1"] = static_cast<long>(collection.time[feature].t1) * 1000;
+        event["t2"] = static_cast<long>(collection.time[feature].t2) * 1000;
+        event["payload"] = payload;
+        features.append(event);
     }
-    return csv.str();
+    return features;
 }
 
 Json::Value ChronicleDBFeatureCollectionDBBackend::createSchemaColumn(const std::string &name, const std::string &type,
-                                                                      bool withIndex) const {
+                                                                      bool withIndex) {
     Json::Value column(Json::objectValue);
     column["name"] = name;
     column["type"] = type;
@@ -166,14 +140,16 @@ Json::Value ChronicleDBFeatureCollectionDBBackend::createSchemaColumn(const std:
 }
 
 Json::Value
-ChronicleDBFeatureCollectionDBBackend::getSchemaFromPointCollection(const PointCollection &collection) const {
+ChronicleDBFeatureCollectionDBBackend::getSchemaFromPointCollection(const PointCollection &collection) {
     Json::Value schema(Json::arrayValue);
     // add timestamp column
     schema.append(createSchemaColumn("timeStart", "LONG", false));
-    // add latitude column
-    schema.append(createSchemaColumn("lat", "DOUBLE", true));
+    // add second timestamp column
+    schema.append(createSchemaColumn("timeEnd", "LONG", false));
     // add longitude column
     schema.append(createSchemaColumn("lon", "DOUBLE", true));
+    // add latitude column
+    schema.append(createSchemaColumn("lat", "DOUBLE", true));
     // add textual attributes
     auto string_keys = collection.feature_attributes.getTextualKeys();
     for (auto &key : string_keys) {
@@ -190,17 +166,13 @@ ChronicleDBFeatureCollectionDBBackend::getSchemaFromPointCollection(const PointC
 
 Json::Value
 ChronicleDBFeatureCollectionDBBackend::createPointCollectionImportRequestBody(const std::string &dataSetName,
-                                                                              const PointCollection &collection) const {
+                                                                              const PointCollection &collection) {
     Json::Value body(Json::objectValue);
-    // setting up mandatory metadata
-    body["path"] = "";
-    body["separator"] = ",";
-    body["timestampColumn"] = "timeStart";
-    body["timestampFormat"] = "UNIX_S";
+    // setting up metadata
     body["streamName"] = dataSetName;
     body["schema"] = getSchemaFromPointCollection(collection);
     // setting up actual data
-    body["csvdata"] = convertPointCollectionToCSV(collection);
+    body["events"] = convertPointCollectionToFeatureEvents(collection);
 
     return body;
 }
