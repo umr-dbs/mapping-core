@@ -2,7 +2,7 @@
 #include "datatypes/plots/histogram.h"
 
 TEST(Plots, HistogramSerialization) {
-	Histogram histogram(10, 0.0, 1.0);
+	Histogram histogram(10, 0.0, 1.0, "foobar");
 
 	histogram.inc(0.0);
 	histogram.inc(0.1337);

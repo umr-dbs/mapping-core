@@ -4,8 +4,8 @@
 #include <vector>
 #include <sstream>
 #include <string>
-
-#include "datatypes/plot.h"
+#include <datatypes/unit.h>
+#include <datatypes/plot.h>
 
 /**
  * This class models a one dimensional histograms with variable number of buckets
@@ -13,10 +13,14 @@
 class Histogram : public GenericPlot {
     public:
         Histogram(unsigned long number_of_buckets, double min, double max);
+        Histogram(unsigned long number_of_buckets, double min, double max, const Unit &unit);
+        Histogram(unsigned long number_of_buckets, double min, double max, std::string unit_string);
 
         explicit Histogram(BinaryReadBuffer &buffer);
 
         ~Histogram() override;
+
+        static auto compute_unit_string(const Unit &unit) -> std::string;
 
         void inc(double value);
 
@@ -44,7 +48,7 @@ class Histogram : public GenericPlot {
             return counts.size();
         }
 
-        /*
+        /**
          * returns the count of all inserted elements (without NoData)
          */
         int getValidDataCount();
@@ -70,8 +74,9 @@ class Histogram : public GenericPlot {
 
     private:
         std::vector<int> counts;
-        int nodata_count;
-        double min, max;
+        int nodata_count = 0;
+        double min = 0, max = 0;
+        std::string unit;
         std::vector<std::pair<double, std::string>> markers;
 };
 
