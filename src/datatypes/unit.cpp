@@ -19,10 +19,6 @@ const std::vector< std::pair<Unit::Interpolation, std::string> > InterpolationSp
 EnumConverter<Unit::Interpolation> InterpolationConverter(InterpolationSpecificationMap, "unknown");
 
 
-static void str_to_lower(std::string &str) {
-	std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-}
-
 Unit::Unit(const std::string &json) {
 	std::istringstream iss(json);
 	Json::Reader reader(Json::Features::strictMode());
@@ -40,9 +36,7 @@ Unit::Unit(const Json::Value &json) {
 
 void Unit::init(const Json::Value &json) {
 	measurement = json.get("measurement", "").asString();
-	str_to_lower(measurement);
 	unit = json.get("unit", "").asString();
-	str_to_lower(unit);
 
 	min = json.get("min", -std::numeric_limits<double>::infinity()).asDouble();
 	max = json.get("max", std::numeric_limits<double>::infinity()).asDouble();
@@ -82,8 +76,6 @@ void Unit::init(const Json::Value &json) {
 }
 
 Unit::Unit(const std::string &_measurement, const std::string &_unit) : measurement(_measurement), unit(_unit) {
-	str_to_lower(measurement);
-	str_to_lower(unit);
 	min = -std::numeric_limits<double>::infinity();
 	max = std::numeric_limits<double>::infinity();
 	interpolation = Interpolation::Unknown;
