@@ -6,7 +6,7 @@
 #include <cmath>
 #include <string>
 #include <limits>
-#include <algorithm>
+#include <utility>
 #include <json/json.h>
 
 
@@ -24,7 +24,7 @@ Unit::Unit(const std::string &json) {
 	Json::Reader reader(Json::Features::strictMode());
 	Json::Value root;
 	if (!reader.parse(iss, root) || !root.isObject())
-		throw ArgumentException("Unit invalid: not a parseable json object");
+		throw ArgumentException("Unit invalid: not a parsable json object");
 
 	init(root);
 	verify();
@@ -75,7 +75,7 @@ void Unit::init(const Json::Value &json) {
 	}
 }
 
-Unit::Unit(const std::string &_measurement, const std::string &_unit) : measurement(_measurement), unit(_unit) {
+Unit::Unit(std::string measurement, std::string unit) : measurement(std::move(measurement)), unit(std::move(unit)) {
 	min = -std::numeric_limits<double>::infinity();
 	max = std::numeric_limits<double>::infinity();
 	interpolation = Interpolation::Unknown;
@@ -84,10 +84,6 @@ Unit::Unit(const std::string &_measurement, const std::string &_unit) : measurem
 }
 
 Unit::Unit(Uninitialized_t u) {
-}
-
-Unit::~Unit() {
-
 }
 
 Unit Unit::unknown() {
@@ -105,10 +101,10 @@ Json::Value Unit::toJsonObject() const {
 	root["interpolation"] = InterpolationConverter.to_string(interpolation);
 
 	if (isClassification()) {
-		Json::Value classes(Json::ValueType::objectValue);
-		for (auto p : this->classes)
-			classes[std::to_string(p.first)] = p.second.getName();
-		root["classes"] = classes;
+		Json::Value classesJson(Json::ValueType::objectValue);
+		for (const auto& p : this->classes)
+			classesJson[std::to_string(p.first)] = p.second.getName();
+		root["classes"] = classesJson;
 	}
 
 	return root;
@@ -122,15 +118,15 @@ std::string Unit::toJson() const {
 }
 
 void Unit::verify() const {
-	if (measurement.size() == 0 || unit.size() == 0)
+	if (measurement.empty() || unit.empty())
 		throw ArgumentException("Unit invalid: measurement or unit empty");
 
 	if (std::isnan(min) || std::isnan(max) || min >= max)
 		throw ArgumentException("Unit invalid: min or max not valid");
 
-	if (isClassification() && classes.size() == 0)
+	if (isClassification() && classes.empty())
 		throw ArgumentException("Unit invalid: Cannot use a classification without specifying any classes");
-	else if (!isClassification() && classes.size() > 0)
+	else if (!isClassification() && !classes.empty())
 		throw ArgumentException("Unit invalid: a unit that is not a classification must not have any classes");
 }
 

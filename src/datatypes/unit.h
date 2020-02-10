@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <utility>
 #include <vector>
 #include "util/sizeutil.h"
 
@@ -35,12 +36,11 @@ class Unit {
 	protected:
 		class Class {
 			public:
-				Class(const std::string &name) : name(name) {}
+				explicit Class(std::string name) : name(std::move(name)) {}
 				const std::string &getName() const { return name; }
 				size_t get_byte_size() const { return SizeUtil::get_byte_size(name); }
 			private:
 				std::string name;
-				// TODO: color?
 		};
 		class Uninitialized_t {
 		};
@@ -57,28 +57,29 @@ class Unit {
 		 *
 		 * @param u pass the constant Unit::UNINITIALIZED
 		 */
-		Unit(Uninitialized_t u);
+		explicit Unit(Uninitialized_t u);
 		static const Uninitialized_t UNINITIALIZED;
 		/**
 		 * Construct a unit from its JSON representation
 		 *
 		 * @param json the JSON representation as a string
 		 */
-		Unit(const std::string &json);
+		explicit Unit(const std::string &json);
 		/**
 		 * Construct a unit from its JSON representation
 		 *
 		 * @param json the JSON representation as a Json::Value
 		 */
-		Unit(const Json::Value &json);
+		explicit Unit(const Json::Value &json);
 		/**
 		 * Construct a unit containing just the minimum information to be valid.
 		 *
 		 * @param measurement The measurement.
 		 * @param unit The unit.
 		 */
-		Unit(const std::string &measurement, const std::string &unit);
-		~Unit();
+		Unit(std::string measurement, std::string unit);
+
+		~Unit() = default;
 
 		/**
 		 * Verify if a Unit is considered valid. Throws an exception if it is not.
@@ -158,9 +159,6 @@ class Unit {
 		 */
 		size_t get_byte_size() const;
 
-		//const Class &getClass(size_t idx) const { return classes.at(idx); }
-		//const std::string &getParam(const std::string &key) { return params.at(key); }
-
 	private:
 		void init(const Json::Value &json);
 
@@ -168,11 +166,7 @@ class Unit {
 		std::string unit;
 		Interpolation interpolation;
 		std::map<int32_t, Class> classes;
-		//std::map<std::string, std::string> params;
-		double min, max;
-		// Classification colors?
-		// accuracy?
-		// freeform parameters?
+		double min{}, max{};
 };
 
 
