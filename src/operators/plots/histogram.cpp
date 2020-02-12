@@ -36,13 +36,13 @@ enum class RangeMode {
 class HistogramOperator : public GenericOperator {
 	public:
 		HistogramOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params);
-		virtual ~HistogramOperator();
+		~HistogramOperator() override;
 
 #ifndef MAPPING_OPERATOR_STUBS
-		virtual std::unique_ptr<GenericPlot> getPlot(const QueryRectangle &rect, const QueryTools &tools);
+		std::unique_ptr<GenericPlot> getPlot(const QueryRectangle &rect, const QueryTools &tools) override;
 #endif
 	protected:
-		void writeSemanticParameters(std::ostringstream& stream);
+		void writeSemanticParameters(std::ostringstream& stream) override;
 
 	private:
 		RangeMode rangeMode;
@@ -80,7 +80,7 @@ HistogramOperator::HistogramOperator(int sourcecounts[], GenericOperator *source
 void HistogramOperator::writeSemanticParameters(std::ostringstream& stream) {
 	Json::Value params(Json::ValueType::objectValue);
 
-	if(attribute != "")
+	if(!attribute.empty())
 		params["attribute"] = attribute;
 
 	if(rangeMode == RangeMode::MINMAX) {
@@ -99,8 +99,7 @@ void HistogramOperator::writeSemanticParameters(std::ostringstream& stream) {
 	Json::FastWriter writer;
 	stream << writer.write(params);
 }
-HistogramOperator::~HistogramOperator() {
-}
+HistogramOperator::~HistogramOperator() = default;
 REGISTER_OPERATOR(HistogramOperator, "histogram");
 
 
@@ -158,7 +157,7 @@ struct histogram{
 			}
 		}
 
-		auto histogram = std::make_unique<Histogram>(buckets, min, max);
+		auto histogram = std::make_unique<Histogram>(buckets, min, max, raster->dd.unit);
 
 		int size = raster->getPixelCount();
 		for (int i=0;i<size;i++) {
@@ -174,7 +173,7 @@ struct histogram{
 	}
 };
 
-std::unique_ptr<GenericPlot> createHistogram(SimpleFeatureCollection &features, std::string attribute, RangeMode rangeMode, double min, double max, size_t buckets){
+std::unique_ptr<GenericPlot> createHistogram(SimpleFeatureCollection &features, const std::string& attribute, RangeMode rangeMode, double min, double max, size_t buckets){
 	auto &valueVector = features.feature_attributes.numeric(attribute);
 	size_t featureCount = features.getFeatureCount();
 	size_t numberOfValues;
@@ -225,7 +224,7 @@ std::unique_ptr<GenericPlot> createHistogram(SimpleFeatureCollection &features, 
 		buckets = sqrt(featureCount);
 	}
 
-	auto histogram = std::make_unique<Histogram>(buckets, min, max);
+	auto histogram = std::make_unique<Histogram>(buckets, min, max, valueVector.unit);
 	for (size_t i=0; i < featureCount; i++) {
 		double value = valueVector.get(i);
 		if (std::isnan(value) /* is NaN */)
