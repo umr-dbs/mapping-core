@@ -66,7 +66,7 @@ std::string cURL::escape(const std::string &input) {
     return result;
 }
 
-auto cURL::getCookies() -> std::vector<std::string> {
+auto cURL::getCookies() const -> std::vector<std::string> {
     CURLcode res;
     struct curl_slist *cookies;
     struct curl_slist *nc;

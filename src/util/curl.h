@@ -21,7 +21,7 @@ class cURL {
 		void perform();
 		std::string escape(const std::string &input);
 
-		auto getCookies() -> std::vector<std::string> ;
+		auto getCookies() const -> std::vector<std::string>;
 
 		static size_t defaultWriteFunction(void *buffer, size_t size, size_t nmemb, void *userp);
 	private:
