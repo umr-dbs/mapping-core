@@ -80,11 +80,11 @@ class QueryProcessor {
 		/**
 		 * Starts processing a query, waits for the result and returns it.
 		 */
-		std::unique_ptr<QueryResult> process(const Query &q, bool includeProvenance);
+		std::unique_ptr<QueryResult> process(const Query &q, std::shared_ptr<UserDB::Session> session, bool includeProvenance);
 		/**
 		 * Starts processing a query asynchronously. Returns an object that allows tracking progress and waiting on the result.
 		 */
-		std::unique_ptr<QueryProgress> processAsync(const Query &q, bool includeProvenance);
+		std::unique_ptr<QueryProgress> processAsync(const Query &q, std::shared_ptr<UserDB::Session> session, bool includeProvenance);
 
 	private:
 		QueryProcessor(std::unique_ptr<QueryProcessorBackend> backend);

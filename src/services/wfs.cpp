@@ -114,7 +114,7 @@ void WFSService::getFeature() {
 	}
 
 	Query query(operatorgraph, resultType, QueryRectangle(sref, tref, QueryResolution::none()));
-	auto result = processQuery(query, user);
+	auto result = processQuery(query, session);
 	auto features = result->getAnyFeatureCollection();
 
 	// TODO: check permission

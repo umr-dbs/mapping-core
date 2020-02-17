@@ -6,8 +6,8 @@ class LocalQueryProcessor : public QueryProcessor::QueryProcessorBackend {
 	public:
 		LocalQueryProcessor(const ConfigurationTable& params);
 		virtual ~LocalQueryProcessor();
-		virtual std::unique_ptr<QueryProcessor::QueryResult> process(const Query &q, bool includeProvenance);
-		virtual std::unique_ptr<QueryProcessor::QueryProgress> processAsync(const Query &q, bool includeProvenance);
+		virtual std::unique_ptr<QueryProcessor::QueryResult> process(const Query &q, std::shared_ptr<UserDB::Session> session, bool includeProvenance);
+		virtual std::unique_ptr<QueryProcessor::QueryProgress> processAsync(const Query &q, std::shared_ptr<UserDB::Session> session, bool includeProvenance);
 };
 REGISTER_QUERYPROCESSOR_BACKEND(LocalQueryProcessor, "local");
 
@@ -20,12 +20,12 @@ LocalQueryProcessor::~LocalQueryProcessor() {
 }
 
 
-std::unique_ptr<QueryProcessor::QueryResult> LocalQueryProcessor::process(const Query &q, bool includeProvenance) {
+std::unique_ptr<QueryProcessor::QueryResult> LocalQueryProcessor::process(const Query &q, std::shared_ptr<UserDB::Session> session, bool includeProvenance) {
 	try {
 		auto op = GenericOperator::fromJSON(q.operatorgraph);
 
 		QueryProfiler profiler;
-		QueryTools tools(profiler);
+		QueryTools tools(profiler, session);
 
 		std::unique_ptr<ProvenanceCollection> provenance;
 		if(includeProvenance) {
@@ -67,8 +67,8 @@ class LocalQueryProgress : public QueryProcessor::QueryProgress {
 		std::unique_ptr<QueryProcessor::QueryResult> result;
 };
 
-std::unique_ptr<QueryProcessor::QueryProgress> LocalQueryProcessor::processAsync(const Query &q, bool includeProvenance) {
+std::unique_ptr<QueryProcessor::QueryProgress> LocalQueryProcessor::processAsync(const Query &q, std::shared_ptr<UserDB::Session> session, bool includeProvenance) {
 	auto progress = std::make_unique<LocalQueryProgress>();
-	progress->result = process(q, includeProvenance);
+	progress->result = process(q, session, includeProvenance);
 	return std::unique_ptr<QueryProcessor::QueryProgress>( progress.release() );
 }

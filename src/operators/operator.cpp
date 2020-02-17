@@ -159,7 +159,7 @@ std::unique_ptr<GenericRaster> GenericOperator::getCachedRaster(const QueryRecta
 		{
 			QueryProfilerRunningGuard guard(parent_profiler, exec_profiler);
 			TIME_EXEC("Operator.getRaster");
-			result = getRaster(rect,QueryTools(exec_profiler));
+			result = getRaster(rect,QueryTools(exec_profiler, tools.session));
 		}
 		d_profile(depth, type, "raster", exec_profiler);
 		if ( cache.put(semantic_id,result,rect,exec_profiler) ) {
@@ -193,7 +193,7 @@ std::unique_ptr<PointCollection> GenericOperator::getCachedPointCollection(const
 		{
 			QueryProfilerRunningGuard guard(parent_profiler, exec_profiler);
 			TIME_EXEC("Operator.getPointCollection");
-			result = getPointCollection(rect,QueryTools(exec_profiler));
+			result = getPointCollection(rect,QueryTools(exec_profiler, tools.session));
 		}
 		d_profile(depth, type, "points", exec_profiler);
 		if ( cache.put(semantic_id,result,rect,exec_profiler) )
@@ -228,7 +228,7 @@ std::unique_ptr<LineCollection> GenericOperator::getCachedLineCollection(const Q
 		{
 			QueryProfilerRunningGuard guard(parent_profiler, exec_profiler);
 			TIME_EXEC("Operator.getLineCollection");
-			result = getLineCollection(rect,QueryTools(exec_profiler));
+			result = getLineCollection(rect,QueryTools(exec_profiler, tools.session));
 		}
 		d_profile(depth, type, "lines", exec_profiler);
 		if ( cache.put(semantic_id,result,rect,exec_profiler) )
@@ -263,7 +263,7 @@ std::unique_ptr<PolygonCollection> GenericOperator::getCachedPolygonCollection(c
 		{
 			QueryProfilerRunningGuard guard(parent_profiler, exec_profiler);
 			TIME_EXEC("Operator.getPolygonCollection");
-			result = getPolygonCollection(rect,QueryTools(exec_profiler));
+			result = getPolygonCollection(rect,QueryTools(exec_profiler, tools.session));
 		}
 		d_profile(depth, type, "polygon", exec_profiler);
 		if ( cache.put(semantic_id,result,rect,exec_profiler) )
@@ -294,7 +294,7 @@ std::unique_ptr<GenericPlot> GenericOperator::getCachedPlot(const QueryRectangle
 		{
 			QueryProfilerRunningGuard guard(parent_profiler, exec_profiler);
 			TIME_EXEC("Operator.getPlot");
-			result = getPlot(rect,QueryTools(exec_profiler));
+			result = getPlot(rect,QueryTools(exec_profiler, tools.session));
 		}
 		d_profile(depth, type, "plot", exec_profiler);
 		if ( cache.put(semantic_id,result,rect,exec_profiler) )

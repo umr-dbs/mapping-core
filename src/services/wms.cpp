@@ -72,7 +72,7 @@ void WMSService::run() {
 
 
 			Query query(params.get("layers"), Query::ResultType::RASTER, qrect);
-			auto result_raster = processQuery(query, user)
+			auto result_raster = processQuery(query, session)
 				->getRaster(GenericOperator::RasterQM::EXACT);
 
 			double bbox[4] = {sref.x1, sref.y1, sref.x2, sref.y2};
@@ -194,7 +194,7 @@ void WMSService::run() {
 		);
 
 		Query query(params.get("layers"), Query::ResultType::RASTER, qrect);
-		auto result_raster = processQuery(query, user)
+		auto result_raster = processQuery(query, session)
 			->getRaster(GenericOperator::RasterQM::LOOSE);
 
 		response.sendContentType("application/json");

@@ -126,7 +126,7 @@ void FeatureCollectionDBService::run() {
 		std::string type = params.get("type", "");
 
 		Query query(queryString, featureTypeConverter.from_string(type), rect);
-		auto result = processQuery(query, user);
+		auto result = processQuery(query, session);
 
 		FeatureCollectionDB::DataSetMetaData metaData;
 		if(type == "points") {
