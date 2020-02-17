@@ -31,6 +31,8 @@ class RasterGDALSourceOperator : public GenericOperator {
 		std::string sourcename;
 		int channel;
 
+		Json::Value gdalParams;
+
 		std::unique_ptr<GenericRaster> loadDataset( const GDALTimesnap::GDALDataLoadingInfo &loadingInfo,
 													CrsId crsId,
 													bool clip, 
@@ -52,6 +54,8 @@ RasterGDALSourceOperator::RasterGDALSourceOperator(int sourcecounts[], GenericOp
 	if (sourcename.length() == 0)
 		throw OperatorException("SourceOperator: missing sourcename");
 	channel = params.get("channel", 1).asInt();
+
+	gdalParams = params.get("gdal_params", Json::objectValue);
 }
 
 RasterGDALSourceOperator::~RasterGDALSourceOperator() = default;
@@ -79,13 +83,22 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 	params["sourcename"] = sourcename;
 	params["channel"] = channel;
 
+	params["gdal_params"] = gdalParams;
+
 	Json::FastWriter writer;
 	stream << writer.write(params);
 }
 
 // load the json definition of the dataset, then get the file to be loaded from GDALTimesnap. Finally load the raster.
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
-	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+    Json::Value datasetJson;
+
+    if (gdalParams.isMember("channels")) {
+        datasetJson = gdalParams;
+    } else {
+        datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+    }
+
 	GDALTimesnap::GDALDataLoadingInfo loadingInfo = GDALTimesnap::getDataLoadingInfo(datasetJson, channel, rect);
 	auto raster = loadDataset(loadingInfo, rect.crsId, true, rect);
 	//flip here so the tiff result will not be flipped
