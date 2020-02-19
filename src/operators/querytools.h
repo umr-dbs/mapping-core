@@ -1,6 +1,7 @@
 #ifndef OPERATORS_QUERYTOOLS_H
 #define OPERATORS_QUERYTOOLS_H
 
+#include "userdb/userdb.h"
 #include "operators/queryprofiler.h"
 
 /*
@@ -9,8 +10,11 @@
  */
 class QueryTools {
 	public:
-		explicit QueryTools(QueryProfiler &profiler) : profiler(profiler) {};
+        explicit QueryTools(QueryProfiler &profiler) : profiler(profiler) {};
+		QueryTools(QueryProfiler &profiler, std::shared_ptr<UserDB::Session> session) : profiler(profiler), session(std::move(session)) {};
+
 		QueryProfiler &profiler;
+		std::shared_ptr<UserDB::Session> session;
 };
 
 

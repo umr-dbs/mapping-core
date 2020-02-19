@@ -132,7 +132,7 @@ void WCSService::run() {
 		);
 
 		Query query(params.get("coverageid"), Query::ResultType::RASTER, query_rect);
-		auto result = processQuery(query, user);
+		auto result = processQuery(query, session);
 		auto result_raster = result->getRaster(GenericOperator::RasterQM::EXACT);
 
 		// TODO: check permissions

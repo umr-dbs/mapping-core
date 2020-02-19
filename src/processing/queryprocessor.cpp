@@ -15,15 +15,15 @@ QueryProcessor &QueryProcessor::getDefaultProcessor() {
 	return *default_instance;
 }
 
-std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::process(const Query &q, bool includeProvenance) {
-	auto progress = processAsync(q, includeProvenance);
+std::unique_ptr<QueryProcessor::QueryResult> QueryProcessor::process(const Query &q, std::shared_ptr<UserDB::Session> session, bool includeProvenance) {
+	auto progress = processAsync(q, session, includeProvenance);
 	progress->wait();
 	return progress->getResult();
 }
 
 
-std::unique_ptr<QueryProcessor::QueryProgress> QueryProcessor::processAsync(const Query &q, bool includeProvenance) {
-	return backend->processAsync(q, includeProvenance);
+std::unique_ptr<QueryProcessor::QueryProgress> QueryProcessor::processAsync(const Query &q, std::shared_ptr<UserDB::Session> session, bool includeProvenance) {
+	return backend->processAsync(q, session, includeProvenance);
 }
 
 

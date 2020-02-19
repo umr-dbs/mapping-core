@@ -72,7 +72,7 @@ void ProvenanceService::run() {
 	}
 
 	Query query(queryString, resultType, rect);
-	auto result = processQuery(query, user);
+	auto result = processQuery(query, session);
 
 	response.sendContentType("application/json; charset=utf-8");
 	response.finishHeaders();
