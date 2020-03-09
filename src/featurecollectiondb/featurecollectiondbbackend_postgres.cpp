@@ -126,13 +126,13 @@ FeatureCollectionDBBackend::DataSetMetaData PostgresFeatureCollectionDBBackend::
 	reader.parse(row["numeric_attributes"].as<std::string>().c_str(), json );
 	std::map<std::string, Unit> numeric_attributes;
 	for(int i = 0; i < json.size(); ++i) {
-		numeric_attributes.emplace(json[i]["key"].asString(), json[i]["unit"]);
+		numeric_attributes.emplace(json[i]["key"].asString(), Unit(json[i]["unit"]));
 	}
 
 	reader.parse(row["textual_attributes"].as<std::string>().c_str(), json );
 	std::map<std::string, Unit> textual_attributes;
 	for(int i = 0; i < json.size(); ++i) {
-		textual_attributes.emplace(json[i]["key"].asString(), json[i]["unit"]);
+		textual_attributes.emplace(json[i]["key"].asString(), Unit(json[i]["unit"]));
 	}
 
 	bool hasTime = row["has_time"].as<bool>();
