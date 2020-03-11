@@ -34,14 +34,14 @@ class RasterGDALSourceOperator : public GenericOperator {
 
 		std::unique_ptr<GenericRaster> loadDataset( const GDALTimesnap::GDALDataLoadingInfo &loadingInfo,
 													CrsId crsId,
-													bool clip, 
+													bool clip,
 													const QueryRectangle &qrect,
 													const QueryTools &tools);
-		
+
 		std::unique_ptr<GenericRaster> loadRaster(  GDALDataset *dataset, double origin_x, double origin_y,
-													double scale_x, double scale_y, 																					   
+													double scale_x, double scale_y,
 													CrsId crsId, bool clip,
-													double clip_x1, double clip_y1, 
+													double clip_x1, double clip_y1,
 													double clip_x2, double clip_y2,
 													const QueryRectangle &qrect,
                                                     const GDALTimesnap::GDALDataLoadingInfo &loadingInfo);
@@ -63,8 +63,16 @@ RasterGDALSourceOperator::~RasterGDALSourceOperator() = default;
 REGISTER_OPERATOR(RasterGDALSourceOperator, "gdal_source");
 
 void RasterGDALSourceOperator::getProvenance(ProvenanceCollection &pc) {
-	std::string local_identifier = "data.gdal_source." + sourcename;
-	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+    std::string local_identifier;
+    Json::Value datasetJson;
+
+    if (gdalParams.isMember("channels")) {
+        local_identifier = "data.gdal_source." + gdalParams["channels"][channel]["file_name"].asString();
+        datasetJson = gdalParams;
+    } else {
+        local_identifier = "data.gdal_source." + sourcename;
+        datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+    }
 
 	Json::Value provenanceinfo = datasetJson["provenance"];
 	if (provenanceinfo.isObject()) {
@@ -74,7 +82,7 @@ void RasterGDALSourceOperator::getProvenance(ProvenanceCollection &pc) {
 								local_identifier));
 	} else {
 		pc.add(Provenance("", "", "", local_identifier));
-	}	
+	}
 }
 
 void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &stream) {
@@ -123,7 +131,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	bool flipx = false, flipy = false;
 
 	poBand = dataset->GetRasterBand( loadingInfo.channel );
-	poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );	
+	poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
 
 	GDALDataType type = poBand->GetRasterDataType();
 
@@ -139,7 +147,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
         hasnodata = true;
         nodata = loadingInfo.nodata;
     }
-	
+
 	int nXSize = poBand->GetXSize();
 	int nYSize = poBand->GetYSize();
 
@@ -276,16 +284,19 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 }
 
 void injectParameters(std::string &file, const QueryRectangle &qrect, const QueryTools &tools) {
-    boost::replace_all(file, "%%%MINX%%%", concat(qrect.x1));
-    boost::replace_all(file, "%%%MINY%%%", concat(qrect.y1));
-    boost::replace_all(file, "%%%MAXX%%%", concat(qrect.x2));
-    boost::replace_all(file, "%%%MAXY%%%", concat(qrect.y2));
+    boost::replace_all(file, "%%%MINX%%%", std::to_string(qrect.x1));
+    boost::replace_all(file, "%%%MINY%%%", std::to_string(qrect.y1));
+    boost::replace_all(file, "%%%MAXX%%%", std::to_string(qrect.x2));
+    boost::replace_all(file, "%%%MAXY%%%", std::to_string(qrect.y2));
 
-    boost::replace_all(file, "%%%T1%%%", concat(qrect.t1));
-    boost::replace_all(file, "%%%T2%%%", concat(qrect.t2));
+    boost::replace_all(file, "%%%XRES%%%", std::to_string(qrect.xres));
+    boost::replace_all(file, "%%%YRES%%%", std::to_string(qrect.yres));
+
+    boost::replace_all(file, "%%%T1%%%", std::to_string(qrect.t1));
+    boost::replace_all(file, "%%%T2%%%", std::to_string(qrect.t2));
 
     UserDB::User &user = tools.session->getUser();
-    for (auto& key : Configuration::getVector<std::string>("gdal_source.injectible_user_artifacts")) {
+    for (auto& key : Configuration::getVector<std::string>("gdal_source.injectable_user_artifacts")) {
         size_t split = key.find(':');
         if (split) {
             std::string type = key.substr(0, split);
@@ -307,6 +318,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(const GDALT
 	GDAL::init();
 	std::string fileName = loadingInfo.fileName;
     injectParameters(fileName, qrect, tools);
+
 	auto dataset = (GDALDataset *) GDALOpen(fileName.c_str(), GA_ReadOnly);
 
 	if (dataset == nullptr)
