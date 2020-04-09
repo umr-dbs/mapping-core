@@ -4,9 +4,12 @@
 .settings
 .idea
 *.tmp.*
+.vscode
+
 
 # compiled binaries
 /target
+/build
 *.cl.h
 
 # CMake
@@ -15,6 +18,8 @@ CMakeFiles
 cmake_install.cmake
 CMakeCache.txt
 CTestTestfile.cmake
+CMakeDoxyfile.in
+CMakeDoxygenDefaults.cmake
 /Testing
 Makefile
 DartConfiguration.tcl
