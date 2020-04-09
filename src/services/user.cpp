@@ -4,6 +4,7 @@
 #include "util/configuration.h"
 
 #include "rasterdb/rasterdb.h"
+#include "util/log.h"
 
 #include <json/json.h>
 #include <util/gdal_source_datasets.h>
@@ -77,11 +78,15 @@ void UserService::run() {
 			auto dataSets= GDALSourceDataSets::getDataSetNames();
 			for(const auto &dataSet : dataSets) {
                 if (user.hasPermission("data.gdal_source." + dataSet)) {
-                    auto description = GDALSourceDataSets::getDataSetDescription(dataSet);
-                    description["operator"] = "gdal_source";
+					try	{
+						auto description = GDALSourceDataSets::getDataSetDescription(dataSet);
+						description["operator"] = "gdal_source";
 
-                    // TODO: resolve name clashes
-                    v[dataSet] = description;
+						// TODO: resolve name clashes
+						v[dataSet] = description;
+					} catch(const std::exception& e) {
+						Log::warn("UserService GDALSourceDataSets: could not load dataset: " + dataSet + ". Exception: " + e.what());
+					}
                 }
             }
 
@@ -89,11 +94,15 @@ void UserService::run() {
 			std::vector<std::string> ogr_source_names = OGRSourceDatasets::getDatasetNames();
 			for(const auto &name : ogr_source_names){
 				if(user.hasPermission("data.ogr_source." + name)){
-                    Json::Value description = OGRSourceDatasets::getDatasetListing(name);
-                    description["operator"] = "ogr_source";
+					try {
+						Json::Value description = OGRSourceDatasets::getDatasetListing(name);
+						description["operator"] = "ogr_source";
 
-					// TODO: resolve name clashes
-					v[name] = description;
+						// TODO: resolve name clashes
+						v[name] = description;
+					} catch(const std::exception& e) {
+						Log::warn("UserService OGRSourceDatasets: could not load dataset: " + name + ". Exception: " + e.what());
+					}				
 				}
 			}
 
