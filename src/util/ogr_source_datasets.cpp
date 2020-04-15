@@ -61,6 +61,17 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
         Json::Value listing_json(Json::ValueType::objectValue);
         listing_json["name"]  = layer_name;
 
+        // Get the spatial ref information from the dataset
+        OGRSpatialReference *layer_srs_ref = layer->GetSpatialRef();
+        if(layer_srs_ref == nullptr) {
+            // TODO: handle  this case in a fancy way
+	        listing_json["coords"] = layer_def["coords"];
+        } else {
+ 	        std::string srs_auth_code = layer_srs_ref->GetAuthorityCode(nullptr);
+            std::string srs_auth_name = layer_srs_ref->GetAuthorityName(nullptr);
+            listing_json["coords"]["crs"] = srs_auth_name + ":" + srs_auth_code;
+        }
+
         // if layer does not have a geometry type (eg CSV files), check "geometry_type" in the layer/dataset json
         auto geom_type = layer->GetGeomType();
         if(geom_type != OGRwkbGeometryType::wkbUnknown){
