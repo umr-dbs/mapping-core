@@ -49,17 +49,21 @@
  *
  */
 class OGRRawSourceOperator : public GenericOperator {
-public:
-	OGRRawSourceOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params);
-	virtual ~OGRRawSourceOperator() override = default;
+    public:
+        OGRRawSourceOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params);
 
-	std::unique_ptr<PointCollection> getPointCollection(const QueryRectangle &rect, const QueryTools &tools) override;
-	std::unique_ptr<LineCollection> getLineCollection(const QueryRectangle &rect, const QueryTools &tools) override;
-	std::unique_ptr<PolygonCollection> getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools) override;
+        ~OGRRawSourceOperator() override = default;
 
-protected:
-	void writeSemanticParameters(std::ostringstream& stream) override;
-	void getProvenance(ProvenanceCollection &pc) override;
+        auto getPointCollection(const QueryRectangle &rect, const QueryTools &tools) -> std::unique_ptr<PointCollection> override;
+
+        auto getLineCollection(const QueryRectangle &rect, const QueryTools &tools) ->  std::unique_ptr<LineCollection> override;
+
+        auto getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools) -> std::unique_ptr<PolygonCollection> override;
+
+    protected:
+        void writeSemanticParameters(std::ostringstream &stream) override;
+
+        void getProvenance(ProvenanceCollection &pc) override;
 
 private:
 	std::unique_ptr<OGRSourceUtil> ogrUtil;
@@ -72,31 +76,26 @@ OGRRawSourceOperator::OGRRawSourceOperator(int sourcecounts[], GenericOperator *
 	ogrUtil = std::make_unique<OGRSourceUtil>(params, std::move(local_id));
 }
 
-REGISTER_OPERATOR(OGRRawSourceOperator, "ogr_raw_source");
+REGISTER_OPERATOR(OGRRawSourceOperator, "ogr_raw_source"); // NOLINT(cert-err58-cpp)
 
-void OGRRawSourceOperator::writeSemanticParameters(std::ostringstream& stream)
-{
-	Json::Value &params = ogrUtil->getParameters();
-	Json::FastWriter writer;
-	stream << writer.write(params);
+void OGRRawSourceOperator::writeSemanticParameters(std::ostringstream &stream) {
+    Json::Value &params = ogrUtil->getParameters();
+    Json::FastWriter writer;
+    stream << writer.write(params);
 }
 
-void OGRRawSourceOperator::getProvenance(ProvenanceCollection &pc)
-{	
-	ogrUtil->getProvenance(pc);
+void OGRRawSourceOperator::getProvenance(ProvenanceCollection &pc) {
+    ogrUtil->getProvenance(pc);
 }
 
-std::unique_ptr<PointCollection> OGRRawSourceOperator::getPointCollection(const QueryRectangle &rect, const QueryTools &tools)
-{
-	return ogrUtil->getPointCollection(rect, tools);
+auto OGRRawSourceOperator::getPointCollection(const QueryRectangle &rect, const QueryTools &tools) -> std::unique_ptr<PointCollection> {
+    return ogrUtil->getPointCollection(rect, tools);
 }
 
-std::unique_ptr<LineCollection> OGRRawSourceOperator::getLineCollection(const QueryRectangle &rect, const QueryTools &tools)
-{
-	return ogrUtil->getLineCollection(rect, tools);
+auto OGRRawSourceOperator::getLineCollection(const QueryRectangle &rect, const QueryTools &tools) -> std::unique_ptr<LineCollection>{
+    return ogrUtil->getLineCollection(rect, tools);
 }
 
-std::unique_ptr<PolygonCollection> OGRRawSourceOperator::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools)
-{	
-	return ogrUtil->getPolygonCollection(rect, tools);
+auto OGRRawSourceOperator::getPolygonCollection(const QueryRectangle &rect, const QueryTools &tools) -> std::unique_ptr<PolygonCollection> {
+    return ogrUtil->getPolygonCollection(rect, tools);
 }
