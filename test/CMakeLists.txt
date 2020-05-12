@@ -30,7 +30,7 @@ add_library(mapping_core_unittests_lib
         unittests/gdal_source.cpp
         unittests/util/configuration.cpp
         unittests/png_rgb_composite.cpp
-        unittests/uploader.cpp)
+        unittests/uploader.cpp unittests/util/gdal_memory_mapped.cpp)
 
 target_include_directories(mapping_core_unittests_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
