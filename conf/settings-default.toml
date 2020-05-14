@@ -66,3 +66,6 @@ location= "tcp:127.0.0.1:10200" # The connection string for the R-Operator to us
 
 [uploader]
 directory="uploader" # The name of the directory where the uploader stores the files
+
+[gdal_source]
+injectable_user_artifacts=[] # artifact values that are allowed to be read from the artifact db [ ["type:name"], ...]

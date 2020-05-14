@@ -13,8 +13,8 @@ class QueryProcessor::QueryProcessorBackend {
 	public:
 		QueryProcessorBackend() = default;
 		virtual ~QueryProcessorBackend() {};
-		virtual std::unique_ptr<QueryProcessor::QueryResult> process(const Query &q, bool includeProvenance);
-		virtual std::unique_ptr<QueryProcessor::QueryProgress> processAsync(const Query &q, bool includeProvenance) = 0;
+		virtual std::unique_ptr<QueryProcessor::QueryResult> process(const Query &q, std::shared_ptr<UserDB::Session> session, bool includeProvenance);
+		virtual std::unique_ptr<QueryProcessor::QueryProgress> processAsync(const Query &q, std::shared_ptr<UserDB::Session> session,bool includeProvenance) = 0;
 };
 
 class QueryProcessorBackendRegistration {

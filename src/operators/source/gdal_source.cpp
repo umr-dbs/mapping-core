@@ -3,11 +3,10 @@
 #include "raster/opencl.h"
 #include "operators/operator.h"
 #include "util/gdal_timesnap.h"
-
 #include "util/gdal.h"
-
 #include "util/gdal_source_datasets.h"
 #include "util/gdal_dataset_importer.h"
+#include "util/configuration.h"
 
 /**
  * Operator that loads raster data via gdal. Loads them from imported GDAL dataset, import via GDAL dataset importer.
@@ -31,15 +30,18 @@ class RasterGDALSourceOperator : public GenericOperator {
 		std::string sourcename;
 		int channel;
 
+		Json::Value gdalParams;
+
 		std::unique_ptr<GenericRaster> loadDataset( const GDALTimesnap::GDALDataLoadingInfo &loadingInfo,
 													CrsId crsId,
-													bool clip, 
-													const QueryRectangle &qrect);
-		
+													bool clip,
+													const QueryRectangle &qrect,
+													const QueryTools &tools);
+
 		std::unique_ptr<GenericRaster> loadRaster(  GDALDataset *dataset, double origin_x, double origin_y,
-													double scale_x, double scale_y, 																					   
+													double scale_x, double scale_y,
 													CrsId crsId, bool clip,
-													double clip_x1, double clip_y1, 
+													double clip_x1, double clip_y1,
 													double clip_x2, double clip_y2,
 													const QueryRectangle &qrect,
                                                     const GDALTimesnap::GDALDataLoadingInfo &loadingInfo);
@@ -52,6 +54,8 @@ RasterGDALSourceOperator::RasterGDALSourceOperator(int sourcecounts[], GenericOp
 	if (sourcename.length() == 0)
 		throw OperatorException("SourceOperator: missing sourcename");
 	channel = params.get("channel", 1).asInt();
+
+	gdalParams = params.get("gdal_params", Json::objectValue);
 }
 
 RasterGDALSourceOperator::~RasterGDALSourceOperator() = default;
@@ -59,8 +63,16 @@ RasterGDALSourceOperator::~RasterGDALSourceOperator() = default;
 REGISTER_OPERATOR(RasterGDALSourceOperator, "gdal_source");
 
 void RasterGDALSourceOperator::getProvenance(ProvenanceCollection &pc) {
-	std::string local_identifier = "data.gdal_source." + sourcename;
-	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+    std::string local_identifier;
+    Json::Value datasetJson;
+
+    if (gdalParams.isMember("channels")) {
+        local_identifier = "data.gdal_source." + gdalParams["channels"][channel]["file_name"].asString();
+        datasetJson = gdalParams;
+    } else {
+        local_identifier = "data.gdal_source." + sourcename;
+        datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+    }
 
 	Json::Value provenanceinfo = datasetJson["provenance"];
 	if (provenanceinfo.isObject()) {
@@ -70,7 +82,7 @@ void RasterGDALSourceOperator::getProvenance(ProvenanceCollection &pc) {
 								local_identifier));
 	} else {
 		pc.add(Provenance("", "", "", local_identifier));
-	}	
+	}
 }
 
 void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &stream) {
@@ -79,15 +91,24 @@ void RasterGDALSourceOperator::writeSemanticParameters(std::ostringstream &strea
 	params["sourcename"] = sourcename;
 	params["channel"] = channel;
 
+	params["gdal_params"] = gdalParams;
+
 	Json::FastWriter writer;
 	stream << writer.write(params);
 }
 
 // load the json definition of the dataset, then get the file to be loaded from GDALTimesnap. Finally load the raster.
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRectangle &rect, const QueryTools &tools) {
-	Json::Value datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+    Json::Value datasetJson;
+
+    if (gdalParams.isMember("channels")) {
+        datasetJson = gdalParams;
+    } else {
+        datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+    }
+
 	GDALTimesnap::GDALDataLoadingInfo loadingInfo = GDALTimesnap::getDataLoadingInfo(datasetJson, channel, rect);
-	auto raster = loadDataset(loadingInfo, rect.crsId, true, rect);
+	auto raster = loadDataset(loadingInfo, rect.crsId, true, rect, tools);
 	//flip here so the tiff result will not be flipped
 	return raster->flip(false, true);
 }
@@ -110,7 +131,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	bool flipx = false, flipy = false;
 
 	poBand = dataset->GetRasterBand( loadingInfo.channel );
-	poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );	
+	poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
 
 	GDALDataType type = poBand->GetRasterDataType();
 
@@ -126,7 +147,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
         hasnodata = true;
         nodata = loadingInfo.nodata;
     }
-	
+
 	int nXSize = poBand->GetXSize();
 	int nYSize = poBand->GetYSize();
 
@@ -262,13 +283,43 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadRaster(GDALDataset 
 	//GDALRasterBand is not to be freed, is owned by GDALDataset that will be closed later
 }
 
+void injectParameters(std::string &file, const QueryRectangle &qrect, const QueryTools &tools) {
+    boost::replace_all(file, "%%%MINX%%%", std::to_string(qrect.x1));
+    boost::replace_all(file, "%%%MINY%%%", std::to_string(qrect.y1));
+    boost::replace_all(file, "%%%MAXX%%%", std::to_string(qrect.x2));
+    boost::replace_all(file, "%%%MAXY%%%", std::to_string(qrect.y2));
+
+    boost::replace_all(file, "%%%XRES%%%", std::to_string(qrect.xres));
+    boost::replace_all(file, "%%%YRES%%%", std::to_string(qrect.yres));
+
+    boost::replace_all(file, "%%%T1%%%", std::to_string(qrect.t1));
+    boost::replace_all(file, "%%%T2%%%", std::to_string(qrect.t2));
+
+    UserDB::User &user = tools.session->getUser();
+    for (auto& key : Configuration::getVector<std::string>("gdal_source.injectable_user_artifacts")) {
+        size_t split = key.find(':');
+        if (split) {
+            std::string type = key.substr(0, split);
+            std::string name = key.substr(split + 1);
+            std::string placeholder = "%%%" + key + "%%%";
+
+            try {
+                boost::replace_all(file, placeholder, user.loadArtifact(user.getUsername(), type,
+                                                                        name)->getLatestArtifactVersion()->getValue());
+            } catch(UserDB::artifact_error&) {}
+        }
+    }
+}
+
 //load the GDALDataset from disk
 std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(const GDALTimesnap::GDALDataLoadingInfo &loadingInfo,
-                                                                     CrsId crsId, bool clip, const QueryRectangle &qrect) {
-	
+                                                                     CrsId crsId, bool clip, const QueryRectangle &qrect,
+                                                                     const QueryTools &tools) {
 	GDAL::init();
+	std::string fileName = loadingInfo.fileName;
+    injectParameters(fileName, qrect, tools);
 
-	auto dataset = (GDALDataset *) GDALOpen(loadingInfo.fileName.c_str(), GA_ReadOnly);
+	auto dataset = (GDALDataset *) GDALOpen(fileName.c_str(), GA_ReadOnly);
 
 	if (dataset == nullptr)
 		throw OperatorException(concat("GDAL Source: Could not open dataset ", loadingInfo.fileName));
