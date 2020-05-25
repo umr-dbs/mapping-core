@@ -37,6 +37,7 @@ std::vector<std::string> OGRSourceDatasets::getDatasetNames(){
 Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name){
     Json::Value dataset_def = getDatasetDescription(dataset_name);
 
+    // This call registers all available formats with GDAL.
     GDALAllRegister();
     GDALDataset *dataset = OGRSourceUtil::openGDALDataset(dataset_def);
 
@@ -47,11 +48,13 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
     const std::string filename = dataset_def["filename"].asString();
     const bool isCsv = OGRSourceUtil::hasSuffix(filename, ".csv") || OGRSourceUtil::hasSuffix(filename, ".tsv");
 
+    // Create the JSON objects which will hold the dataset information.
     Json::Value listing_array(Json::ValueType::arrayValue);
     Json::Value all_layers_def = dataset_def["layers"];
     Json::Value columns_dataset = dataset_def["columns"];
     Json::Value root;
 
+    // Loop through all layers of the dataset (by name).
     for(auto &curr_layer_name : all_layers_def.getMemberNames()){
         OGRLayer *layer = dataset->GetLayerByName(curr_layer_name.c_str());
         std::string layer_name(layer->GetName());
@@ -61,12 +64,13 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
         Json::Value listing_json(Json::ValueType::objectValue);
         listing_json["name"]  = layer_name;
 
-        // Get the spatial ref information from the dataset
+        // Get the spatial ref information from the dataset.
         OGRSpatialReference *layer_srs_ref = layer->GetSpatialRef();
         if(layer_srs_ref == nullptr) {
-            // TODO: handle  this case in a fancy way
+            // If there is no spatial information (null pointer) use the information from the JSON file.
 	        listing_json["coords"] = layer_def["coords"];
         } else {
+            // Else, use the srs code an name from the dataset.
  	        std::string srs_auth_code = layer_srs_ref->GetAuthorityCode(nullptr);
             std::string srs_auth_name = layer_srs_ref->GetAuthorityName(nullptr);
             listing_json["coords"]["crs"] = srs_auth_name + ":" + srs_auth_code;
@@ -82,7 +86,8 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
         } else {
             listing_json["geometry_type"] = dataset_def.get("geometry_type", "Unknown");
         }
-
+    
+        // Get the layer description (if available).
         if(layer_def.isMember("description")){
             listing_json["title"] = layer_def["description"];
         } else if(dataset_def.isMember("description")){
@@ -99,9 +104,11 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
             }
         }
 
+        // Prepare two arrays to hold column names for numberic and textual attributes.
         Json::Value textual(Json::ValueType::arrayValue);
         Json::Value numeric(Json::ValueType::arrayValue);
 
+        // Get the OGR attribute object.
         OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
 
         for(int j = 0; j < attributeDefn->GetFieldCount(); j++){
@@ -128,6 +135,7 @@ Json::Value OGRSourceDatasets::getDatasetListing(const std::string &dataset_name
                 continue;
             }
 
+            // Get the type and sort the field name into the matching array.
             OGRFieldType type = field->GetType();
 
             if(type == OFTInteger || type == OFTInteger64 || type == OFTReal)
