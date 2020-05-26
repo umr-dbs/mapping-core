@@ -16,11 +16,20 @@
  */
 class RasterGDALSourceOperator : public GenericOperator {
 	public:
+        /**
+         * Generic operator constructor
+         */
 		RasterGDALSourceOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params);
 		~RasterGDALSourceOperator() override;
 
+        /**
+         * Writes the provenance information to a `ProvenanceCollection`
+         */
 		void getProvenance(ProvenanceCollection &pc) override;
 
+		/**
+		 * This operator only returns raster images
+		 */
 		std::unique_ptr<GenericRaster> getRaster(const QueryRectangle &rect, const QueryTools &tools) override;
 
 	protected:
