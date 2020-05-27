@@ -76,8 +76,10 @@ void UserService::run() {
 
 			// GDALSource
 			auto dataSets= GDALSourceDataSets::getDataSetNames();
+			// loop over all datasets
 			for(const auto &dataSet : dataSets) {
                 if (user.hasPermission("data.gdal_source." + dataSet)) {
+					// wrap the description parsing into try/catch to skip broken descriptions
 					try	{
 						auto description = GDALSourceDataSets::getDataSetDescription(dataSet);
 						description["operator"] = "gdal_source";
@@ -92,8 +94,10 @@ void UserService::run() {
 
 			// OGR File Source
 			std::vector<std::string> ogr_source_names = OGRSourceDatasets::getDatasetNames();
+			// loop over all datasets
 			for(const auto &name : ogr_source_names){
 				if(user.hasPermission("data.ogr_source." + name)){
+					// wrap the description parsing into try/catch to skip broken descriptions
 					try {
 						Json::Value description = OGRSourceDatasets::getDatasetListing(name);
 						description["operator"] = "ogr_source";
