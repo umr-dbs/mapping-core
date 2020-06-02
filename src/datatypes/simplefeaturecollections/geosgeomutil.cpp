@@ -114,10 +114,10 @@ std::unique_ptr<geos::geom::Geometry> GeosGeomUtil::createGeosLineCollection(con
 
 	const geos::geom::GeometryFactory *gf = geos::geom::GeometryFactory::getDefaultInstance();
 
-	std::unique_ptr<std::vector<geos::geom::Geometry*>> multiLines(new std::vector<geos::geom::Geometry*>);
+	std::vector<std::unique_ptr<geos::geom::Geometry>> multiLines;
 
 	for(size_t featureIndex = 0; featureIndex < lineCollection.getFeatureCount(); ++featureIndex){
-		std::unique_ptr<std::vector<geos::geom::Geometry*>> lines(new std::vector<geos::geom::Geometry*>);
+		std::vector<std::unique_ptr<geos::geom::Geometry>> lines;
 
 		for(size_t lineIndex = lineCollection.start_feature[featureIndex]; lineIndex < lineCollection.start_feature[featureIndex + 1]; ++lineIndex){
 
@@ -128,15 +128,15 @@ std::unique_ptr<geos::geom::Geometry> GeosGeomUtil::createGeosLineCollection(con
 			}
 
 			const geos::geom::CoordinateSequenceFactory* csf = geos::geom::CoordinateArraySequenceFactory::instance();
-			geos::geom::CoordinateSequence* coordinateSequence = csf->create(coordinates.release());
+			std::unique_ptr<geos::geom::CoordinateSequence> coordinateSequence = csf->create(coordinates.release());
 
-			lines->push_back(gf->createLineString(coordinateSequence));
+			lines.push_back(gf->createLineString(std::move(coordinateSequence)));
 		}
 
-		multiLines->push_back(gf->createMultiLineString(lines.release()));
+		multiLines.push_back(gf->createMultiLineString(std::move(lines)));
 	}
 
-	std::unique_ptr<geos::geom::Geometry> collection (gf->createGeometryCollection(multiLines.release()));
+	std::unique_ptr<geos::geom::Geometry> collection (gf->createGeometryCollection(std::move(multiLines)));
 
 	//do this beforehand?
 	collection->setSRID(lineCollection.stref.crsId.code);
@@ -231,10 +231,10 @@ std::unique_ptr<geos::geom::Geometry> GeosGeomUtil::createGeosPolygonCollection(
 	const geos::geom::GeometryFactory *gf = geos::geom::GeometryFactory::getDefaultInstance();
 
 	//TODO: calculate size beforehand
-	std::unique_ptr<std::vector<geos::geom::Geometry*>> multiPolygons(new std::vector<geos::geom::Geometry*>);
+	std::vector<std::unique_ptr<geos::geom::Geometry>> multiPolygons;
 
 	for(size_t featureIndex = 0; featureIndex < polygonCollection.getFeatureCount(); ++featureIndex){
-		std::unique_ptr<std::vector<geos::geom::Geometry*>> polygons(new std::vector<geos::geom::Geometry*>);
+		std::vector<std::unique_ptr<geos::geom::Geometry>> polygons;
 
 		for(size_t polygonIndex = polygonCollection.start_feature[featureIndex]; polygonIndex < polygonCollection.start_feature[featureIndex + 1]; ++polygonIndex){
 
@@ -242,46 +242,45 @@ std::unique_ptr<geos::geom::Geometry> GeosGeomUtil::createGeosPolygonCollection(
 			size_t ringIndex = polygonCollection.start_polygon[polygonIndex];
 
 			//TODO: calculate size beforehand
-			std::unique_ptr<std::vector<geos::geom::Coordinate>> coordinates (new std::vector<geos::geom::Coordinate>);
+			std::vector<geos::geom::Coordinate> coordinates;
 
 			//outer ring
 			for(size_t pointsIndex = polygonCollection.start_ring[ringIndex]; pointsIndex < polygonCollection.start_ring[ringIndex + 1]; ++pointsIndex){
 				const Coordinate& point = polygonCollection.coordinates[pointsIndex];
-				coordinates->push_back(geos::geom::Coordinate(point.x, point.y));
+				coordinates.push_back(geos::geom::Coordinate(point.x, point.y));
 			}
 
 			const geos::geom::CoordinateSequenceFactory* csf = geos::geom::CoordinateArraySequenceFactory::instance();
 
-			geos::geom::CoordinateSequence* coordinateSequence = csf->create(coordinates.release());
+			std::unique_ptr<geos::geom::CoordinateSequence> coordinateSequence = csf->create(std::move(coordinates));
 
-			geos::geom::LinearRing* outerRing = gf->createLinearRing(coordinateSequence);
+			std::unique_ptr<geos::geom::LinearRing> outerRing = gf->createLinearRing(std::move(coordinateSequence));
 
 
 			//inner rings
 			//TODO calculate size beforehand
-			std::unique_ptr<std::vector<geos::geom::Geometry*>> innerRings (new std::vector<geos::geom::Geometry*>);
+			std::vector<std::unique_ptr<geos::geom::LinearRing>> innerRings;
 
 			for(++ringIndex; ringIndex < polygonCollection.start_polygon[polygonIndex + 1]; ++ringIndex){
-				coordinates.reset(new std::vector<geos::geom::Coordinate>);
+				std::vector<geos::geom::Coordinate> inner_coordinates;
+
 
 				for(size_t pointsIndex = polygonCollection.start_ring[ringIndex]; pointsIndex < polygonCollection.start_ring[ringIndex + 1]; ++pointsIndex){
 					const Coordinate& point = polygonCollection.coordinates[pointsIndex];
-					coordinates->push_back(geos::geom::Coordinate(point.x, point.y));
+					inner_coordinates.push_back(geos::geom::Coordinate(point.x, point.y));
 				}
 
-				coordinateSequence = csf->create(coordinates.release());
-				geos::geom::Geometry* innerRing = gf->createLinearRing(coordinateSequence);
-
-				innerRings->push_back(innerRing);
+				coordinateSequence = csf->create(std::move(inner_coordinates));
+				innerRings.push_back(gf->createLinearRing(std::move(coordinateSequence)));
 			}
 
-			polygons->push_back(gf->createPolygon(outerRing, innerRings.release()));
+			polygons.push_back(gf->createPolygon(std::move(outerRing), std::move(innerRings)));
 		}
 
-		multiPolygons->push_back(gf->createMultiPolygon(polygons.release()));
+		multiPolygons.push_back(gf->createMultiPolygon(std::move(polygons)));
 	}
 
-	std::unique_ptr<geos::geom::Geometry> collection (gf->createGeometryCollection(multiPolygons.release()));
+	std::unique_ptr<geos::geom::Geometry> collection = gf->createGeometryCollection(std::move(multiPolygons));
 
 	//do this beforehand?
 	collection->setSRID(polygonCollection.stref.crsId.code);
