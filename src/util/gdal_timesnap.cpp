@@ -115,17 +115,21 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
     
     // get parameters
 	std::string time_format = channelJson.get("time_format", datasetJson.get("time_format", "")).asString();
-    Log::debug(concat("getDataLoadingInfo: time_format: ", time_format));
 	std::string time_start 	= channelJson.get("time_start", datasetJson.get("time_start", "")).asString();
-    Log::debug(concat("getDataLoadingInfo: time_start: ", time_start));
 	std::string time_end 	= channelJson.get("time_end", datasetJson.get("time_end", "")).asString();
-    Log::debug(concat("getDataLoadingInfo: time_end: ", time_end));
 
     std::string path 	 = channelJson.get("path", datasetJson.get("path", "")).asString();
-    Log::debug(concat("getDataLoadingInfo: path: ", path));
     std::string fileName = channelJson.get("file_name", datasetJson.get("file_name", "")).asString();
-    Log::debug(concat("getDataLoadingInfo: fileName: ", fileName));
 
+    Log::debug(
+        concat("getDataLoadingInfo: time_format: ", time_format,
+            ", time_start: ", time_start,
+            ", time_end: ", time_end,
+            ", path: ", path,
+            ", fileName: ", fileName
+        )
+    );
+    
     channel = channelJson.get("channel", channel).asInt();
 
     // resolve time
