@@ -1,5 +1,7 @@
 #include "gdal_timesnap.h"
 #include <boost/filesystem.hpp>
+#include "util/concat.h"
+#include "util/log.h"
 
 constexpr int MAX_FILE_NAME_LENGTH = 255;
 
@@ -110,7 +112,8 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
 {
     // get parameters
     Json::Value channelJson = datasetJson["channels"][channel];
-
+    
+    // get parameters
 	std::string time_format = channelJson.get("time_format", datasetJson.get("time_format", "")).asString();
 	std::string time_start 	= channelJson.get("time_start", datasetJson.get("time_start", "")).asString();
 	std::string time_end 	= channelJson.get("time_end", datasetJson.get("time_end", "")).asString();
@@ -118,6 +121,15 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
     std::string path 	 = channelJson.get("path", datasetJson.get("path", "")).asString();
     std::string fileName = channelJson.get("file_name", datasetJson.get("file_name", "")).asString();
 
+    Log::debug(
+        concat("getDataLoadingInfo: time_format: ", time_format,
+            ", time_start: ", time_start,
+            ", time_end: ", time_end,
+            ", path: ", path,
+            ", fileName: ", fileName
+        )
+    );
+    
     channel = channelJson.get("channel", channel).asInt();
 
     // resolve time
@@ -200,6 +212,8 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
         size_t placeholderPos = fileName.find(placeholder);
 
         fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
+        Log::debug(concat("getDataLoadingInfo: resulting time fileName: ", fileName.c_str()));
+
     }
 
 
@@ -220,7 +234,17 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
 
     boost::filesystem::path file_path(path);
     file_path /= fileName;
-	return GDALDataLoadingInfo(file_path.string(), channel,
+	std::string dataset_file_path = file_path.string();
+    Log::debug(concat("getDataLoadingInfo: file_path: ", file_path)); 
+
+    // Handle NetCDF subdatasets
+    if (channelJson.isMember("netcdf_subdataset") || datasetJson.isMember("netcdf_subdataset")) {
+        std::string netcdf_subdataset = channelJson.get("netcdf_subdataset", datasetJson.get("netcdf_subdataset", "")).asString();
+        dataset_file_path = concat("NETCDF:", dataset_file_path, ":", netcdf_subdataset);
+        Log::debug(concat("getDataLoadingInfo: found NETCDF subdataset: ", netcdf_subdataset, ". Resulting path: ", dataset_file_path));
+    }
+
+	return GDALDataLoadingInfo(dataset_file_path, channel,
                                TemporalReference(TIMETYPE_UNIX, time_start_mapping, time_end_mapping),
                                crsId, nodata, unit);
 }
