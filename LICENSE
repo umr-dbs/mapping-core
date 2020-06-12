@@ -2,27 +2,6 @@ MIT License
 
 Copyright (c) 2014-2020 Database Research Group of the University of Marburg
 
-Copyright (c) 2020 European Commission on changes to the following files:
- - cmake/FindPNG++.cmake
- - src/datatypes/colorizer.cpp
- - src/datatypes/colorizer.h
- - src/datatypes/plots/histogram.cpp
- - src/datatypes/plots/histogram.h
- - src/datatypes/raster/export_png.cpp
- - src/datatypes/raster/raster_priv.h
- - src/datatypes/unit.cpp
- - src/datatypes/unit.h
- - src/operators/plots/histogram.cpp
- - src/operators/processing/raster/rgba_composite.cl (new)
- - src/operators/processing/raster/rgba_composite.cpp (new)
- - src/operators/source/gdal_source.cpp
- - src/operators/source/ogr_raw_source.cpp
- - src/services/user.cpp
- - src/util/ogr_source_datasets.cpp
- - test/unittests/colorizer.cpp
- - test/unittests/plots/plots.cpp
- - test/unittests/util/gdal_memory_mapped.cpp (new)
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
