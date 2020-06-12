@@ -23,12 +23,18 @@ static const int EXPECTED_RASTER_INPUTS = 3;
  */
 class RgbaCompositeOperator : public GenericOperator {
     public:
+        /**
+         * Generic operator constructor
+         */
         RgbaCompositeOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params);
 
         ~RgbaCompositeOperator() override;
 
 #ifndef MAPPING_OPERATOR_STUBS
 
+        /**
+         * This operator can only return a raster
+         */
         auto getRaster(const QueryRectangle &rect, const QueryTools &tools) -> std::unique_ptr<GenericRaster> override;
 
 #endif
