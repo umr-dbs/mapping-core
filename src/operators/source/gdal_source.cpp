@@ -7,6 +7,7 @@
 #include "util/gdal_source_datasets.h"
 #include "util/gdal_dataset_importer.h"
 #include "util/configuration.h"
+#include "util/log.h"
 
 /**
  * Operator that loads raster data via gdal. Loads them from imported GDAL dataset, import via GDAL dataset importer.
@@ -16,11 +17,20 @@
  */
 class RasterGDALSourceOperator : public GenericOperator {
 	public:
+        /**
+         * Generic operator constructor
+         */
 		RasterGDALSourceOperator(int sourcecounts[], GenericOperator *sources[], Json::Value &params);
 		~RasterGDALSourceOperator() override;
 
+        /**
+         * Writes the provenance information to a `ProvenanceCollection`
+         */
 		void getProvenance(ProvenanceCollection &pc) override;
 
+		/**
+		 * This operator only returns raster images
+		 */
 		std::unique_ptr<GenericRaster> getRaster(const QueryRectangle &rect, const QueryTools &tools) override;
 
 	protected:
@@ -103,8 +113,10 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::getRaster(const QueryRe
 
     if (gdalParams.isMember("channels")) {
         datasetJson = gdalParams;
+        Log::debug("getRaster: Using gdalParams.");
     } else {
         datasetJson = GDALSourceDataSets::getDataSetDescription(sourcename);
+        Log::debug("getRaster: Using getDataSetDescription.");
     }
 
 	GDALTimesnap::GDALDataLoadingInfo loadingInfo = GDALTimesnap::getDataLoadingInfo(datasetJson, channel, rect);
@@ -318,6 +330,7 @@ std::unique_ptr<GenericRaster> RasterGDALSourceOperator::loadDataset(const GDALT
 	GDAL::init();
 	std::string fileName = loadingInfo.fileName;
     injectParameters(fileName, qrect, tools);
+    Log::debug(concat("loadDataset: using filename: ", fileName.c_str()));
 
 	auto dataset = (GDALDataset *) GDALOpen(fileName.c_str(), GA_ReadOnly);
 
