@@ -30,7 +30,7 @@ add_library(mapping_core_unittests_lib
         unittests/gdal_source.cpp
         unittests/util/configuration.cpp
         unittests/png_rgb_composite.cpp
-        unittests/uploader.cpp)
+        unittests/uploader.cpp unittests/util/gdal_memory_mapped.cpp)
 
 target_include_directories(mapping_core_unittests_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -56,6 +56,15 @@ download_project(PROJ       googletest
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
 target_link_libraries(mapping_core_unittests_lib gtest)
+
+
+foreach (mapping_test_addition IN ITEMS ${MAPPING_ADD_TO_UNITTESTS_LIBRARIES_INTERNAL})
+    message(STATUS "Adding ${mapping_test_addition} to tests.")
+    # Provide dependencies to foreign test library
+    target_link_libraries_internal(${mapping_test_addition} mapping_core_unittests_lib)
+    # Append foregin tests to unit tests
+    target_link_libraries_internal(mapping_unittests ${mapping_test_addition})
+endforeach(mapping_test_addition)
 
 # Define the build of the test executables as one of the tests s.t. they are built on `make test`
 # TODO: use multiple threads for building

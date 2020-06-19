@@ -5,6 +5,7 @@ project(mapping_core
 
 # CMake Settings
 cmake_minimum_required(VERSION 3.7)
+cmake_policy(SET CMP0079 NEW)
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 ## Debug
@@ -46,6 +47,13 @@ download_project(PROJ       cpptoml
         PREFIX CMakeFiles/Download
         )
 add_subdirectory(${cpptoml_SOURCE_DIR} ${cpptoml_BINARY_DIR} EXCLUDE_FROM_ALL)
+
+# Modules
+set(MAPPING_CORE_PATH ${CMAKE_SOURCE_DIR} CACHE PATH "This is the mapping-core directory." FORCE)
+foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
+    message(STATUS "Loading Module `${mapping_module}`")
+    add_subdirectory(${MAPPING_MODULE_PATH}/${mapping_module} target/modules/${mapping_module})
+endforeach (mapping_module)
 
 add_subdirectory(src)
 

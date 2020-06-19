@@ -290,12 +290,6 @@ find_package(Fcgi++ REQUIRED)
 target_link_libraries(mapping_core_services_lib ${Fcgi++_LIBRARIES})
 target_include_directories(mapping_core_services_lib PRIVATE ${Fcgi++_INCLUDE_DIRS})
 
-# Modules
-set(MAPPING_CORE_PATH ${CMAKE_SOURCE_DIR} CACHE PATH "This is the mapping-core directory." FORCE)
-foreach (mapping_module IN ITEMS ${MAPPING_MODULES})
-    message(STATUS "Loading Module `${mapping_module}`")
-    add_subdirectory(../${MAPPING_MODULE_PATH}/${mapping_module} target/modules/${mapping_module})
-endforeach (mapping_module)
 ## Base
 foreach (mapping_core_addition IN ITEMS ${MAPPING_ADD_TO_BASE_OBJECTS})
     message(STATUS "Adding ${mapping_core_addition} to base.")
