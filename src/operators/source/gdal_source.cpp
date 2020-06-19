@@ -307,6 +307,11 @@ void injectParameters(std::string &file, const QueryRectangle &qrect, const Quer
     boost::replace_all(file, "%%%T1%%%", std::to_string(qrect.t1));
     boost::replace_all(file, "%%%T2%%%", std::to_string(qrect.t2));
 
+    // in the case that there is no user session, stop getting the user. TODO: re-engineer so that there is always a session
+    if (!tools.session) {
+        return;
+    }
+
     UserDB::User &user = tools.session->getUser();
     for (auto& key : Configuration::getVector<std::string>("gdal_source.injectable_user_artifacts")) {
         size_t split = key.find(':');
