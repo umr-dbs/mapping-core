@@ -115,15 +115,15 @@ void OGRSourceUtil::readAnyCollection(const QueryRectangle &rect,
     // a call suggested by OGR Tutorial as "just in case" (to start reading from first feature)
     layer->ResetReading();
 
-    // no need to process any further if result is empty
-    if (layer->GetFeatureCount() < 1) {
-        return;
-    }
-
     //start reading the FeatureCollection
     OGRFeatureDefn *attributeDefn = layer->GetLayerDefn();
     createAttributeArrays(attributeDefn, collection->feature_attributes);
     initTimeReading(attributeDefn, layer, rect);
+
+    // no need to process any further if result is empty
+    if (layer->GetFeatureCount() <= 0) {
+        return;
+    }
 
     //createFromWkt allocates a geometry and writes its pointer into a local pointer, therefore the third parameter is a OGRGeometry **.
     //afterwards it is moved into a unique_ptr
@@ -351,7 +351,7 @@ OGRSourceUtil::readRingToPolygonCollection(const OGRLinearRing *ring, std::uniqu
     collection->finishRing();
 }
 
-// create the AttributeArrays for the FeatureCollection based on Attribute Fields in OGRLayer. 
+// create the AttributeArrays for the FeatureCollection based on Attribute Fields in OGRLayer.
 // only if the user asked for the attribute in the query parameters.
 // create a string vector with the attribute names for writing the attributes for each feature easier
 void OGRSourceUtil::createAttributeArrays(OGRFeatureDefn *attributeDefn, AttributeArrays &attributeArrays) {
@@ -389,7 +389,7 @@ void OGRSourceUtil::createAttributeArrays(OGRFeatureDefn *attributeDefn, Attribu
 
 
 // write attribute values for the given attribute definition using the attributeNames
-// returns false if an error occurred and ErrorHandling is set to skip so that 
+// returns false if an error occurred and ErrorHandling is set to skip so that
 // the last written feature has to be removed again in the calling function
 bool OGRSourceUtil::readAttributesIntoCollection(AttributeArrays &attributeArrays, OGRFeatureDefn *attributeDefn,
                                                  OGRFeature *feature, int featureIndex) {
