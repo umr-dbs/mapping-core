@@ -222,16 +222,21 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
         Log::debug(concat("getDataLoadingInfo: using channels as time"));
 
         auto time_channel = 0;
-        auto channel_time_strings = datasetJson.get("channel_start_time_list", Json::Value(Json::ValueType::arrayValue));
-        for (auto &time_string : channel_time_strings) {
-            auto channel_time = timeParser->parse(time_string.asString());
+        const auto channel_time_strings = datasetJson.get("channel_start_time_list", Json::Value(Json::ValueType::arrayValue));
+        for (const auto &time_string : channel_time_strings) {
+            auto const channel_time = timeParser->parse(time_string.asString());
             if (wantedTimeUnix >= channel_time) {
                 time_channel += 1;
             } else {
                 break;
             }
         }
-        Log::debug(concat("getDataLoadingInfo: setting channel to: ", time_channel, " (was ", channel,")"));
+        
+        if (time_channel <= 0) {
+            throw NoRasterForGivenTimeException("No channel corresponds to the requested time");
+        }
+        
+        Log::debug(concat("getDataLoadingInfo: setting channel to: ", time_channel, " (was: ", channel,") for time: ", wantedTimeUnix));
         channel = time_channel;
     }
 
