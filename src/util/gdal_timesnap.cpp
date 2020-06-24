@@ -214,6 +214,30 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
         fileName = fileName.replace(placeholderPos, placeholder.length(), snappedTimeString);
         Log::debug(concat("getDataLoadingInfo: resulting time fileName: ", fileName.c_str()));
 
+    } else if (
+        datasetJson.isMember("channel_start_time_list")
+        && datasetJson["channel_start_time_list"].isArray()
+    ) {
+
+        Log::debug(concat("getDataLoadingInfo: using channels as time"));
+
+        auto time_channel = 0;
+        const auto channel_time_strings = datasetJson.get("channel_start_time_list", Json::Value(Json::ValueType::arrayValue));
+        for (const auto &time_string : channel_time_strings) {
+            auto const channel_time = timeParser->parse(time_string.asString());
+            if (wantedTimeUnix >= channel_time) {
+                time_channel += 1;
+            } else {
+                break;
+            }
+        }
+        
+        if (time_channel <= 0) {
+            throw NoRasterForGivenTimeException("No channel corresponds to the requested time");
+        }
+        
+        Log::debug(concat("getDataLoadingInfo: setting channel to: ", time_channel, " (was: ", channel,") for time: ", wantedTimeUnix));
+        channel = time_channel;
     }
 
 
