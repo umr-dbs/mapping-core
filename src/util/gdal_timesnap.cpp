@@ -105,14 +105,14 @@ ptime GDALTimesnap::snapToInterval(TimeUnit snapUnit, int intervalValue, ptime s
 
 
 
-// calculates the filename for queried time by snapping the wanted time to the 
+// calculates the filename for queried time by snapping the wanted time to the
 // nearest smaller timestamp that exists for the dataset
 // TODO: move general parameter parsing to a more appropriate function
 GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value datasetJson, int channel, const TemporalReference &tref)
 {
     // get parameters
     Json::Value channelJson = datasetJson["channels"][channel];
-    
+
     // get parameters
 	std::string time_format = channelJson.get("time_format", datasetJson.get("time_format", "")).asString();
 	std::string time_start 	= channelJson.get("time_start", datasetJson.get("time_start", "")).asString();
@@ -129,7 +129,7 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
             ", fileName: ", fileName
         )
     );
-    
+
     channel = channelJson.get("channel", channel).asInt();
 
     // resolve time
@@ -154,8 +154,12 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
 
     //check if requested time is in range of dataset timestamps
     //a dataset only has start not end time. if wantedtime is past the last file of dataset, it can simply not be loaded.
-    if(wantedTimeUnix < time_start_mapping || wantedTimeUnix > time_end_mapping)
-        throw NoRasterForGivenTimeException("Requested time is not in range of dataset");
+    if(wantedTimeUnix < time_start_mapping || wantedTimeUnix > time_end_mapping) {
+        throw NoRasterForGivenTimeException(
+                "Requested time is not in range of dataset",
+                MappingExceptionType::PERMANENT
+        );
+    }
 
     if(datasetJson.isMember("time_interval") || channelJson.isMember("time_interval")) {
         Json::Value timeInterval = channelJson.get("time_interval", datasetJson.get("time_interval", Json::Value(Json::objectValue)));
@@ -231,11 +235,14 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
                 break;
             }
         }
-        
+
         if (time_channel <= 0) {
-            throw NoRasterForGivenTimeException("No channel corresponds to the requested time");
+            throw NoRasterForGivenTimeException(
+                    "No channel corresponds to the requested time",
+                    MappingExceptionType::PERMANENT
+            );
         }
-        
+
         Log::debug(concat("getDataLoadingInfo: setting channel to: ", time_channel, " (was: ", channel,") for time: ", wantedTimeUnix));
         channel = time_channel;
     }
@@ -259,7 +266,7 @@ GDALTimesnap::GDALDataLoadingInfo GDALTimesnap::getDataLoadingInfo(Json::Value d
     boost::filesystem::path file_path(path);
     file_path /= fileName;
 	std::string dataset_file_path = file_path.string();
-    Log::debug(concat("getDataLoadingInfo: file_path: ", file_path)); 
+    Log::debug(concat("getDataLoadingInfo: file_path: ", file_path));
 
     // Handle NetCDF subdatasets
     if (channelJson.isMember("netcdf_subdataset") || datasetJson.isMember("netcdf_subdataset")) {
