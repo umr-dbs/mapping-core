@@ -344,8 +344,12 @@ RasterDBBackend::RasterDescription LocalRasterDBBackend::getClosestRaster(int ch
 	stmt.bind(1, channelid);
 	stmt.bind(2, t1);
 	stmt.bind(3, t2);
-	if (!stmt.next())
-		throw NoRasterForGivenTimeException( concat("No raster found for the given time (source=", sourcename, ", channel=", channelid, ", time=", t1, "-", t2, ")"));
+    if (!stmt.next()) {
+        throw NoRasterForGivenTimeException(
+                concat("No raster found for the given time (source=", sourcename, ", channel=", channelid, ", time=", t1, "-", t2, ")"),
+                MappingExceptionType::PERMANENT
+        );
+    }
 
 	auto rasterid = stmt.getInt64(0);
 	double time_start = stmt.getDouble(1);
